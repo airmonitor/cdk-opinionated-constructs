@@ -27,7 +27,7 @@ class AWSLambdaFunction(Construct):
         """
         super().__init__(scope, id)
 
-    def signing_profile(self, props, env) -> signer.ISigningProfile:
+    def signing_profile(self, props) -> signer.ISigningProfile:
         """
         Create code signing profile using AWS Signer to be used in signing config
         :return: AWS Signer signing profile
@@ -37,7 +37,7 @@ class AWSLambdaFunction(Construct):
             self,
             "signing-profile",
             platform=signer.Platform.AWS_LAMBDA_SHA384_ECDSA,
-            signing_profile_name=f'{props["stage"]}-{props["project"]}-{env.region}',
+            signing_profile_name=f'{props["stage"]}-{props["project"]}-{props["service_name"]}',
         )
 
     def signing_config(self, profile: signer.ISigningProfile) -> lmb.ICodeSigningConfig:
