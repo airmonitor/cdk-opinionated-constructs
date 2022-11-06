@@ -13,7 +13,7 @@ from aws_cdk import aws_logs as logs
 from typing import Dict, Union
 
 
-class AWSLambdaFunction(Construct):
+class AWSPythonLambdaFunction(Construct):
     """Create Lambda function and supported objects like lambda layer, signing
     profile, IAM role and policies."""
 
@@ -27,9 +27,11 @@ class AWSLambdaFunction(Construct):
         """
         super().__init__(scope, id)
 
-    def signing_profile(self, props) -> signer.ISigningProfile:
-        """
-        Create code signing profile using AWS Signer to be used in signing config
+    def signing_profile(self, signing_profile_name: str) -> signer.ISigningProfile:
+        """Create code signing profile using AWS Signer to be used in signing
+        config.
+
+        :param signing_profile_name: The name of signing profile
         :return: AWS Signer signing profile
         """
 
@@ -37,7 +39,7 @@ class AWSLambdaFunction(Construct):
             self,
             "signing-profile",
             platform=signer.Platform.AWS_LAMBDA_SHA384_ECDSA,
-            signing_profile_name=f'{props["stage"]}-{props["project"]}-{props["service_name"]}',
+            signing_profile_name=signing_profile_name,
         )
 
     def signing_config(self, profile: signer.ISigningProfile) -> lmb.ICodeSigningConfig:
@@ -50,9 +52,7 @@ class AWSLambdaFunction(Construct):
 
         return lmb.CodeSigningConfig(self, "conde-signing-config", signing_profiles=[profile])
 
-    def create_lambda_layer(
-        self, props: Dict, code_path: str, construct_id: str = "supporting_libraries"
-    ) -> lmb.LayerVersion:
+    def create_lambda_layer(self, code_path: str, construct_id: str = "supporting_libraries") -> lmb.LayerVersion:
         """Create lambda layer.
 
         :param props: The dictionary which contain configuration values.
@@ -65,7 +65,6 @@ class AWSLambdaFunction(Construct):
             id=construct_id,
             code=lmb.Code.from_asset(code_path),
             compatible_runtimes=[lmb.Runtime.PYTHON_3_9],
-            description=f"Supporting libs layer for {props['project']}",
         )
 
     # pylint: disable=R0913

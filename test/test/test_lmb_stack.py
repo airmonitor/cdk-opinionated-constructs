@@ -2,27 +2,28 @@
 """Test AWS Lambda function construct against cdk-nag."""
 from aws_cdk import Stack
 from constructs import Construct
-from cdk_opinionated_constructs.lmb import AWSLambdaFunction
+from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
 import aws_cdk.aws_lambda as lmb
 
 from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 
-class TestAWSLambdaFunctionStack(Stack):
+class TestAWSPythonLambdaFunctionStack(Stack):
     """Test generated sns topic against AWS solutions  checks."""
 
     def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        lmb_construct = AWSLambdaFunction(self, id="lmb_construct")
-        lmb_signing_profile = lmb_construct.signing_profile(props=props)
+        lmb_construct = AWSPythonLambdaFunction(self, id="lmb_construct")
+        lmb_signing_profile = lmb_construct.signing_profile(
+            signing_profile_name=f'{props["stage"]}-{props["project"]}-{props["service_name"]}'
+        )
         lmb_signing = lmb_construct.signing_config(lmb_signing_profile)
         lmb_construct.create_lambda_function(
             code_path=props["service_name"],
             env=env,
             function_name=props["service_name"],
-            props=props,
             timeout=6,
             layer=lmb.LayerVersion.from_layer_version_arn(
                 self,
