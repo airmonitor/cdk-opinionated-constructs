@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="cdk-opinionated-constructs",
-    version="0.3.0",
+    version="1.3.0",
     description="AWS CDK constructs come without added security configurations.",
     long_description="Very rarely this is validated during the CI pipeline via tools like CDK-NAG. The idea behind this project is to create secured constructs from the start.",
     license="MIT",
@@ -17,7 +17,7 @@ setup(
     packages=find_packages(where="."),
     install_requires=[
         "aws-cdk-lib>=2.50.0",
-        "constructs>=10.1.150",
+        "constructs>=10.0.0,<11.0.0",
     ],
     python_requires=">=3.9",
 )
