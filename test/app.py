@@ -7,6 +7,7 @@ from test.test_s3_stack import TestS3Stack
 from test.test_sns_stack import TestSNSStack
 from test.test_lmb_stack import TestAWSPythonLambdaFunctionStack
 from test.test_wafv2_stack import TestWAFv2Stack
+from test.test_alb_stack import TestALBStack
 
 app = cdk.App()
 TestS3Stack(app, "TestS3Stack")
@@ -18,5 +19,6 @@ TestAWSPythonLambdaFunctionStack(
     props={"stage": "dev", "project": "test_project", "service_name": "example_lambda_function"},
 )
 TestWAFv2Stack(app, "TestWAFv2Stack")
+TestALBStack(app, "TestALBStack", env=cdk.Environment(account="123456789012", region="eu-west-1"))
 
 app.synth()
