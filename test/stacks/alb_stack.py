@@ -7,6 +7,10 @@ from aws_cdk import aws_kms as kms
 import aws_cdk.aws_ec2 as ec2
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 
+from cdk_nag import NagSuppressions
+from aws_cdk import Aspects
+from cdk_nag import AwsSolutionsChecks
+
 
 class TestALBStack(Stack):
     """Test generated sns topic against AWS solutions  checks."""
@@ -15,6 +19,16 @@ class TestALBStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
         shared_kms_key = kms.Key(self, "SharedKmsKey", enable_key_rotation=True)
+
+        NagSuppressions.add_resource_suppressions(
+            vpc,
+            suppressions=[
+                {
+                    "id": "AwsSolutions-VPC7",
+                    "reason": "Test VPC, flow logs logs aren't required here.",
+                },
+            ],
+        )
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
 
@@ -29,3 +43,6 @@ class TestALBStack(Stack):
         )
 
         alb.log_access_logs(bucket=alb_access_logs_bucket)
+
+        # Validate stack against AWS Solutions checklist
+        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
