@@ -8,7 +8,7 @@ import aws_cdk as cdk
 import aws_cdk.aws_wafv2 as wafv2
 from aws_cdk import aws_logs as logs
 
-from typing import Any, Dict, Literal, Union
+from typing import Optional, Any, Dict, Literal, Union
 
 
 class WAFv2(Construct):
@@ -23,7 +23,7 @@ class WAFv2(Construct):
         name: str,
         rate_value: Union[int, None],
         aws_common_rule: bool = True,
-        aws_common_rule_ignore_list: list = None,
+        aws_common_rule_ignore_list: Optional[list] = None,
         aws_anony_list: bool = False,
         aws_bad_inputs_rule: bool = False,
         aws_sqli_rule: bool = False,
