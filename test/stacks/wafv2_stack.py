@@ -3,7 +3,8 @@
 from aws_cdk import Stack
 from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_elasticloadbalancingv2 as albv2
+from aws_cdk import aws_kms as kms
+from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from cdk_opinionated_constructs.wafv2 import WAFv2
 
 from aws_cdk import Aspects
@@ -16,6 +17,8 @@ class TestWAFv2Stack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
+        shared_kms_key = kms.Key(self, "SharedKmsKey", enable_key_rotation=True)
+
         NagSuppressions.add_resource_suppressions(
             vpc,
             suppressions=[
@@ -26,16 +29,19 @@ class TestWAFv2Stack(Stack):
             ],
         )
 
-        alb = albv2.ApplicationLoadBalancer(self, id="alb", vpc=vpc)
-        NagSuppressions.add_resource_suppressions(
-            alb,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-ELB2",
-                    "reason": "Test ALB, access logs aren't required here.",
-                },
-            ],
+        alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
+
+        alb = alb_construct.create_alb(
+            load_balancer_name="alb",
+            internet_facing=True,
+            vpc=vpc,
         )
+
+        alb_access_logs_bucket = alb_construct.create_access_logs_bucket(
+            bucket_name="bucket-name", kms_key=shared_kms_key, expiration_days=7
+        )
+
+        alb.log_access_logs(bucket=alb_access_logs_bucket)
 
         wafv2_construct = WAFv2(self, construct_id="wafv2_construct")
 

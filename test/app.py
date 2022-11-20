@@ -3,10 +3,10 @@
 
 import aws_cdk as cdk
 import os
-from stacks.test_s3_stack import TestS3Stack
-from stacks.test_sns_stack import TestSNSStack
-from stacks.test_lmb_stack import TestAWSPythonLambdaFunctionStack
-from stacks.test_wafv2_stack import TestWAFv2Stack
+from stacks.s3_stack import TestS3Stack
+from stacks.sns_stack import TestSNSStack
+from stacks.lmb_stack import TestAWSPythonLambdaFunctionStack
+from stacks.wafv2_stack import TestWAFv2Stack
 from stacks.alb_stack import TestALBStack
 from stacks.ecr_stack import TestECRStack
 
@@ -20,9 +20,9 @@ TestAWSPythonLambdaFunctionStack(
     app,
     "TestAWSLambdaFunctionStack",
     env=CDK_ENV,
-    props={"stage": "dev", "project": "test_project", "service_name": "example_lambda_function"},
+    props={"project": "test_project", "service_name": "example_lambda_function"},
 )
-TestWAFv2Stack(app, "TestWAFv2Stack")
+TestWAFv2Stack(app, "TestWAFv2Stack", env=CDK_ENV)
 TestALBStack(app, "TestALBStack", env=CDK_ENV)
 TestECRStack(app, "TestECRStack", env=CDK_ENV)
 
