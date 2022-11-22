@@ -13,7 +13,7 @@ from cdk_nag import AwsSolutionsChecks
 
 
 class TestALBStack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated EC2 ALB against AWS recommendations."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)

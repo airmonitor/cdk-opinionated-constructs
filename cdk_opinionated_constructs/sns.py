@@ -25,26 +25,23 @@ class SNSTopic(Construct):
         super().__init__(scope, id)
 
     def create_sns_topic(self, topic_name: str, master_key: Union[kms.IKey, None]) -> sns.Topic:
-        """Create SNS topic.
+        """Create SNS topic with resource policy that enforce encrypted access.
 
         :param topic_name: The name of SNS topic
         :param master_key: The KMS key to encrypt messages going through sns topic
         :return: The CDK object for SNS topic
         """
-        return sns.Topic(self, id=topic_name, topic_name=topic_name, master_key=master_key)
-
-    @staticmethod
-    def create_sns_topic_policy(sns_topic: sns.ITopic):
-        """Create topic policy that denies unencrypted access."""
-        sns_topic.add_to_resource_policy(
+        topic = sns.Topic(self, id=topic_name, topic_name=topic_name, master_key=master_key)
+        topic.add_to_resource_policy(
             iam.PolicyStatement(
                 sid="AllowPublishThroughSSLOnly",
                 actions=["sns:Publish"],
                 effect=iam.Effect.DENY,
-                resources=[sns_topic.topic_arn],
+                resources=[topic.topic_arn],
                 conditions={
                     "Bool": {"aws:SecureTransport": "false"},
                 },
                 principals=[iam.AnyPrincipal()],
             )
         )
+        return topic
