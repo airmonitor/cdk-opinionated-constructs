@@ -55,7 +55,6 @@ class AWSPythonLambdaFunction(Construct):
     def create_lambda_layer(self, code_path: str, construct_id: str = "supporting_libraries") -> lmb.LayerVersion:
         """Create lambda layer.
 
-        :param props: The dictionary which contain configuration values.
         :param code_path: path which contain lambda layer directory
         :param construct_id: construct id
         :return: Lambda layer
