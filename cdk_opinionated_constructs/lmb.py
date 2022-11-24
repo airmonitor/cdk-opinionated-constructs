@@ -27,28 +27,19 @@ class AWSPythonLambdaFunction(Construct):
         """
         super().__init__(scope, id)
 
-    def signing_profile(self, signing_profile_name: str) -> signer.ISigningProfile:
-        """Create code signing profile using AWS Signer to be used in signing
-        config.
+    def signing_config(self, signing_profile_name: str) -> lmb.ICodeSigningConfig:
+        """Create code signing config and profile to sign lambda code with help
+        from AWS Signer.
 
         :param signing_profile_name: The name of signing profile
-        :return: AWS Signer signing profile
+        :return: AWS Lambda code signing config
         """
-
-        return signer.SigningProfile(
+        profile = signer.SigningProfile(
             self,
             "signing-profile",
             platform=signer.Platform.AWS_LAMBDA_SHA384_ECDSA,
             signing_profile_name=signing_profile_name,
         )
-
-    def signing_config(self, profile: signer.ISigningProfile) -> lmb.ICodeSigningConfig:
-        """Create code signing config using AWS Lambda to sign lambda code
-        using profile created by AWS Signer.
-
-        :param profile: AWS Signer profile
-        :return: AWS Lambda code signing config
-        """
 
         return lmb.CodeSigningConfig(self, "conde-signing-config", signing_profiles=[profile])
 
