@@ -81,6 +81,8 @@ class TestSNSStack(Stack):
 ## AWS Lambda example:
 
 ```python
+# -*- coding: utf-8 -*-
+"""Test AWS Lambda function construct.."""
 from aws_cdk import Stack
 from constructs import Construct
 from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
@@ -97,12 +99,9 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         lmb_construct = AWSPythonLambdaFunction(self, id="lmb_construct")
-        lmb_signing_profile = lmb_construct.signing_profile(
-            signing_profile_name=f'{props["stage"]}-{props["project"]}-{props["service_name"]}'
-        )
-        lmb_signing = lmb_construct.signing_config(lmb_signing_profile)
+        lmb_signing = lmb_construct.signing_config(signing_profile_name="signing_profile_name")
         lmb_construct.create_lambda_function(
-            code_path=props["service_name"],
+            code_path=f'{props["service_name"]}',
             env=env,
             function_name=props["service_name"],
             timeout=6,
