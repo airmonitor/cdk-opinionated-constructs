@@ -17,11 +17,11 @@ class TestAWSPythonLambdaFunctionStack(Stack):
 
         lmb_construct = AWSPythonLambdaFunction(self, id="lmb_construct")
         lmb_signing = lmb_construct.signing_config(signing_profile_name="signing_profile_name")
-        lmb_construct.create_lambda_function(
+        lmb_function = lmb_construct.create_lambda_function(
             code_path=f'{props["service_name"]}',
             env=env,
             function_name=props["service_name"],
-            timeout=6,
+            timeout=10,
             layer=lmb.LayerVersion.from_layer_version_arn(
                 self,
                 id="aws_lambda_powertools_layer",
@@ -34,6 +34,9 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             reserved_concurrent_executions=1,
             signing_config=lmb_signing,
         )
+
+        self.output_props = props.copy()
+        self.output_props["lmb_function"] = lmb_function
 
         # Validate stack against AWS Solutions checklist
         nag_suppression_rule_list = self.nag_suppression()
@@ -57,3 +60,11 @@ class TestAWSPythonLambdaFunctionStack(Stack):
                 "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
             },
         ]
+
+    @property
+    def outputs(self):
+        """Update props dictionary.
+
+        :return: Updated props dict
+        """
+        return self.output_props
