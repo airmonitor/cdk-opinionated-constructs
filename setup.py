@@ -18,6 +18,7 @@ setup(
     install_requires=[
         "aws-cdk-lib>=2.51.1",
         "constructs>=10.0.0,<11.0.0",
+        "cdk-monitoring-constructs>=1.28.0,<2.0.0",
     ],
     python_requires=">=3.9",
 )
