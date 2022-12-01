@@ -13,6 +13,7 @@ import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
 import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_certificatemanager as certificate_manager
 
 
 class ApplicationLoadBalancer(Construct):
@@ -37,7 +38,7 @@ class ApplicationLoadBalancer(Construct):
         :return: CDK S3 IBucket object
         """
 
-        alb_access_logs_bucket_construct = S3Bucket(self, id=f"alb_access-logs-{bucket_name}-construct")
+        alb_access_logs_bucket_construct = S3Bucket(self, id=f"alb_access_logs_{bucket_name}_construct")
         alb_access_logs_bucket = alb_access_logs_bucket_construct.create_bucket(
             bucket_name=bucket_name,
             kms_key=kms_key,
@@ -98,7 +99,7 @@ class ApplicationLoadBalancer(Construct):
         """
         return albv2.ApplicationLoadBalancer(
             self,
-            id=f"{load_balancer_name}-load-balancer",
+            id=f"{load_balancer_name}_load_balancer",
             load_balancer_name=load_balancer_name,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
@@ -106,87 +107,50 @@ class ApplicationLoadBalancer(Construct):
         )
 
     @staticmethod
-    def listeners(alb: albv2.ApplicationLoadBalancer, ports: list[dict]) -> list[dict]:
-        """Create ALB listeners using provided list of dicts.
-
-        Example input:
-        alb_ports = [
-            {
-                "port": "443/tcp",
-                "source": ["0.0.0.0/0"],
-                "protocol": albv2.Protocol.HTTPS,
-                "certificate": imported_acm_certificate,
-                "targets": [ec2_auto_scaling_group],
-            }
-        ]
-
-
-        Example usage:
-        alb_listeners = alb_construct.listeners(alb=alb, ports=alb_ports)
+    def add_connections(
+        alb: albv2.ApplicationLoadBalancer, certificates: list[certificate_manager.ICertificate], ports: list
+    ):
+        """Create ALB listener and target.
 
         :param alb: The CDK construct for Application Load Balancer
+        :param certificates: List of certificates from AWS Certificate Manager
         :param ports: List of dictionaries that contain connection details
-        :return: Updated list of dictionaries to which new key named lister was added
 
-        [
-            {
-                'port': '443/tcp',
-                'source': ['0.0.0.0/0'],
-                'protocol': <Protocol.TLS: 'TLS'>,
-                'certificate': <jsii._reference_map.InterfaceDynamicProxy object at 0x12012bfa0>,
-                "targets": [ec2_auto_scaling_group],
-                'listener': <aws_cdk.aws_elasticloadbalancingv2.ApplicationListener object at 0x12018f130>
-            }
-        ]
+        Example usage:
+        connections(
+            alb=alb,
+            certificates=[imported_acm_certificate],
+            ports=[
+                {
+                    "back_end_port": 8088,
+                    "front_end_port": 443,
+                    "back_end_protocol": albv2.ApplicationProtocol.HTTP,
+                    "targets": [service],
+                    "healthy_http_codes": "200,302",
+                }
+            ]
+        )
         """
         for port_definition in ports:
-            port_number = port_definition["port"]
-            port_number = int(port_number.split("/")[0])
-            protocol = port_definition["protocol"]
-            certificate = port_definition["certificate"]
+            front_end_port_number = port_definition["front_end_port"]
+
             listener = alb.add_listener(
-                certificates=[certificate],
-                id=f"{protocol}-{port_number}-listener",
-                port=port_number,
-                protocol=protocol,
+                certificates=certificates,
+                id=f"https_{front_end_port_number}_listener",
+                port=front_end_port_number,
+                protocol=albv2.ApplicationProtocol.HTTPS,
                 ssl_policy=albv2.SslPolicy.FORWARD_SECRECY_TLS12_RES_GCM,
-                open=True,
+                open=False,
             )
-            port_definition["listener"] = listener
 
-        return ports
-
-    @staticmethod
-    def targets(alb_listeners: list[dict]):
-        """
-        Create ALB targets
-        Example input for alb_listeners:
-
-        [
-            {
-                'port': '443/tcp',
-                'source': ['0.0.0.0/0'],
-                'protocol': <Protocol.TLS: 'TLS'>,
-                'certificate': <jsii._reference_map.InterfaceDynamicProxy object at 0x12012bfa0>,
-                "targets": [ec2_auto_scaling_group],
-                "healthy_http_codes": "200,302"
-                'listener': <aws_cdk.aws_elasticloadbalancingv2.ApplicationListener object at 0x12018f130>
-             }
-         ]
-        :param alb_listeners: list of dict that contain port definitions
-        """
-        for port_definition in alb_listeners:
-            port_number = port_definition["port"]
-            port_number = int(port_number.split("/")[0])
-            protocol = port_definition["protocol"]
-            alb_listener = port_definition["listener"]
-            alb_listener.add_targets(
-                id=f"{protocol}-{port_number}-target",
+            back_end_port = port_definition["back_end_port"]
+            listener.add_targets(
+                id=f"{back_end_port}_target",
                 health_check=albv2.HealthCheck(
                     enabled=True,
                     healthy_http_codes=port_definition.get("healthy_http_codes"),
                 ),
-                port=port_number,
-                protocol=protocol,
+                port=back_end_port,
+                protocol=port_definition["back_end_protocol"],
                 targets=port_definition["targets"],
             )
