@@ -62,10 +62,10 @@ class TestWAFv2Stack(Stack):
                 "username_field": "data[AuthUser][userId]",
             },
         )
-        wafv2_construct.web_acl_association(resource_arn=alb.load_balancer_arn, web_acl_arn=wafv2_acl.attr_arn)
-        wafv2_log_group = wafv2_construct.web_acl_log(log_group_name="aws-waf-logs-wafv2")
 
-        wafv2_construct.web_acl_log_config(log_group=wafv2_log_group, web_acl_arn=wafv2_acl.attr_arn)
+        wafv2_construct.web_acl_log(log_group_name="aws-waf-logs-wafv2", web_acl_arn=wafv2_acl.attr_arn)
+
+        wafv2_construct.web_acl_association(resource_arn=alb.load_balancer_arn, web_acl_arn=wafv2_acl.attr_arn)
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
