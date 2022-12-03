@@ -232,13 +232,15 @@ class WAFv2(Construct):
         """
         return wafv2.CfnWebACLAssociation(self, "ACLAssociation", resource_arn=resource_arn, web_acl_arn=web_acl_arn)
 
-    def web_acl_log(self, log_group_name: str) -> logs.LogGroup:
-        """Create CloudWatch log group and associate it with WAF.
+    def web_acl_log(self, web_acl_arn: str, log_group_name: str) -> wafv2.CfnLoggingConfiguration:
+        """Configure provided log group as a target for WAF log destination.
 
+        :param web_acl_arn: The WEB Application Access Control List ARN
         :param log_group_name: The name of log group
-        :return: CDK CloudWatch logs.LogGroup
+        :return: AWS CDK wafv2.CfnLoggingConfiguration
         """
-        return logs.LogGroup(
+
+        log_group = logs.LogGroup(
             self,
             id="web_acl_log_group",
             log_group_name=log_group_name,
@@ -246,13 +248,6 @@ class WAFv2(Construct):
             removal_policy=cdk.RemovalPolicy.DESTROY,
         )
 
-    def web_acl_log_config(self, web_acl_arn: str, log_group: logs.LogGroup) -> wafv2.CfnLoggingConfiguration:
-        """Configure provided log group as a target for WAF log destination.
-
-        :param web_acl_arn: The WEB Application Access Control List ARN
-        :param log_group: The CDK construct of a CloudWatch log group
-        :return: AWS CDK wafv2.CfnLoggingConfiguration
-        """
         return wafv2.CfnLoggingConfiguration(
             self,
             id="web_acl_cfn_log_configuration",
