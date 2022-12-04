@@ -117,14 +117,14 @@ class ApplicationLoadBalancer(Construct):
         :param ports: List of dictionaries that contain connection details
 
         Example usage:
-        connections(
+        add_connections(
             alb=alb,
             certificates=[imported_acm_certificate],
             ports=[
                 {
                     "back_end_port": 8088,
                     "front_end_port": 443,
-                    "back_end_protocol": albv2.ApplicationProtocol.HTTP,
+                    "back_end_protocol": albv2.ApplicationProtocol.HTTPS,
                     "targets": [service],
                     "healthy_http_codes": "200,302",
                 }
