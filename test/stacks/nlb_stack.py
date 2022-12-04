@@ -54,5 +54,4 @@ class TestNLBStack(Stack):
             ],
         )
         # Validate stack against AWS Solutions checklist
-
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
