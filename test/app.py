@@ -10,7 +10,7 @@ from stacks.lmb_monitoring_stack import TestAWSPythonLambdaFunctionStackMonitori
 from stacks.wafv2_stack import TestWAFv2Stack
 from stacks.alb_stack import TestALBStack
 from stacks.ecr_stack import TestECRStack
-
+from stacks.nlb_stack import TestNLBStack
 
 CDK_ENV = cdk.Environment(account=os.environ["CDK_DEFAULT_ACCOUNT"], region=os.environ["CDK_DEFAULT_REGION"])
 
@@ -32,5 +32,6 @@ TestLambdaMonitoringStack = TestAWSPythonLambdaFunctionStackMonitoring(
 TestWAFv2Stack(app, "TestWAFv2Stack", env=CDK_ENV)
 TestALBStack(app, "TestALBStack", env=CDK_ENV)
 TestECRStack(app, "TestECRStack", env=CDK_ENV)
+TestNLBStack(app, "TestNLBStack", env=CDK_ENV)
 
 app.synth()
