@@ -127,6 +127,7 @@ class ApplicationLoadBalancer(Construct):
                     "back_end_protocol": albv2.ApplicationProtocol.HTTPS,
                     "targets": [service],
                     "healthy_http_codes": "200,302",
+                    "deregistration_delay": cdk.Duration.minutes(1)
                 }
             ]
         )
@@ -146,6 +147,7 @@ class ApplicationLoadBalancer(Construct):
             back_end_port = port_definition["back_end_port"]
             listener.add_targets(
                 id=f"{back_end_port}_target",
+                deregistration_delay=port_definition.get("deregistration_delay"),
                 health_check=albv2.HealthCheck(
                     enabled=True,
                     healthy_http_codes=port_definition.get("healthy_http_codes"),

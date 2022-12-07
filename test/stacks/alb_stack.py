@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Example code for Application Load Balancer cdk stack."""
-from aws_cdk import Stack
+from aws_cdk import Stack, Duration
 from constructs import Construct
 
 from aws_cdk import aws_kms as kms
@@ -57,6 +57,7 @@ class TestALBStack(Stack):
                     "back_end_protocol": albv2.ApplicationProtocol.HTTP,
                     "targets": [],
                     "healthy_http_codes": "200,302",
+                    "deregistration_delay": Duration.minutes(1),
                 }
             ],
         )
