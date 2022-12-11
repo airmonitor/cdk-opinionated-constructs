@@ -12,7 +12,6 @@ import aws_cdk as cdk
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_certificatemanager as certificate_manager
 
 
@@ -86,25 +85,6 @@ class ApplicationLoadBalancer(Construct):
         )
 
         return alb_access_logs_bucket
-
-    def create_alb(
-        self, load_balancer_name: str, vpc: ec2.Vpc, internet_facing: bool = False
-    ) -> albv2.ApplicationLoadBalancer:
-        """Create AWS Application Load Balancer construct.
-
-        :param internet_facing: Set true to create public ALB
-        :param load_balancer_name: The load balancer name
-        :param vpc: CDK construct for VPC
-        :return: CDK construct for Application Load Balancer
-        """
-        return albv2.ApplicationLoadBalancer(
-            self,
-            id=f"{load_balancer_name}_load_balancer",
-            load_balancer_name=load_balancer_name,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
-            internet_facing=internet_facing,
-        )
 
     @staticmethod
     def add_connections(

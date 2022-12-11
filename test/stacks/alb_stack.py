@@ -35,10 +35,14 @@ class TestALBStack(Stack):
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
 
-        alb = alb_construct.create_alb(
-            load_balancer_name="alb",
+        alb_name = "alb"
+        alb = albv2.ApplicationLoadBalancer(
+            self,
+            id=f"{alb_name}_load_balancer",
             internet_facing=True,
+            load_balancer_name=alb_name,
             vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
         )
 
         alb_access_logs_bucket = alb_construct.create_access_logs_bucket(
