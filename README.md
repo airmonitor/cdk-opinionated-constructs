@@ -464,7 +464,16 @@ class TestNLBStack(Stack):
         )
 
         nlb_construct = NetworkLoadBalancer(self, construct_id="nlb_construct")
-        nlb = nlb_construct.create_nlb(load_balancer_name="nlb", vpc=vpc)
+        nlb_name = "nlb"
+        nlb = albv2.NetworkLoadBalancer(
+            self,
+            id=f"{nlb_name}_load_balancer",
+            cross_zone_enabled=False,
+            internet_facing=True,
+            load_balancer_name=nlb_name,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+        )
 
         nlb_access_logs_bucket = nlb_construct.create_access_logs_bucket(
             bucket_name="bucket-name", kms_key=shared_kms_key, expiration_days=7
