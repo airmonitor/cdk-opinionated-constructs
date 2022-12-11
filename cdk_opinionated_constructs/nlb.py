@@ -7,7 +7,6 @@ import aws_cdk as cdk
 from constructs import Construct
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
 import aws_cdk.aws_events_targets as albv2_targets
-import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
 import aws_cdk.aws_kms as kms
@@ -87,23 +86,6 @@ class NetworkLoadBalancer(Construct):
         )
 
         return alb_access_logs_bucket
-
-    def create_nlb(self, load_balancer_name: str, vpc: ec2.Vpc) -> albv2.NetworkLoadBalancer:
-        """Create Public Network Load Balancer.
-
-        :param load_balancer_name: The name of Network Load Balancer
-        :param vpc: CDK construct for VPC
-        :return: CDK construct for Network Load Balancer
-        """
-        return albv2.NetworkLoadBalancer(
-            self,
-            id=f"{load_balancer_name}-load-balancer",
-            cross_zone_enabled=True,
-            internet_facing=True,
-            load_balancer_name=load_balancer_name,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
-        )
 
     @staticmethod
     def add_connections(

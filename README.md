@@ -363,10 +363,14 @@ class TestALBStack(Stack):
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
 
-        alb = alb_construct.create_alb(
-            load_balancer_name="alb",
+        alb_name = "alb"
+        alb = albv2.ApplicationLoadBalancer(
+            self,
+            id=f"{alb_name}_load_balancer",
             internet_facing=True,
+            load_balancer_name=alb_name,
             vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
         )
 
         alb_access_logs_bucket = alb_construct.create_access_logs_bucket(
@@ -385,13 +389,14 @@ class TestALBStack(Stack):
                     "back_end_protocol": albv2.ApplicationProtocol.HTTP,
                     "targets": [],
                     "healthy_http_codes": "200,302",
-                    "deregistration_delay": Duration.minutes(1)
+                    "deregistration_delay": Duration.minutes(1),
                 }
             ],
         )
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+
 ```
 
 ## ECR example
@@ -459,7 +464,16 @@ class TestNLBStack(Stack):
         )
 
         nlb_construct = NetworkLoadBalancer(self, construct_id="nlb_construct")
-        nlb = nlb_construct.create_nlb(load_balancer_name="nlb", vpc=vpc)
+        nlb_name = "nlb"
+        nlb = albv2.NetworkLoadBalancer(
+            self,
+            id=f"{nlb_name}_load_balancer",
+            cross_zone_enabled=False,
+            internet_facing=True,
+            load_balancer_name=nlb_name,
+            vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+        )
 
         nlb_access_logs_bucket = nlb_construct.create_access_logs_bucket(
             bucket_name="bucket-name", kms_key=shared_kms_key, expiration_days=7
