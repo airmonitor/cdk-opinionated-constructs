@@ -11,6 +11,8 @@ from stacks.wafv2_stack import TestWAFv2Stack
 from stacks.alb_stack import TestALBStack
 from stacks.ecr_stack import TestECRStack
 from stacks.nlb_stack import TestNLBStack
+from stacks.rds_postgresql_stack import TestRDSPostgreSQLStack
+from stacks.rds_mysql_stack import TestRDSMySQLStack
 
 CDK_ENV = cdk.Environment(account=os.environ["CDK_DEFAULT_ACCOUNT"], region=os.environ["CDK_DEFAULT_REGION"])
 
@@ -33,5 +35,7 @@ TestWAFv2Stack(app, "TestWAFv2Stack", env=CDK_ENV)
 TestALBStack(app, "TestALBStack", env=CDK_ENV)
 TestECRStack(app, "TestECRStack", env=CDK_ENV)
 TestNLBStack(app, "TestNLBStack", env=CDK_ENV)
+TestRDSPostgreSQLStack(app, "TestRDSPostgreSQLStack", env=CDK_ENV)
+TestRDSMySQLStack(app, "TestRDSMySQLStack", env=CDK_ENV)
 
 app.synth()
