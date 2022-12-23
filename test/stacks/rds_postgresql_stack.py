@@ -9,7 +9,7 @@ from cdk_nag import NagSuppressions
 from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks
 import aws_cdk.aws_secretsmanager as secretsmanager
-from cdk_opinionated_constructs.rds_instance import RDSPostgreSQLInstance
+from cdk_opinionated_constructs.rds_instance import RDSInstance
 
 
 class TestRDSPostgreSQLStack(Stack):
@@ -37,7 +37,7 @@ class TestRDSPostgreSQLStack(Stack):
             allow_all_outbound=False,
         )
 
-        rds_construct = RDSPostgreSQLInstance(self, construct_id="rds_construct")
+        rds_construct = RDSInstance(self, construct_id="rds_construct")
 
         database_name = "database-name"
 

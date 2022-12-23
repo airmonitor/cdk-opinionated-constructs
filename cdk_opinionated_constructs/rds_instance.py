@@ -12,8 +12,8 @@ import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_rds as rds
 
 
-class RDSPostgreSQLInstance(Construct):
-    """Create AWS RDS DB Instance."""
+class RDSInstance(Construct):
+    """Create AWS RDS  DB Instance."""
 
     # pylint: disable=W0235
     # pylint: disable=W0622
@@ -35,11 +35,13 @@ class RDSPostgreSQLInstance(Construct):
         vpc: Union[ec2.Vpc, ec2.IVpc],
         preferred_maintenance_window: Union[str, None] = "Sun:04:00-Sun:04:30",
         snapshot_identifier: Union[str, None] = None,
+        instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
         **kwargs,
     ) -> rds.DatabaseInstance:
         """Create Aurora RDS with PostgresSQL compatibility.
 
-        :param engine:
+        :param instance_type: Type of RDS instance
+        :param engine: Database engine version
         :param snapshot_identifier: The name of RDS snapshot to be used to create RDS instance from it.
         :param preferred_maintenance_window: The RDS preferred maintenance window
         :param secret: The existing secret in the AWS Secrets Manager
@@ -75,7 +77,7 @@ class RDSPostgreSQLInstance(Construct):
                 enable_performance_insights=True,
                 engine=engine,
                 iam_authentication=True,
-                instance_type=ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+                instance_type=instance_type,
                 max_allocated_storage=200,
                 multi_az=stage == "prod",
                 preferred_maintenance_window=preferred_maintenance_window,
@@ -101,7 +103,7 @@ class RDSPostgreSQLInstance(Construct):
                 enable_performance_insights=True,
                 engine=engine,
                 iam_authentication=True,
-                instance_type=ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+                instance_type=instance_type,
                 max_allocated_storage=200,
                 multi_az=stage == "prod",
                 preferred_maintenance_window=preferred_maintenance_window,
