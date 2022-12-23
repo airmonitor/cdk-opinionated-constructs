@@ -43,7 +43,7 @@ class TestRDSMySQLStack(Stack):
 
         rds_instance = rds_construct.create_db_instance(
             database_name=database_name,
-            engine=rds.DatabaseInstanceEngine.postgres(version=rds.MysqlEngineVersion.VER_8_0_31),
+            engine=rds.DatabaseInstanceEngine.mysql(version=rds.MysqlEngineVersion.VER_8_0_31),
             publicly_accessible=False,
             secret=secretsmanager.Secret.from_secret_name_v2(self, id="imported_secret", secret_name="secret-name"),
             security_group=security_group,
