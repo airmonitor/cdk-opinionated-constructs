@@ -12,7 +12,7 @@ setup(
     version="1.16.0",
     description="AWS CDK constructs come without added security configurations.",
     long_description="The idea behind this project is to create secured constructs from the start. \n"
-    "Supported constructs: ALB, ECR, LMB, NLB, S3, SNS, WAF",
+    "Supported constructs: ALB, ECR, LMB, NLB, S3, SNS, WAF, RDS",
     license="MIT",
     package_dir={"": "."},
     packages=find_packages(where="."),
