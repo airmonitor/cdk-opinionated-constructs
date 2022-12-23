@@ -11,7 +11,8 @@ setup(
     name="cdk-opinionated-constructs",
     version="1.14.0",
     description="AWS CDK constructs come without added security configurations.",
-    long_description="Very rarely this is validated during the CI pipeline via tools like CDK-NAG. The idea behind this project is to create secured constructs from the start.",
+    long_description="The idea behind this project is to create secured constructs from the start. \n"
+    "Supported constructs: ALB, ECR, LMB, NLB, S3, SNS, WAF",
     license="MIT",
     package_dir={"": "."},
     packages=find_packages(where="."),
