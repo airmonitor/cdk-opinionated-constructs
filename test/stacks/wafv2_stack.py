@@ -3,6 +3,7 @@
 from aws_cdk import Stack
 from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_elasticloadbalancingv2 as albv2
 from aws_cdk import aws_kms as kms
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from cdk_opinionated_constructs.wafv2 import WAFv2
@@ -31,10 +32,14 @@ class TestWAFv2Stack(Stack):
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
 
-        alb = alb_construct.create_alb(
-            load_balancer_name="alb",
+        alb_name = "alb"
+        alb = albv2.ApplicationLoadBalancer(
+            self,
+            id=f"{alb_name}_load_balancer",
             internet_facing=True,
+            load_balancer_name=alb_name,
             vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
         )
 
         alb_access_logs_bucket = alb_construct.create_access_logs_bucket(
