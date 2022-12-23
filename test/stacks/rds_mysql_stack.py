@@ -12,8 +12,8 @@ import aws_cdk.aws_secretsmanager as secretsmanager
 from cdk_opinionated_constructs.rds_instance import RDSInstance
 
 
-class TestRDSPostgreSQLStack(Stack):
-    """Test generated RDS PostgreSQL stack."""
+class TestRDSMySQLStack(Stack):
+    """Test generated RDS MySQL stack."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -43,7 +43,7 @@ class TestRDSPostgreSQLStack(Stack):
 
         rds_instance = rds_construct.create_db_instance(
             database_name=database_name,
-            engine=rds.DatabaseInstanceEngine.postgres(version=rds.PostgresEngineVersion.VER_13_8),
+            engine=rds.DatabaseInstanceEngine.postgres(version=rds.MysqlEngineVersion.VER_8_0_31),
             publicly_accessible=False,
             secret=secretsmanager.Secret.from_secret_name_v2(self, id="imported_secret", secret_name="secret-name"),
             security_group=security_group,
