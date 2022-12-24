@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="cdk-opinionated-constructs",
-    version="1.16.0",
+    version="1.16.1",
     description="AWS CDK constructs come without added security configurations.",
     long_description="The idea behind this project is to create secured constructs from the start. \n"
     "Supported constructs: ALB, ECR, LMB, NLB, S3, SNS, WAF, RDS",
