@@ -21,7 +21,7 @@ class TestRDSMySQLStack(Stack):
         shared_kms_key = kms.Key(self, "shared_kms_key", enable_key_rotation=True)
 
         private_subnet = ec2.SubnetConfiguration(
-            name="private_with_nat", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=25
+            name="Private", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=25
         )
         vpc = ec2.Vpc(
             self,
@@ -41,6 +41,7 @@ class TestRDSMySQLStack(Stack):
         rds_subnet_group = rds.SubnetGroup(
             self,
             id="rds_subnet_group",
+            description="rds_subnet_group",
             vpc=vpc,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             vpc_subnets=ec2.SubnetSelection(
