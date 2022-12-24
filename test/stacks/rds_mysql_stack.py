@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Example code for Application Load Balancer cdk stack."""
+import aws_cdk as cdk
 from aws_cdk import Stack
 from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
@@ -20,7 +21,7 @@ class TestRDSMySQLStack(Stack):
         shared_kms_key = kms.Key(self, "shared_kms_key", enable_key_rotation=True)
 
         private_subnet = ec2.SubnetConfiguration(
-            name="private_with_nat", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=25
+            name="Private", subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS, cidr_mask=25
         )
         vpc = ec2.Vpc(
             self,
@@ -37,6 +38,17 @@ class TestRDSMySQLStack(Stack):
             allow_all_outbound=False,
         )
 
+        rds_subnet_group = rds.SubnetGroup(
+            self,
+            id="rds_subnet_group",
+            description="rds_subnet_group",
+            vpc=vpc,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+            vpc_subnets=ec2.SubnetSelection(
+                availability_zones=vpc.availability_zones, one_per_az=False, subnet_group_name="Private"
+            ),
+        )
+
         rds_construct = RDSInstance(self, construct_id="rds_construct")
 
         database_name = "database-name"
@@ -50,6 +62,7 @@ class TestRDSMySQLStack(Stack):
             snapshot_identifier="snapshot_identifier",
             stage="prod",
             storage_encryption_key=shared_kms_key,
+            subnet_group=rds_subnet_group,
             vpc=vpc,
         )
 
