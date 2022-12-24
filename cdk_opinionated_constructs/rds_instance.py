@@ -32,6 +32,7 @@ class RDSInstance(Construct):
         secret: Union[secretsmanager.Secret, secretsmanager.ISecret],
         security_group: ec2.SecurityGroup,
         stage: str,
+        subnet_group: rds.SubnetGroup,
         vpc: Union[ec2.Vpc, ec2.IVpc],
         preferred_maintenance_window: Union[str, None] = "Sun:04:00-Sun:04:30",
         snapshot_identifier: Union[str, None] = None,
@@ -40,6 +41,7 @@ class RDSInstance(Construct):
     ) -> rds.DatabaseInstance:
         """Create Aurora RDS with PostgresSQL compatibility.
 
+        :param subnet_group: The RDS subnet group
         :param instance_type: Type of RDS instance
         :param engine: Database engine version
         :param snapshot_identifier: The name of RDS snapshot to be used to create RDS instance from it.
@@ -53,16 +55,6 @@ class RDSInstance(Construct):
         :return: The AWS CDK Serverless Cluster object
         """
 
-        subnet_group = rds.SubnetGroup(
-            self,
-            id="subnet-group",
-            description=database_name,
-            vpc=vpc,
-            removal_policy=cdk.RemovalPolicy.DESTROY,
-            vpc_subnets=ec2.SubnetSelection(
-                availability_zones=vpc.availability_zones, one_per_az=False, subnet_group_name="private_with_nat"
-            ),
-        )
         return (
             rds.DatabaseInstanceFromSnapshot(
                 self,
