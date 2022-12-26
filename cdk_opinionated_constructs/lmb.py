@@ -104,6 +104,7 @@ class AWSPythonLambdaFunction(Construct):
             code_signing_config=signing_config,
             environment={**lambda_environment_default_variables, **env_variables},
             function_name=function_name,
+            filesystem=kwargs.get("filesystem"),
             handler=handler,
             id=function_name,
             initial_policy=[
