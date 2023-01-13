@@ -4,7 +4,6 @@ S3 bucket for storing access logs.
 
 Security parameters are set by default
 """
-from aws_cdk import aws_kms as kms
 from cdk_nag import NagSuppressions
 from cdk_opinionated_constructs.s3 import S3Bucket
 from constructs import Construct
@@ -27,31 +26,20 @@ class ApplicationLoadBalancer(Construct):
         """
         super().__init__(scope, construct_id)
 
-    def create_access_logs_bucket(self, bucket_name: str, kms_key: kms.IKey, expiration_days: int) -> s3.Bucket:
+    def create_access_logs_bucket(self, bucket_name: str, expiration_days: int) -> s3.Bucket:
         """Create dedicated access logs bucket using opinionated cdk construct
         from cdk-opinionated-constructs.
 
         :param expiration_days: The number of days after which logs will be deleted
         :param bucket_name: The name of S3 bucket
-        :param kms_key: The kms key
         :return: CDK S3 IBucket object
         """
 
         alb_access_logs_bucket_construct = S3Bucket(self, id=f"alb_access_logs_{bucket_name}_construct")
         alb_access_logs_bucket = alb_access_logs_bucket_construct.create_bucket(
-            bucket_name=bucket_name,
-            kms_key=kms_key,
+            bucket_name=bucket_name, encryption=s3.BucketEncryption.S3_MANAGED
         )
 
-        # The ALB access logging function don't work with KMS CMK which is used in the S3 bucket.
-        # To overcome this issue a supported bucket encryption was used - AES256
-        cfn_alb_access_logs_bucket = alb_access_logs_bucket.node.default_child
-        cfn_alb_access_logs_bucket.add_property_override(
-            "BucketEncryption.ServerSideEncryptionConfiguration.0.ServerSideEncryptionByDefault.SSEAlgorithm", "AES256"
-        )
-        cfn_alb_access_logs_bucket.add_property_deletion_override(
-            "BucketEncryption.ServerSideEncryptionConfiguration.0.ServerSideEncryptionByDefault.KMSMasterKeyID"
-        )
         alb_access_logs_bucket.add_to_resource_policy(
             permission=iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
