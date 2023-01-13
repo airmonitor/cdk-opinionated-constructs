@@ -4,24 +4,29 @@ CDK constructs with added security configuration
 ## S3 Bucket example:
 
 ```python
+# -*- coding: utf-8 -*-
+"""Test S3 construct against cdk-nag."""
 from aws_cdk import Stack
 from constructs import Construct
 from cdk_opinionated_constructs.s3 import S3Bucket
 import aws_cdk.aws_kms as kms
+import aws_cdk.aws_s3 as s3
 
 from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 
 class TestS3Stack(Stack):
-    """Test generated s3 bucket against AWS solutions  checks"""
+    """Test generated s3 bucket against AWS solutions  checks."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         shared_kms_key = kms.Key(self, "SharedKmsKey", enable_key_rotation=True)
 
         s3_bucket_construct = S3Bucket(self, id="bucket")
-        access_logs_bucket = s3_bucket_construct.create_bucket(bucket_name="access-logs-bucket", kms_key=shared_kms_key)
+        access_logs_bucket = s3_bucket_construct.create_bucket(
+            bucket_name="access-logs-bucket", encryption=s3.BucketEncryption.S3_MANAGED
+        )
 
         NagSuppressions.add_resource_suppressions(
             access_logs_bucket,
@@ -37,13 +42,13 @@ class TestS3Stack(Stack):
         s3_bucket_construct.create_bucket(
             bucket_name="test-s3-bucket",
             kms_key=shared_kms_key,
+            encryption=s3.BucketEncryption.KMS,
             server_access_logs_bucket=access_logs_bucket,
-            server_access_logs_prefix="test-s3-bucket"
+            server_access_logs_prefix="test-s3-bucket",
         )
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-
 
 ```
 
@@ -251,6 +256,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
 from aws_cdk import Stack
 from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_elasticloadbalancingv2 as albv2
 from aws_cdk import aws_kms as kms
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from cdk_opinionated_constructs.wafv2 import WAFv2
@@ -279,14 +285,18 @@ class TestWAFv2Stack(Stack):
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
 
-        alb = alb_construct.create_alb(
-            load_balancer_name="alb",
+        alb_name = "alb"
+        alb = albv2.ApplicationLoadBalancer(
+            self,
+            id=f"{alb_name}_load_balancer",
             internet_facing=True,
+            load_balancer_name=alb_name,
             vpc=vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
         )
 
         alb_access_logs_bucket = alb_construct.create_access_logs_bucket(
-            bucket_name="bucket-name", kms_key=shared_kms_key, expiration_days=7
+            bucket_name="bucket-name", expiration_days=7
         )
 
         alb.log_access_logs(bucket=alb_access_logs_bucket)
@@ -311,10 +321,7 @@ class TestWAFv2Stack(Stack):
             },
         )
 
-        wafv2_construct.web_acl_log(
-            log_group_name="aws-waf-logs-wafv2",
-            web_acl_arn=wafv2_acl.attr_arn
-        )
+        wafv2_construct.web_acl_log(log_group_name="aws-waf-logs-wafv2", web_acl_arn=wafv2_acl.attr_arn)
 
         wafv2_construct.web_acl_association(resource_arn=alb.load_balancer_arn, web_acl_arn=wafv2_acl.attr_arn)
 
@@ -374,7 +381,7 @@ class TestALBStack(Stack):
         )
 
         alb_access_logs_bucket = alb_construct.create_access_logs_bucket(
-            bucket_name="bucket-name", kms_key=shared_kms_key, expiration_days=7
+            bucket_name="bucket-name", expiration_days=7
         )
 
         alb.log_access_logs(bucket=alb_access_logs_bucket)
@@ -476,7 +483,7 @@ class TestNLBStack(Stack):
         )
 
         nlb_access_logs_bucket = nlb_construct.create_access_logs_bucket(
-            bucket_name="bucket-name", kms_key=shared_kms_key, expiration_days=7
+            bucket_name="bucket-name", expiration_days=7
         )
         nlb.log_access_logs(bucket=nlb_access_logs_bucket)
 

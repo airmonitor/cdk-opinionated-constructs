@@ -3,7 +3,6 @@
 from aws_cdk import Stack, Duration
 from constructs import Construct
 
-from aws_cdk import aws_kms as kms
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
@@ -20,7 +19,6 @@ class TestALBStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
-        shared_kms_key = kms.Key(self, "shared_kms_key", enable_key_rotation=True)
         certificate = certificate_manager.Certificate(self, "certificate", domain_name="example.com")
 
         NagSuppressions.add_resource_suppressions(
@@ -45,9 +43,7 @@ class TestALBStack(Stack):
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
         )
 
-        alb_access_logs_bucket = alb_construct.create_access_logs_bucket(
-            bucket_name="bucket-name", kms_key=shared_kms_key, expiration_days=7
-        )
+        alb_access_logs_bucket = alb_construct.create_access_logs_bucket(bucket_name="bucket-name", expiration_days=7)
 
         alb.log_access_logs(bucket=alb_access_logs_bucket)
 
