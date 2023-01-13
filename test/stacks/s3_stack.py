@@ -4,6 +4,7 @@ from aws_cdk import Stack
 from constructs import Construct
 from cdk_opinionated_constructs.s3 import S3Bucket
 import aws_cdk.aws_kms as kms
+import aws_cdk.aws_s3 as s3
 
 from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
@@ -17,7 +18,9 @@ class TestS3Stack(Stack):
         shared_kms_key = kms.Key(self, "SharedKmsKey", enable_key_rotation=True)
 
         s3_bucket_construct = S3Bucket(self, id="bucket")
-        access_logs_bucket = s3_bucket_construct.create_bucket(bucket_name="access-logs-bucket", kms_key=shared_kms_key)
+        access_logs_bucket = s3_bucket_construct.create_bucket(
+            bucket_name="access-logs-bucket", encryption=s3.BucketEncryption.S3_MANAGED
+        )
 
         NagSuppressions.add_resource_suppressions(
             access_logs_bucket,
@@ -33,6 +36,7 @@ class TestS3Stack(Stack):
         s3_bucket_construct.create_bucket(
             bucket_name="test-s3-bucket",
             kms_key=shared_kms_key,
+            encryption=s3.BucketEncryption.KMS,
             server_access_logs_bucket=access_logs_bucket,
             server_access_logs_prefix="test-s3-bucket",
         )

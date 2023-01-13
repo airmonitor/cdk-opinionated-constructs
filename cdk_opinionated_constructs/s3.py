@@ -8,7 +8,7 @@ import aws_cdk as cdk
 import aws_cdk.aws_s3 as s3
 from aws_cdk import aws_kms as kms
 
-from typing import Union
+from typing import Optional
 
 
 class S3Bucket(Construct):
@@ -29,13 +29,15 @@ class S3Bucket(Construct):
     def create_bucket(
         self,
         bucket_name: str,
-        kms_key: kms.IKey,
-        server_access_logs_bucket: Union[None, s3.IBucket] = None,
+        encryption: s3.BucketEncryption,
+        kms_key: Optional[kms.IKey] = None,
+        server_access_logs_bucket: Optional[s3.IBucket] = None,
         enforce_ssl: bool = True,
         **kwargs,
     ) -> s3.Bucket:
         """Create S3 bucket.
 
+        :param encryption: The type of encryption.
         :param kms_key: The kms to be used.
         :param bucket_name: The name of S3 bucket.
         :param enforce_ssl: Bool value if SSL should be enforced.
@@ -51,15 +53,21 @@ class S3Bucket(Construct):
             id=bucket_name,
             auto_delete_objects=True,
             block_public_access=s3.BlockPublicAccess(
-                block_public_acls=True, block_public_policy=True, ignore_public_acls=True, restrict_public_buckets=True
+                block_public_acls=True,
+                block_public_policy=True,
+                ignore_public_acls=True,
+                restrict_public_buckets=True,
             ),
             bucket_name=bucket_name,
-            encryption=s3.BucketEncryption.KMS,
+            encryption=encryption,
             encryption_key=kms_key,
             enforce_ssl=enforce_ssl,
-            event_bridge_enabled=True if kwargs.get("event_bridge_enabled") else False,
+            event_bridge_enabled=bool(kwargs.get("event_bridge_enabled")),
             lifecycle_rules=[
-                s3.LifecycleRule(enabled=True, noncurrent_version_expiration=cdk.Duration.days(amount=1)),
+                s3.LifecycleRule(
+                    enabled=True,
+                    noncurrent_version_expiration=cdk.Duration.days(amount=1),
+                ),
                 s3.LifecycleRule(
                     enabled=True,
                     expired_object_delete_marker=True,
