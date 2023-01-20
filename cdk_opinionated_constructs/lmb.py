@@ -118,6 +118,8 @@ class AWSPythonLambdaFunction(Construct):
             layers=[layer],
             log_retention=logs.RetentionDays.ONE_WEEK,
             memory_size=memory_size,
+            on_success=kwargs.get("on_success"),
+            on_failure=kwargs.get("on_failure"),
             profiling=True,
             reserved_concurrent_executions=reserved_concurrent_executions,
             runtime=lmb.Runtime.PYTHON_3_9,
