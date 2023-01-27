@@ -1,3 +1,5 @@
+[![tests](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/tests.yml)
+
 # cdk-opinionated-constructs
 CDK constructs with added security configuration
 
