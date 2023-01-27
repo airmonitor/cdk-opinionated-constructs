@@ -35,4 +35,6 @@ jobs:
       run: |
         cd test
         source .venv/bin/activate
+        export CDK_DEFAULT_ACCOUNT=${{ env.CDK_DEFAULT_ACCOUNT }}
+        export CDK_DEFAULT_REGION=${{ env.CDK_DEFAULT_REGION }}
         cdk synth
