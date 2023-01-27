@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  synth:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.10
+
+    - name: Install dependencies
+      run: |
+        cd test
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install -r requirements.txt
+
+    - name: Invoke CDK synth
+      run: |
+        cd test
+        cdk synth

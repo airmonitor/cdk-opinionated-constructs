@@ -1,0 +1,11 @@
+# Basic dependabot.yml file with
+# minimum configuration for two package managers
+
+version: 2
+updates:
+    # Enable version updates for pip
+    - package-ecosystem: "pip"
+      directory: "test"
+      schedule:
+        interval: "weekly"
+
