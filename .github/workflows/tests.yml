@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+env:
+  # Setting an environment variable with the value of a configuration variable
+  env_var: ${{ vars.ENV_CONTEXT_VAR }}
 
 jobs:
   synth:
@@ -35,6 +38,6 @@ jobs:
       run: |
         cd test
         source .venv/bin/activate
-        export CDK_DEFAULT_ACCOUNT=${{ env.CDK_DEFAULT_ACCOUNT }}
-        export CDK_DEFAULT_REGION=${{ env.CDK_DEFAULT_REGION }}
+        export CDK_DEFAULT_ACCOUNT=${{ env_var.CDK_DEFAULT_ACCOUNT }}
+        export CDK_DEFAULT_REGION=${{ env_var.CDK_DEFAULT_REGION }}
         cdk synth
