@@ -13,6 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 18.x
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -20,6 +25,7 @@ jobs:
 
     - name: Install dependencies
       run: |
+        npm install -g aws-cdk
         cd test
         python -m venv .venv
         source .venv/bin/activate
