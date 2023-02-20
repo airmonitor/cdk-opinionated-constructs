@@ -22,11 +22,13 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             env=env,
             function_name=props["service_name"],
             timeout=10,
-            layer=lmb.LayerVersion.from_layer_version_arn(
-                self,
-                id="aws_lambda_powertools_layer",
-                layer_version_arn="arn:aws:lambda:eu-west-1:123456789012:layer:aws-lambda-powertools-python-layer:1",
-            ),
+            layers=[
+                lmb.LayerVersion.from_layer_version_arn(
+                    self,
+                    id="aws_lambda_powertools_layer",
+                    layer_version_arn="arn:aws:lambda:eu-west-1:123456789012:layer:aws-lambda-powertools-python-layer:1",
+                )
+            ],
             env_variables={
                 "POWERTOOLS_SERVICE_NAME": props["service_name"],
                 "LOG_LEVEL": "DEBUG",

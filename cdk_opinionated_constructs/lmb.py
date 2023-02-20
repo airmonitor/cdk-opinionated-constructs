@@ -64,7 +64,7 @@ class AWSPythonLambdaFunction(Construct):
         env: cdk.Environment,
         env_variables: Dict,
         function_name: str,
-        layer: lmb.ILayerVersion,
+        layers: list[lmb.ILayerVersion],
         reserved_concurrent_executions: Union[None, int],
         timeout: int,
         architecture: lmb.Architecture = lmb.Architecture.ARM_64,
@@ -81,7 +81,7 @@ class AWSPythonLambdaFunction(Construct):
         :param env_variables: Dictionary which contain additional lambda env variables
         :param function_name: The name of lambda function
         :param handler: Lambda handler, default handler.handler
-        :param layer: Contains lambda layer object
+        :param layers: Contains list of lambda layer objects
         :param memory_size: Lambda memory size, default 256MB
         :param reserved_concurrent_executions: The number of max concurrent lambda executions
         :param signing_config: Contains signing config for lambda, default None
@@ -115,7 +115,7 @@ class AWSPythonLambdaFunction(Construct):
                     resources=["arn:aws:logs:*:*:log-group:/aws/lambda-insights:*"],
                 ),
             ],
-            layers=[layer],
+            layers=layers,
             log_retention=logs.RetentionDays.ONE_WEEK,
             memory_size=memory_size,
             on_success=kwargs.get("on_success"),

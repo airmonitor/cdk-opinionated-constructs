@@ -112,11 +112,13 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             env=env,
             function_name=props["service_name"],
             timeout=6,
-            layer=lmb.LayerVersion.from_layer_version_arn(
-                self,
-                id="aws_lambda_powertools_layer",
-                layer_version_arn="arn:aws:lambda:eu-west-1:123456789012:layer:aws-lambda-powertools-python-layer:1",
-            ),
+            layers=[
+                lmb.LayerVersion.from_layer_version_arn(
+                    self,
+                    id="aws_lambda_powertools_layer",
+                    layer_version_arn="arn:aws:lambda:eu-west-1:123456789012:layer:aws-lambda-powertools-python-layer:1",
+                )
+            ],
             env_variables={
                 "POWERTOOLS_SERVICE_NAME": props["service_name"],
                 "LOG_LEVEL": "DEBUG",
@@ -144,7 +146,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             {
                 "id": "AwsSolutions-IAM5",
                 "reason": "There isn't a way to tailor IAM policy using more restrictive permissions for "
-                "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
+                          "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
             },
         ]
 
@@ -259,7 +261,6 @@ from aws_cdk import Stack
 from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-from aws_cdk import aws_kms as kms
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from cdk_opinionated_constructs.wafv2 import WAFv2
 
@@ -273,7 +274,6 @@ class TestWAFv2Stack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
-        shared_kms_key = kms.Key(self, "SharedKmsKey", enable_key_rotation=True)
 
         NagSuppressions.add_resource_suppressions(
             vpc,
@@ -339,8 +339,6 @@ class TestWAFv2Stack(Stack):
 """Example code for Application Load Balancer cdk stack."""
 from aws_cdk import Stack, Duration
 from constructs import Construct
-
-from aws_cdk import aws_kms as kms
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
@@ -357,7 +355,6 @@ class TestALBStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
-        shared_kms_key = kms.Key(self, "shared_kms_key", enable_key_rotation=True)
         certificate = certificate_manager.Certificate(self, "certificate", domain_name="example.com")
 
         NagSuppressions.add_resource_suppressions(
