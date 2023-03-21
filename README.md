@@ -6,16 +6,14 @@ CDK constructs with added security configuration
 ## S3 Bucket example:
 
 ```python
-# -*- coding: utf-8 -*-
 """Test S3 construct against cdk-nag."""
-from aws_cdk import Stack
-from constructs import Construct
-from cdk_opinionated_constructs.s3 import S3Bucket
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_s3 as s3
-
-from aws_cdk import Aspects
+from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from constructs import Construct
+
+from cdk_opinionated_constructs.s3 import S3Bucket
 
 
 class TestS3Stack(Stack):
@@ -51,21 +49,22 @@ class TestS3Stack(Stack):
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-
 ```
-
 ## SNS topic example:
 
 ```python
-# -*- coding: utf-8 -*-
 """Test SNS construct against cdk-nag."""
-from aws_cdk import Stack
-from constructs import Construct
-from cdk_opinionated_constructs.sns import SNSTopic
 import aws_cdk.aws_kms as kms
+from aws_cdk import Aspects, Stack
+from cdk_nag import (
+    AwsSolutionsChecks,
+    HIPAASecurityChecks,
+    NIST80053R5Checks,
+    PCIDSS321Checks,
+)
+from constructs import Construct
 
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NIST80053R5Checks, PCIDSS321Checks, HIPAASecurityChecks
+from cdk_opinionated_constructs.sns import SNSTopic
 
 
 class TestSNSStack(Stack):
@@ -83,30 +82,31 @@ class TestSNSStack(Stack):
         Aspects.of(self).add(NIST80053R5Checks(log_ignores=True))
         Aspects.of(self).add(PCIDSS321Checks(log_ignores=True))
         Aspects.of(self).add(HIPAASecurityChecks(log_ignores=True))
-
 ```
 ## AWS Lambda example:
 
 ```python
-# -*- coding: utf-8 -*-
 """Test AWS Lambda function construct.."""
-from aws_cdk import Stack
-from constructs import Construct
-from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
 import aws_cdk.aws_lambda as lmb
-
-from aws_cdk import Aspects
+from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from constructs import Construct
+
+from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
 
 
 class TestAWSPythonLambdaFunctionStack(Stack):
     """Test generated sns topic against AWS solutions  checks."""
 
-    def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
+    def __init__(
+        self, scope: Construct, construct_id: str, env, props, **kwargs
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         lmb_construct = AWSPythonLambdaFunction(self, id="lmb_construct")
-        lmb_signing = lmb_construct.signing_config(signing_profile_name="signing_profile_name")
+        lmb_signing = lmb_construct.signing_config(
+            signing_profile_name="signing_profile_name"
+        )
         lmb_construct.create_lambda_function(
             code_path=f'{props["service_name"]}',
             env=env,
@@ -146,22 +146,19 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             {
                 "id": "AwsSolutions-IAM5",
                 "reason": "There isn't a way to tailor IAM policy using more restrictive permissions for "
-                          "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
+                "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
             },
         ]
-
 ```
-
 ## AWS Lambda monitoring example:
 ```python
-# -*- coding: utf-8 -*-
 """Test AWS Lambda function construct."""
-from aws_cdk import Stack, Duration
-from cdk_opinionated_constructs.sns import SNSTopic
-
-import aws_cdk.aws_lambda as lmb
 import aws_cdk.aws_kms as kms
+import aws_cdk.aws_lambda as lmb
 import cdk_monitoring_constructs as cdk_monitoring
+from aws_cdk import Duration, Stack
+
+from cdk_opinionated_constructs.sns import SNSTopic
 
 
 class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
@@ -183,17 +180,19 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
         kms_key = kms.Key(self, id="kms_key", enable_key_rotation=True)
 
         sns_construct = SNSTopic(self, id="alarm_topic")
-        alarm_topic = sns_construct.create_sns_topic(topic_name="alarm_topic", master_key=kms_key)
-
-        documentation = (
-            "https://https://github.com/airmonitor/cdk-opinionated-constructs/blob/main/README.md"
+        alarm_topic = sns_construct.create_sns_topic(
+            topic_name="alarm_topic", master_key=kms_key
         )
+
+        documentation = "https://https://github.com/airmonitor/cdk-opinionated-constructs/blob/main/README.md"
 
         monitoring = cdk_monitoring.MonitoringFacade(
             self,
             id="monitoring_facade",
             alarm_factory_defaults=cdk_monitoring.AlarmFactoryDefaults(
-                action=cdk_monitoring.SnsAlarmActionStrategy(on_alarm_topic=alarm_topic),
+                action=cdk_monitoring.SnsAlarmActionStrategy(
+                    on_alarm_topic=alarm_topic
+                ),
                 alarm_name_prefix=f'{props["service_name"]}',
                 actions_enabled=True,
             ),
@@ -245,27 +244,25 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
                     documentation_link=documentation,
                     evaluation_periods=1,
                     period=Duration.minutes(1),
-                    max_latency=Duration.seconds(round(lmb_function.timeout.to_seconds() * 0.99)),
+                    max_latency=Duration.seconds(
+                        round(lmb_function.timeout.to_seconds() * 0.99)
+                    ),
                 )
             },
         )
-
-
 ```
 ## WAFv2 example
 
 ```python
-# -*- coding: utf-8 -*-
 """Test AWS WAFv2 construct against cdk-nag."""
-from aws_cdk import Stack
-from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from constructs import Construct
+
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from cdk_opinionated_constructs.wafv2 import WAFv2
-
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 
 class TestWAFv2Stack(Stack):
@@ -323,30 +320,29 @@ class TestWAFv2Stack(Stack):
             },
         )
 
-        wafv2_construct.web_acl_log(log_group_name="aws-waf-logs-wafv2", web_acl_arn=wafv2_acl.attr_arn)
+        wafv2_construct.web_acl_log(
+            log_group_name="aws-waf-logs-wafv2", web_acl_arn=wafv2_acl.attr_arn
+        )
 
-        wafv2_construct.web_acl_association(resource_arn=alb.load_balancer_arn, web_acl_arn=wafv2_acl.attr_arn)
+        wafv2_construct.web_acl_association(
+            resource_arn=alb.load_balancer_arn, web_acl_arn=wafv2_acl.attr_arn
+        )
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-
 ```
-
 ## ApplicationLoadBalancer example
 
 ```python
-# -*- coding: utf-8 -*-
 """Example code for Application Load Balancer cdk stack."""
-from aws_cdk import Stack, Duration
-from constructs import Construct
-import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_certificatemanager as certificate_manager
+import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
+from aws_cdk import Aspects, Duration, Stack
+from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from constructs import Construct
 
-from cdk_nag import NagSuppressions
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks
+from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 
 
 class TestALBStack(Stack):
@@ -355,7 +351,9 @@ class TestALBStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
-        certificate = certificate_manager.Certificate(self, "certificate", domain_name="example.com")
+        certificate = certificate_manager.Certificate(
+            self, "certificate", domain_name="example.com"
+        )
 
         NagSuppressions.add_resource_suppressions(
             vpc,
@@ -402,17 +400,20 @@ class TestALBStack(Stack):
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-
 ```
-
 ## ECR example
 
 ```python
-from aws_cdk import Stack
+from aws_cdk import Aspects, Stack
+from cdk_nag import (
+    AwsSolutionsChecks,
+    HIPAASecurityChecks,
+    NIST80053R5Checks,
+    PCIDSS321Checks,
+)
 from constructs import Construct
+
 from cdk_opinionated_constructs.ecr import ECR
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NIST80053R5Checks, PCIDSS321Checks, HIPAASecurityChecks
 
 
 class TestECRStack(Stack):
@@ -424,7 +425,7 @@ class TestECRStack(Stack):
         ecr_construct.repository(
             repository_name="repository_name",
             removal_policy="destroy",
-            max_image_age=90
+            max_image_age=90,
         )
 
         # Validate stack against AWS Solutions checklist
@@ -432,24 +433,18 @@ class TestECRStack(Stack):
         Aspects.of(self).add(NIST80053R5Checks(log_ignores=True))
         Aspects.of(self).add(PCIDSS321Checks(log_ignores=True))
         Aspects.of(self).add(HIPAASecurityChecks(log_ignores=True))
-
 ```
-
 ## Network Load Balancer example
 ```python
-# -*- coding: utf-8 -*-
 """Example code for Network Load Balancer cdk stack."""
-from aws_cdk import Stack
+import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_elasticloadbalancingv2 as albv2
+import aws_cdk.aws_kms as kms
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagSuppressions
 from constructs import Construct
 
-import aws_cdk.aws_ec2 as ec2
-import aws_cdk.aws_kms as kms
-import aws_cdk.aws_elasticloadbalancingv2 as albv2
 from cdk_opinionated_constructs.nlb import NetworkLoadBalancer
-
-from cdk_nag import NagSuppressions
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks
 
 
 class TestNLBStack(Stack):
@@ -486,7 +481,9 @@ class TestNLBStack(Stack):
         )
         nlb.log_access_logs(bucket=nlb_access_logs_bucket)
 
-        network_load_balancer_construct = NetworkLoadBalancer(self, construct_id="network_load_balancer_construct")
+        network_load_balancer_construct = NetworkLoadBalancer(
+            self, construct_id="network_load_balancer_construct"
+        )
 
         network_load_balancer_construct.add_connections(
             nlb=nlb,
@@ -503,24 +500,19 @@ class TestNLBStack(Stack):
         )
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-
 ```
-
-
 ## RDS PostgreSQL Instance example
 ```python
-# -*- coding: utf-8 -*-
 """Example code for Application Load Balancer cdk stack."""
-from aws_cdk import Stack
 import aws_cdk as cdk
-from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_rds as rds
-from cdk_nag import NagSuppressions
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks
 import aws_cdk.aws_secretsmanager as secretsmanager
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from constructs import Construct
+
 from cdk_opinionated_constructs.rds_instance import RDSInstance
 
 
@@ -556,7 +548,9 @@ class TestRDSPostgreSQLStack(Stack):
             vpc=vpc,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             vpc_subnets=ec2.SubnetSelection(
-                availability_zones=vpc.availability_zones, one_per_az=False, subnet_group_name="Private"
+                availability_zones=vpc.availability_zones,
+                one_per_az=False,
+                subnet_group_name="Private",
             ),
         )
 
@@ -566,9 +560,13 @@ class TestRDSPostgreSQLStack(Stack):
 
         rds_instance = rds_construct.create_db_instance(
             database_name=database_name,
-            engine=rds.DatabaseInstanceEngine.postgres(version=rds.PostgresEngineVersion.VER_13_8),
+            engine=rds.DatabaseInstanceEngine.postgres(
+                version=rds.PostgresEngineVersion.VER_13_8
+            ),
             publicly_accessible=False,
-            secret=secretsmanager.Secret.from_secret_name_v2(self, id="imported_secret", secret_name="secret-name"),
+            secret=secretsmanager.Secret.from_secret_name_v2(
+                self, id="imported_secret", secret_name="secret-name"
+            ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",
             stage="prod",
@@ -603,23 +601,19 @@ class TestRDSPostgreSQLStack(Stack):
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-
 ```
-
 ## RDS MySQL Instance example
 ```python
-# -*- coding: utf-8 -*-
 """Example code for Application Load Balancer cdk stack."""
 import aws_cdk as cdk
-from aws_cdk import Stack
-from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_rds as rds
-from cdk_nag import NagSuppressions
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks
 import aws_cdk.aws_secretsmanager as secretsmanager
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from constructs import Construct
+
 from cdk_opinionated_constructs.rds_instance import RDSInstance
 
 
@@ -655,7 +649,9 @@ class TestRDSMySQLStack(Stack):
             vpc=vpc,
             removal_policy=cdk.RemovalPolicy.DESTROY,
             vpc_subnets=ec2.SubnetSelection(
-                availability_zones=vpc.availability_zones, one_per_az=False, subnet_group_name="Private"
+                availability_zones=vpc.availability_zones,
+                one_per_az=False,
+                subnet_group_name="Private",
             ),
         )
 
@@ -665,9 +661,13 @@ class TestRDSMySQLStack(Stack):
 
         rds_instance = rds_construct.create_db_instance(
             database_name=database_name,
-            engine=rds.DatabaseInstanceEngine.mysql(version=rds.MysqlEngineVersion.VER_8_0_31),
+            engine=rds.DatabaseInstanceEngine.mysql(
+                version=rds.MysqlEngineVersion.VER_8_0_31
+            ),
             publicly_accessible=False,
-            secret=secretsmanager.Secret.from_secret_name_v2(self, id="imported_secret", secret_name="secret-name"),
+            secret=secretsmanager.Secret.from_secret_name_v2(
+                self, id="imported_secret", secret_name="secret-name"
+            ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",
             stage="prod",
@@ -702,5 +702,4 @@ class TestRDSMySQLStack(Stack):
 
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-
 ```
