@@ -31,6 +31,12 @@ TestLambdaMonitoringStack = TestAWSPythonLambdaFunctionStackMonitoring(
     env=CDK_ENV,
     props=TestLambdaStack.output_props,
 )
+TestAWSPythonLambdaFunctionStack = TestAWSPythonLambdaFunctionStack(
+    app,
+    "TestAWSLambdaDockerFunctionStack",
+    env=CDK_ENV,
+    props={"project": "test_project", "service_name": "example_lambda_function"},
+)
 TestWAFv2Stack(app, "TestWAFv2Stack", env=CDK_ENV)
 TestALBStack(app, "TestALBStack", env=CDK_ENV)
 TestECRStack(app, "TestECRStack", env=CDK_ENV)

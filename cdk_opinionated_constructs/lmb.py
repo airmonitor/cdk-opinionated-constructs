@@ -3,14 +3,14 @@
 
 Security parameters are set by default
 """
-from constructs import Construct
+from typing import Union
+
 import aws_cdk as cdk
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_lambda as lmb
-from aws_cdk import aws_signer as signer
 from aws_cdk import aws_logs as logs
-
-from typing import Dict, Union
+from aws_cdk import aws_signer as signer
+from constructs import Construct
 
 
 class AWSPythonLambdaFunction(Construct):
@@ -62,7 +62,7 @@ class AWSPythonLambdaFunction(Construct):
         self,
         code_path: str,
         env: cdk.Environment,
-        env_variables: Dict,
+        env_variables: dict,
         function_name: str,
         layers: list[lmb.ILayerVersion],
         reserved_concurrent_executions: Union[None, int],
@@ -96,7 +96,6 @@ class AWSPythonLambdaFunction(Construct):
             "CLOUDWATCH_SAMPLING_RATE": "1",
             "REGION_NAME": env.region,
         }
-
         return lmb.Function(
             self,
             architecture=architecture,
@@ -123,6 +122,90 @@ class AWSPythonLambdaFunction(Construct):
             profiling=True,
             reserved_concurrent_executions=reserved_concurrent_executions,
             runtime=lmb.Runtime.PYTHON_3_9,
+            security_groups=kwargs.get("security_groups"),
+            timeout=cdk.Duration.seconds(timeout),
+            tracing=lmb.Tracing.ACTIVE,
+            vpc=kwargs.get("vpc"),
+            vpc_subnets=kwargs.get("vpc_subnets"),
+        )
+
+
+class AWSDockerLambdaFunction(Construct):
+    """Create Lambda function based on docker image with support of signing
+    profile, IAM role and policies."""
+
+    # pylint: disable=W0235
+    # pylint: disable=W0622
+    def __init__(self, scope: Construct, id: str):
+        """
+
+        :param scope:
+        :param id:
+        """
+        super().__init__(scope, id)
+
+    # pylint: disable=R0913
+    def create_lambda_function(
+        self,
+        code: lmb.DockerImageCode,
+        env: cdk.Environment,
+        env_variables: dict,
+        function_name: str,
+        reserved_concurrent_executions: Union[None, int],
+        timeout: int,
+        architecture: lmb.Architecture = lmb.Architecture.X86_64,
+        memory_size: int = 256,
+        **kwargs,
+    ) -> lmb.Function:
+        """Create lambda function.
+
+        :param architecture: Lambda CPU architecture, default ARM_64
+        :param code: The AWS CDK lmb.Code object
+        :param env: The CDK Environment object which consist region and aws account id
+        :param env_variables: Dictionary which contain additional lambda env variables
+        :param function_name: The name of lambda function
+        :param memory_size: Lambda memory size, default 256MB
+        :param reserved_concurrent_executions: The number of max concurrent lambda executions
+        :param timeout: Lambda timeout in seconds
+        :param kwargs:
+            * security_groups - list of ec2.SecurityGroup, the vpc security groups to be assigned to lambda function
+            * vpc - the ec2.IVpc object, lambda will be assigned to this VPC
+            * vpc_subnets - ec2.SubnetSelection, in which subnets lambda will operate
+            * ephemeral_storage_size - The size of the function’s /tmp directory in MiB. Default: 512 MiB
+        :return: Lambda function
+        """
+        lambda_environment_default_variables = {
+            "CLOUDWATCH_SAMPLING_RATE": "1",
+            "REGION_NAME": env.region,
+        }
+        return lmb.DockerImageFunction(
+            self,
+            id=function_name,
+            allow_public_subnet=True,
+            architecture=architecture,
+            code=code,
+            environment=lambda_environment_default_variables | env_variables,
+            ephemeral_storage_size=kwargs.get("ephemeral_storage_size"),
+            filesystem=kwargs.get("filesystem"),
+            function_name=function_name,
+            initial_policy=[
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["logs:CreateLogGroup"],
+                    resources=["*"],
+                ),
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["logs:CreateLogStream", "logs:PutLogEvents"],
+                    resources=["arn:aws:logs:*:*:log-group:/aws/lambda-insights:*"],
+                ),
+            ],
+            log_retention=logs.RetentionDays.ONE_WEEK,
+            memory_size=memory_size,
+            on_failure=kwargs.get("on_failure"),
+            on_success=kwargs.get("on_success"),
+            profiling=False,  # CodeGuru profiling is not supported by runtime FROM_IMAGE
+            reserved_concurrent_executions=reserved_concurrent_executions,
             security_groups=kwargs.get("security_groups"),
             timeout=cdk.Duration.seconds(timeout),
             tracing=lmb.Tracing.ACTIVE,
