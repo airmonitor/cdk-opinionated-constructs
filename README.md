@@ -4,7 +4,6 @@
 CDK constructs with added security configuration
 
 ## S3 Bucket example:
-
 ```python
 """Test S3 construct against cdk-nag."""
 import aws_cdk.aws_kms as kms
@@ -252,7 +251,6 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
         )
 ```
 ## AWS Lambda Docker example:
-
 ```python
 """Test AWS Lambda docker function construct."""
 import aws_cdk as cdk
