@@ -12,7 +12,7 @@ from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 
-class TestAWSPythonLambdaFunctionStack(Stack):
+class TestAWSLambdaDockerFunctionStack(Stack):
     """Test generated sns topic against AWS solutions  checks."""
 
     def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
@@ -37,13 +37,14 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             image_scan_on_push=True,
             image_tag_mutability=ecr.TagMutability.IMMUTABLE,
             repository_name="test_ecr_repository",
+            removal_policy=cdk.RemovalPolicy.DESTROY,
         )
 
         lmb_construct = AWSDockerLambdaFunction(self, id="lmb_construct")
         lmb_function = lmb_construct.create_lambda_function(
             code=lmb.DockerImageCode.from_ecr(
                 repository=ecr_repository,
-                tag="0",
+                tag_or_digest="0",
             ),
             env=env,
             ephemeral_storage_size=cdk.Size.gibibytes(amount=10),

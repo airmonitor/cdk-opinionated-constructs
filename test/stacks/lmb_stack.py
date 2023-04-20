@@ -53,6 +53,11 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         """
         return [
             {
+                "id": "AwsSolutions-L1",
+                "reason": "Supressing false positive, lambda is using latest runtime available at the moment which"
+                "is python3.10",
+            },
+            {
                 "id": "AwsSolutions-IAM4",
                 "reason": "Using managed policies is allowed",
             },

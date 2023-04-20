@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
 """Main app."""
 
-import aws_cdk as cdk
 import os
-from stacks.s3_stack import TestS3Stack
-from stacks.sns_stack import TestSNSStack
-from stacks.lmb_stack import TestAWSPythonLambdaFunctionStack
-from stacks.lmb_monitoring_stack import TestAWSPythonLambdaFunctionStackMonitoring
-from stacks.wafv2_stack import TestWAFv2Stack
+
+import aws_cdk as cdk
+
 from stacks.alb_stack import TestALBStack
 from stacks.ecr_stack import TestECRStack
+from stacks.lmb_docker_stack import TestAWSLambdaDockerFunctionStack
+from stacks.lmb_monitoring_stack import TestAWSPythonLambdaFunctionStackMonitoring
+from stacks.lmb_stack import TestAWSPythonLambdaFunctionStack
 from stacks.nlb_stack import TestNLBStack
-from stacks.rds_postgresql_stack import TestRDSPostgreSQLStack
 from stacks.rds_mysql_stack import TestRDSMySQLStack
+from stacks.rds_postgresql_stack import TestRDSPostgreSQLStack
+from stacks.s3_stack import TestS3Stack
+from stacks.sns_stack import TestSNSStack
+from stacks.wafv2_stack import TestWAFv2Stack
 
 CDK_ENV = cdk.Environment(account=os.environ["CDK_DEFAULT_ACCOUNT"], region=os.environ["CDK_DEFAULT_REGION"])
 
@@ -31,7 +34,7 @@ TestLambdaMonitoringStack = TestAWSPythonLambdaFunctionStackMonitoring(
     env=CDK_ENV,
     props=TestLambdaStack.output_props,
 )
-TestAWSPythonLambdaFunctionStack = TestAWSPythonLambdaFunctionStack(
+TestAWSPythonLambdaFunctionStack = TestAWSLambdaDockerFunctionStack(
     app,
     "TestAWSLambdaDockerFunctionStack",
     env=CDK_ENV,
