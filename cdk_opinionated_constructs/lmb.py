@@ -54,7 +54,7 @@ class AWSPythonLambdaFunction(Construct):
             self,
             id=construct_id,
             code=lmb.Code.from_asset(code_path),
-            compatible_runtimes=[lmb.Runtime.PYTHON_3_9],
+            compatible_runtimes=[lmb.Runtime.PYTHON_3_10],
         )
 
     # pylint: disable=R0913
@@ -121,7 +121,7 @@ class AWSPythonLambdaFunction(Construct):
             on_failure=kwargs.get("on_failure"),
             profiling=True,
             reserved_concurrent_executions=reserved_concurrent_executions,
-            runtime=lmb.Runtime.PYTHON_3_9,
+            runtime=lmb.Runtime.PYTHON_3_10,
             security_groups=kwargs.get("security_groups"),
             timeout=cdk.Duration.seconds(timeout),
             tracing=lmb.Tracing.ACTIVE,
