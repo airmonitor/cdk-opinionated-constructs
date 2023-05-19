@@ -21,5 +21,5 @@ setup(
         "constructs>=10.1.232,<11.0.0",
         "cdk-monitoring-constructs>=3.0.0,<5.0.0",
     ],
-    python_requires=">=3.9",
+    python_requires=">=3.10",
 )
