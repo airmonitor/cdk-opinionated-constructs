@@ -6,7 +6,9 @@ Security parameters are set by default
 from constructs import Construct
 import aws_cdk as cdk
 import aws_cdk.aws_s3 as s3
-from aws_cdk import aws_kms as kms
+import aws_cdk.aws_kms as kms
+import aws_cdk.aws_iam as iam
+
 
 from typing import Optional
 
@@ -32,7 +34,6 @@ class S3Bucket(Construct):
         encryption: s3.BucketEncryption,
         kms_key: Optional[kms.IKey] = None,
         server_access_logs_bucket: Optional[s3.IBucket] = None,
-        enforce_ssl: bool = True,
         **kwargs,
     ) -> s3.Bucket:
         """Create S3 bucket.
@@ -48,7 +49,7 @@ class S3Bucket(Construct):
         :return: The S3 bucket CDK object
         """
 
-        return s3.Bucket(
+        bucket = s3.Bucket(
             self,
             id=bucket_name,
             auto_delete_objects=True,
@@ -61,7 +62,6 @@ class S3Bucket(Construct):
             bucket_name=bucket_name,
             encryption=encryption,
             encryption_key=kms_key,
-            enforce_ssl=enforce_ssl,
             event_bridge_enabled=bool(kwargs.get("event_bridge_enabled")),
             lifecycle_rules=[
                 s3.LifecycleRule(
@@ -80,3 +80,16 @@ class S3Bucket(Construct):
             server_access_logs_bucket=server_access_logs_bucket,
             versioned=True,
         )
+
+        bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="EnforceTLSv12orHigher",
+                principals=[iam.AnyPrincipal()],
+                actions=["*"],
+                effect=iam.Effect.DENY,
+                resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*"],
+                conditions={"Bool": {"aws:SecureTransport": "true"}, "NumericLessThan": {"s3:TlsVersion": 1.2}},
+            )
+        )
+
+        return bucket
