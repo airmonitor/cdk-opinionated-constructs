@@ -26,5 +26,5 @@ def test_s3_bucket(stack_template):
 
 # pylint: disable=redefined-outer-name
 def test_kms_key(stack_template):
-    """Test if KMS key is created."""
+    """Test if a KMS key is created."""
     stack_template.resource_count_is("AWS::KMS::Key", 1)

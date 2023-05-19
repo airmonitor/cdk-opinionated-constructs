@@ -6,7 +6,9 @@ Security parameters are set by default
 from constructs import Construct
 import aws_cdk as cdk
 import aws_cdk.aws_s3 as s3
-from aws_cdk import aws_kms as kms
+import aws_cdk.aws_kms as kms
+import aws_cdk.aws_iam as iam
+
 
 from typing import Optional
 
@@ -38,17 +40,17 @@ class S3Bucket(Construct):
         """Create S3 bucket.
 
         :param encryption: The type of encryption.
+        :param enforce_ssl: Bool value if SSL should be enforced.
         :param kms_key: The kms to be used.
         :param bucket_name: The name of S3 bucket.
-        :param enforce_ssl: Bool value if SSL should be enforced.
         :param server_access_logs_bucket: The CDK object for S3 bucket.
         :param kwargs:
-         event_bridge_enabled: bool - set to True if s3 events should be sent to event bridge
+         Event_bridge_enabled: bool - set to True if s3 events should be sent to event bridge
          server_access_logs_prefix: str - in which prefix logs should be stored
         :return: The S3 bucket CDK object
         """
 
-        return s3.Bucket(
+        bucket = s3.Bucket(
             self,
             id=bucket_name,
             auto_delete_objects=True,
@@ -61,7 +63,6 @@ class S3Bucket(Construct):
             bucket_name=bucket_name,
             encryption=encryption,
             encryption_key=kms_key,
-            enforce_ssl=enforce_ssl,
             event_bridge_enabled=bool(kwargs.get("event_bridge_enabled")),
             lifecycle_rules=[
                 s3.LifecycleRule(
@@ -80,3 +81,17 @@ class S3Bucket(Construct):
             server_access_logs_bucket=server_access_logs_bucket,
             versioned=True,
         )
+
+        if enforce_ssl:
+            bucket.add_to_resource_policy(
+                iam.PolicyStatement(
+                    sid="EnforceTLSv12orHigher",
+                    principals=[iam.AnyPrincipal()],
+                    actions=["*"],
+                    effect=iam.Effect.DENY,
+                    resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*"],
+                    conditions={"Bool": {"aws:SecureTransport": "false"}, "NumericLessThan": {"s3:TlsVersion": 1.2}},
+                )
+            )
+
+        return bucket
