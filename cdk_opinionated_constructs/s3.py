@@ -63,7 +63,6 @@ class S3Bucket(Construct):
             bucket_name=bucket_name,
             encryption=encryption,
             encryption_key=kms_key,
-            enforce_ssl=enforce_ssl,
             event_bridge_enabled=bool(kwargs.get("event_bridge_enabled")),
             lifecycle_rules=[
                 s3.LifecycleRule(
@@ -91,7 +90,7 @@ class S3Bucket(Construct):
                     actions=["*"],
                     effect=iam.Effect.DENY,
                     resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*"],
-                    conditions={"Bool": {"aws:SecureTransport": "true"}, "NumericLessThan": {"s3:TlsVersion": 1.2}},
+                    conditions={"Bool": {"aws:SecureTransport": "false"}, "NumericLessThan": {"s3:TlsVersion": 1.2}},
                 )
             )
 
