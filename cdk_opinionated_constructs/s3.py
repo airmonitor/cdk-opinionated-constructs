@@ -41,7 +41,6 @@ class S3Bucket(Construct):
         :param encryption: The type of encryption.
         :param kms_key: The kms to be used.
         :param bucket_name: The name of S3 bucket.
-        :param enforce_ssl: Bool value if SSL should be enforced.
         :param server_access_logs_bucket: The CDK object for S3 bucket.
         :param kwargs:
          event_bridge_enabled: bool - set to True if s3 events should be sent to event bridge
