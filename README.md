@@ -1,3 +1,4 @@
+[![auto-merge](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/auto_merge.yml/badge.svg)](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/auto_merge.yml)
 [![tests](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/tests.yml)
 
 # cdk-opinionated-constructs
