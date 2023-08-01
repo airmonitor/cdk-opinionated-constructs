@@ -15,7 +15,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
     * AWS CW Dashboard
     * Metrics
     * Alarms
-    * Subscription to SNS topic
+    * Subscription to an SNS topic
     * similar
     """
 

@@ -1,7 +1,7 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 default_language_version:
-  python: python3.10
+  python: python3.11
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -68,3 +68,12 @@ repos:
       - id: shed
         args: [ --refactor, --py39-plus ]
         types_or: [ markdown, rst ]
+  - repo: https://github.com/yunojuno/pre-commit-xenon
+    rev: cc59b0431a5d072786b59430e9b342b2881064f6
+    hooks:
+      - id: xenon
+        args: ["--max-average=A", "--max-modules=A", "--max-absolute=B", "-e 'tests/*,.venv/*,cdk.out/*'"]
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.17.0
+    hooks:
+      - id: gitleaks

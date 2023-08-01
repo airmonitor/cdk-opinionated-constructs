@@ -20,5 +20,5 @@ def stack_template() -> Template:
 
 # pylint: disable=redefined-outer-name
 def test_sns_topic(stack_template):
-    """Test if SNS topic is created."""
+    """Test if an SNS topic is created."""
     stack_template.resource_count_is("AWS::SNS::Topic", 1)

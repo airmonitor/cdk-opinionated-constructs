@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Opinionated CDK construct to create SNS topic.
+"""Opinionated CDK construct to create an SNS topic.
 
 Security parameters are set by default
 """
@@ -25,11 +25,12 @@ class SNSTopic(Construct):
         super().__init__(scope, id)
 
     def create_sns_topic(self, topic_name: str, master_key: Union[kms.IKey, None]) -> sns.Topic:
-        """Create SNS topic with resource policy that enforce encrypted access.
+        """Create an SNS topic with resource policy that enforces encrypted
+        access.
 
-        :param topic_name: The name of SNS topic
-        :param master_key: The KMS key to encrypt messages going through sns topic
-        :return: The CDK object for SNS topic
+        :param topic_name: The name of SNS is topic
+        :param master_key: The KMS key to encrypted messages going through sns topic
+        :return: The CDK object for an SNS topic
         """
         topic = sns.Topic(self, id=topic_name, topic_name=topic_name, master_key=master_key)
         topic.add_to_resource_policy(
