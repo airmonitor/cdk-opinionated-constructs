@@ -10,7 +10,7 @@ from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 
 class TestAWSPythonLambdaFunctionStack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated sns topic against AWS solutions checks."""
 
     def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -54,7 +54,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         return [
             {
                 "id": "AwsSolutions-L1",
-                "reason": "Supressing false positive, lambda is using latest runtime available at the moment which"
+                "reason": "Suppressing false positive, lambda is using latest runtime available at the moment which"
                 "is python3.10",
             },
             {

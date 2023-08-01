@@ -11,7 +11,7 @@ from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 
 class TestS3Stack(Stack):
-    """Test generated s3 bucket against AWS solutions  checks."""
+    """Test generated s3 bucket against AWS solutions checks."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Opinionated CDK construct to create RDS PostgreSQL Instance with dedicated
+"""Opinionated CDK construct to create RDS PostgresSQL Instance with dedicated
 S3 bucket for storing access logs.
 
 Security parameters are set by default
@@ -13,7 +13,7 @@ import aws_cdk.aws_rds as rds
 
 
 class RDSInstance(Construct):
-    """Create AWS RDS  DB Instance."""
+    """Create AWS RDS DB Instance."""
 
     # pylint: disable=W0235
     # pylint: disable=W0622

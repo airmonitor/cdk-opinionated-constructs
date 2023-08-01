@@ -13,7 +13,7 @@ from cdk_nag import AwsSolutionsChecks, NagSuppressions
 
 
 class TestAWSLambdaDockerFunctionStack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated sns topic against AWS solutions checks."""
 
     def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -33,7 +33,7 @@ class TestAWSLambdaDockerFunctionStack(Stack):
             self,
             id="ecr_repository",
             auto_delete_images=True,
-            encryption=ecr.RepositoryEncryption.AES_256,
+            encryption=ecr.RepositoryEncryption.AES_256,  # type: ignore
             image_scan_on_push=True,
             image_tag_mutability=ecr.TagMutability.IMMUTABLE,
             repository_name="test_ecr_repository",

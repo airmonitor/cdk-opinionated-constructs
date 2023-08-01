@@ -46,7 +46,7 @@ class AWSPythonLambdaFunction(Construct):
     def create_lambda_layer(self, code_path: str, construct_id: str = "supporting_libraries") -> lmb.LayerVersion:
         """Create lambda layer.
 
-        :param code_path: path which contain lambda layer directory
+        :param code_path: path which contains lambda layer directory
         :param construct_id: construct id
         :return: Lambda layer
         """
@@ -76,7 +76,7 @@ class AWSPythonLambdaFunction(Construct):
         """Create lambda function.
 
         :param architecture: Lambda CPU architecture, default ARM_64
-        :param code_path: path which contain lambda function directory
+        :param code_path: path which contains lambda function directory
         :param env: The CDK Environment object which consist region and aws account id
         :param env_variables: Dictionary which contain additional lambda env variables
         :param function_name: The name of lambda function
@@ -87,9 +87,9 @@ class AWSPythonLambdaFunction(Construct):
         :param signing_config: Contains signing config for lambda, default None
         :param timeout: Lambda timeout in seconds,
         :param kwargs:
-            * security_groups - list of ec2.SecurityGroup, the vpc security groups to be assigned to lambda function
+            * Security_groups - list of ec2.SecurityGroup, the vpc security groups to be assigned to lambda function
             * vpc - the ec2.IVpc object, lambda will be assigned to this VPC
-            * vpc_subnets - ec2.SubnetSelection, in which subnets lambda will operate
+            * vpc_subnets - ec2.SubnetSelection, in which subnet lambda will operate
         :return: Lambda function
         """
         lambda_environment_default_variables = {
@@ -101,13 +101,17 @@ class AWSPythonLambdaFunction(Construct):
             architecture=architecture,
             code=lmb.Code.from_asset(code_path),
             code_signing_config=signing_config,
-            environment={**lambda_environment_default_variables, **env_variables},
+            environment=lambda_environment_default_variables | env_variables,
             function_name=function_name,
             filesystem=kwargs.get("filesystem"),
             handler=handler,
             id=function_name,
             initial_policy=[
-                iam.PolicyStatement(effect=iam.Effect.ALLOW, actions=["logs:CreateLogGroup"], resources=["*"]),
+                iam.PolicyStatement(
+                    effect=iam.Effect.ALLOW,
+                    actions=["logs:CreateLogGroup"],
+                    resources=["*"],
+                ),
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     actions=["logs:CreateLogStream", "logs:PutLogEvents"],
@@ -161,16 +165,16 @@ class AWSDockerLambdaFunction(Construct):
 
         :param architecture: Lambda CPU architecture, default ARM_64
         :param code: The AWS CDK lmb.Code object
-        :param env: The CDK Environment object which consist region and aws account id
+        :param env: The CDK Environment object which consists of region and aws account id
         :param env_variables: Dictionary which contain additional lambda env variables
         :param function_name: The name of lambda function
         :param memory_size: Lambda memory size, default 256MB
         :param reserved_concurrent_executions: The number of max concurrent lambda executions
         :param timeout: Lambda timeout in seconds
         :param kwargs:
-            * security_groups - list of ec2.SecurityGroup, the vpc security groups to be assigned to lambda function
+            * Security_groups - list of ec2.SecurityGroup, the vpc security groups to be assigned to lambda function
             * vpc - the ec2.IVpc object, lambda will be assigned to this VPC
-            * vpc_subnets - ec2.SubnetSelection, in which subnets lambda will operate
+            * vpc_subnets - ec2.SubnetSelection, in which subnet lambda will operate
             * ephemeral_storage_size - The size of the function’s /tmp directory in MiB. Default: 512 MiB
         :return: Lambda function
         """

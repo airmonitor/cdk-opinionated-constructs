@@ -8,7 +8,7 @@ from cdk_nag import AwsSolutionsChecks, NIST80053R5Checks, PCIDSS321Checks, HIPA
 
 
 class TestECRStack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated sns topic against AWS solutions checks."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)

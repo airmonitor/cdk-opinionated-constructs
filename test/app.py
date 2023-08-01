@@ -44,7 +44,7 @@ TestWAFv2Stack(app, "TestWAFv2Stack", env=CDK_ENV)
 TestALBStack(app, "TestALBStack", env=CDK_ENV)
 TestECRStack(app, "TestECRStack", env=CDK_ENV)
 TestNLBStack(app, "TestNLBStack", env=CDK_ENV)
-TestRDSPostgreSQLStack(app, "TestRDSPostgreSQLStack", env=CDK_ENV)
+TestRDSPostgreSQLStack(app, "TestRDSPostgresSQLStack", env=CDK_ENV)
 TestRDSMySQLStack(app, "TestRDSMySQLStack", env=CDK_ENV)
 
 app.synth()

@@ -31,11 +31,10 @@ class NetworkLoadBalancer(Construct):
         """Create dedicated access logs bucket using opinionated cdk construct
         from cdk-opinionated-constructs.
 
-        :param expiration_days: The number of days after which logs will be deleted
+        :param expiration_days: The number of days after which logs will be deleted is
         :param bucket_name: The name of S3 bucket
         :return: CDK S3 IBucket object
         """
-
         alb_access_logs_bucket_construct = S3Bucket(self, id=f"alb_access_logs_{bucket_name}_construct")
         alb_access_logs_bucket = alb_access_logs_bucket_construct.create_bucket(
             bucket_name=bucket_name, encryption=s3.BucketEncryption.S3_MANAGED
@@ -61,7 +60,7 @@ class NetworkLoadBalancer(Construct):
         )
         alb_access_logs_bucket.add_lifecycle_rule(expiration=cdk.Duration.days(expiration_days))
 
-        # Supress few false positive alerts from the cfn-nag
+        # Supress a few false positive alerts from the cfn-nag
         NagSuppressions.add_resource_suppressions(
             alb_access_logs_bucket,
             [
@@ -97,8 +96,7 @@ class NetworkLoadBalancer(Construct):
                     "back_end_port": 6001,
                     "back_end_protocol": albv2.Protocol.UDP,
                 },
-            ]
-        )
+            ])
         """
         for port_definition in ports:
             front_end_protocol: albv2.Protocol = port_definition["front_end_protocol"]

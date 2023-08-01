@@ -31,9 +31,9 @@ class ECR(Construct):
         If "retain" then ECR repository will not be deleted.
         :param repository_name: The name of the repository
         :param kwargs:
-            * max_image_age: int - the amount of days  an image can be stored in the repository before it expires.
-            * max_image_count: int - the amount of images to be stored, older images will be deleted.
-            max_image_age and max_image_count are mutually exclusive
+            * Max_image_age: int - the amount of days an image can be stored in the repository before it expires.
+            * Max_image_count: int - the number of images to be stored, older images will be deleted.
+            Max_image_age and max_image_count are mutually exclusive
         """
 
         removal_policy_map = {"retain": cdk.RemovalPolicy.RETAIN, "destroy": cdk.RemovalPolicy.DESTROY}
