@@ -17,7 +17,7 @@ from cdk_opinionated_constructs.s3 import S3Bucket
 
 
 class TestS3Stack(Stack):
-    """Test generated s3 bucket against AWS solutions  checks."""
+    """Test generated s3 bucket against AWS solutions checks."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -96,7 +96,7 @@ from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
 
 
 class TestAWSPythonLambdaFunctionStack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated sns topic against AWS solutions checks."""
 
     def __init__(
         self, scope: Construct, construct_id: str, env, props, **kwargs
@@ -168,7 +168,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
     * AWS CW Dashboard
     * Metrics
     * Alarms
-    * Subscription to SNS topic
+    * Subscription to an SNS topic
     * similar
     """
 
@@ -266,7 +266,7 @@ from cdk_opinionated_constructs.lmb import AWSDockerLambdaFunction
 
 
 class TestAWSPythonLambdaFunctionStack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated sns topic against AWS solutions checks."""
 
     def __init__(
         self, scope: Construct, construct_id: str, env, props, **kwargs
@@ -288,7 +288,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             self,
             id="ecr_repository",
             auto_delete_images=True,
-            encryption=ecr.RepositoryEncryption.AES_256,
+            encryption=ecr.RepositoryEncryption.AES_256,  # type: ignore
             image_scan_on_push=True,
             image_tag_mutability=ecr.TagMutability.IMMUTABLE,
             repository_name="test_ecr_repository",
@@ -363,7 +363,7 @@ from cdk_opinionated_constructs.wafv2 import WAFv2
 
 
 class TestWAFv2Stack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated sns topic against AWS solutions checks."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -514,7 +514,7 @@ from cdk_opinionated_constructs.ecr import ECR
 
 
 class TestECRStack(Stack):
-    """Test generated sns topic against AWS solutions  checks."""
+    """Test generated sns topic against AWS solutions checks."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -536,7 +536,6 @@ class TestECRStack(Stack):
 """Example code for Network Load Balancer cdk stack."""
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-import aws_cdk.aws_kms as kms
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
 from constructs import Construct
@@ -550,7 +549,6 @@ class TestNLBStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
-        shared_kms_key = kms.Key(self, "shared_kms_key", enable_key_rotation=True)
         NagSuppressions.add_resource_suppressions(
             vpc,
             suppressions=[
@@ -598,7 +596,7 @@ class TestNLBStack(Stack):
         # Validate stack against AWS Solutions checklist
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
 ```
-## RDS PostgreSQL Instance example
+## RDS PostgresSQL Instance example
 ```python
 """Example code for Application Load Balancer cdk stack."""
 import aws_cdk as cdk
@@ -613,8 +611,8 @@ from constructs import Construct
 from cdk_opinionated_constructs.rds_instance import RDSInstance
 
 
-class TestRDSPostgreSQLStack(Stack):
-    """Test generated RDS PostgreSQL stack."""
+class TestRDSPostgresSQLStack(Stack):
+    """Test generated RDS PostgresSQL stack."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -658,7 +656,7 @@ class TestRDSPostgreSQLStack(Stack):
         rds_instance = rds_construct.create_db_instance(
             database_name=database_name,
             engine=rds.DatabaseInstanceEngine.postgres(
-                version=rds.PostgresEngineVersion.VER_13_8
+                version=rds.PostgresEngineVersion.VER_13_8  # type: ignore
             ),
             publicly_accessible=False,
             secret=secretsmanager.Secret.from_secret_name_v2(
@@ -759,7 +757,7 @@ class TestRDSMySQLStack(Stack):
         rds_instance = rds_construct.create_db_instance(
             database_name=database_name,
             engine=rds.DatabaseInstanceEngine.mysql(
-                version=rds.MysqlEngineVersion.VER_8_0_31
+                version=rds.MysqlEngineVersion.VER_8_0_31  # type: ignore
             ),
             publicly_accessible=False,
             secret=secretsmanager.Secret.from_secret_name_v2(
