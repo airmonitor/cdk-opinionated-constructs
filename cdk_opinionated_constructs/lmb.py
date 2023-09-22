@@ -71,10 +71,12 @@ class AWSPythonLambdaFunction(Construct):
         memory_size: int = 256,
         handler: str = "handler.handler",
         signing_config: Union[lmb.ICodeSigningConfig, None] = None,
+        tracing: bool = True,
         **kwargs,
     ) -> lmb.Function:
         """Create lambda function.
 
+        :param tracing: Enable tracing using AWS XRay
         :param architecture: Lambda CPU architecture, default ARM_64
         :param code_path: path which contains lambda function directory
         :param env: The CDK Environment object which consist region and aws account id
@@ -96,6 +98,7 @@ class AWSPythonLambdaFunction(Construct):
             "CLOUDWATCH_SAMPLING_RATE": "1",
             "REGION_NAME": env.region,
         }
+
         return lmb.Function(
             self,
             architecture=architecture,
@@ -128,7 +131,7 @@ class AWSPythonLambdaFunction(Construct):
             runtime=lmb.Runtime.PYTHON_3_11,  # type: ignore
             security_groups=kwargs.get("security_groups"),
             timeout=cdk.Duration.seconds(timeout),
-            tracing=lmb.Tracing.ACTIVE,
+            tracing=lmb.Tracing.ACTIVE if tracing else lmb.Tracing.DISABLED,
             vpc=kwargs.get("vpc"),
             vpc_subnets=kwargs.get("vpc_subnets"),
         )
