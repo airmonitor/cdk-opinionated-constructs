@@ -72,11 +72,13 @@ class AWSPythonLambdaFunction(Construct):
         handler: str = "handler.handler",
         signing_config: Union[lmb.ICodeSigningConfig, None] = None,
         tracing: bool = True,
+        insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_229_0,
         **kwargs,
     ) -> lmb.Function:
         """Create lambda function.
 
-        :param tracing: Enable tracing using AWS XRay
+        :param insights_version: The Lambda insights extension version
+        :param tracing:  Enables tracing using AWS XRay
         :param architecture: Lambda CPU architecture, default ARM_64
         :param code_path: path which contains lambda function directory
         :param env: The CDK Environment object which consist region and aws account id
@@ -121,6 +123,7 @@ class AWSPythonLambdaFunction(Construct):
                     resources=["arn:aws:logs:*:*:log-group:/aws/lambda-insights:*"],
                 ),
             ],
+            insights_version=insights_version,
             layers=layers,
             log_retention=logs.RetentionDays.ONE_WEEK,
             memory_size=memory_size,
