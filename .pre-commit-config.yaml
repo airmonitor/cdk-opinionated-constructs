@@ -19,7 +19,6 @@ repos:
       - id: destroyed-symlinks
       - id: detect-private-key
       - id: end-of-file-fixer
-      - id: fix-encoding-pragma
       - id: pretty-format-json
         args: [ '--no-sort-keys' ]
       - id: requirements-txt-fixer

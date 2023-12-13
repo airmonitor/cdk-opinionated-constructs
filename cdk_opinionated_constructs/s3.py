@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Opinionated CDK construct to create S3 bucket.
 
 Security parameters are set by default
@@ -8,9 +7,6 @@ import aws_cdk as cdk
 import aws_cdk.aws_s3 as s3
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_iam as iam
-
-
-from typing import Optional
 
 
 class S3Bucket(Construct):
@@ -32,8 +28,8 @@ class S3Bucket(Construct):
         self,
         bucket_name: str,
         encryption: s3.BucketEncryption,
-        kms_key: Optional[kms.IKey] = None,
-        server_access_logs_bucket: Optional[s3.IBucket] = None,
+        kms_key: kms.IKey | None = None,
+        server_access_logs_bucket: s3.IBucket | None = None,
         enforce_ssl: bool = True,
         **kwargs,
     ) -> s3.Bucket:

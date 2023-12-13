@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Opinionated CDK construct for AWS ECR repository with enabled security."""
 
 from typing import Literal

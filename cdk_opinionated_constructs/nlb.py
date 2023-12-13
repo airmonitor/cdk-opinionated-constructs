@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Opinionated CDK construct to create Network load balancer.
 
 Security parameters are set by default
@@ -31,7 +30,8 @@ class NetworkLoadBalancer(Construct):
         """Create dedicated access logs bucket using opinionated cdk construct
         from cdk-opinionated-constructs.
 
-        :param expiration_days: The number of days after which logs will be deleted is
+        :param expiration_days: The number of days after which logs will
+            be deleted is
         :param bucket_name: The name of S3 bucket
         :return: CDK S3 IBucket object
         """

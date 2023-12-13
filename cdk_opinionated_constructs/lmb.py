@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """Opinionated CDK construct to create AWS Lambda function.
 
 Security parameters are set by default
 """
-from typing import Union
 
 import aws_cdk as cdk
 import aws_cdk.aws_iam as iam
@@ -64,13 +62,13 @@ class AWSPythonLambdaFunction(Construct):
         env: cdk.Environment,
         env_variables: dict,
         function_name: str,
-        layers: list[lmb.ILayerVersion],
-        reserved_concurrent_executions: Union[None, int],
+        layers: list[lmb.ILayerVersion] | list[lmb.LayerVersion],
+        reserved_concurrent_executions: None | int,
         timeout: int,
         architecture: lmb.Architecture = lmb.Architecture.ARM_64,
         memory_size: int = 256,
         handler: str = "handler.handler",
-        signing_config: Union[lmb.ICodeSigningConfig, None] = None,
+        signing_config: lmb.ICodeSigningConfig | None = None,
         tracing: bool = True,
         insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_229_0,
         **kwargs,
@@ -161,7 +159,7 @@ class AWSDockerLambdaFunction(Construct):
         env: cdk.Environment,
         env_variables: dict,
         function_name: str,
-        reserved_concurrent_executions: Union[None, int],
+        reserved_concurrent_executions: None | int,
         timeout: int,
         architecture: lmb.Architecture = lmb.Architecture.X86_64,
         memory_size: int = 256,
