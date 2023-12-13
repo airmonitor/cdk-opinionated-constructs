@@ -1,2 +1,14 @@
 line-length = 120
-target-version = "py310"
+target-version = "py311"
+[mccabe]
+# Flag errors (`C901`) whenever the complexity level exceeds 5.
+max-complexity = 5
+[isort]
+combine-as-imports = true
+force-sort-within-sections = true
+lines-between-types = 1
+
+[lint]
+extend-select = [
+  "UP",  # pyupgrade
+]
