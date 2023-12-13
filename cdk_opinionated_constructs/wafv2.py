@@ -29,11 +29,11 @@ class WAFv2(Construct):
                     vendor_name="AWS",
                     managed_rule_group_configs=[
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
-                            login_path=aws_account_takeover_prevention["login_path"],  # type: ignore
+                            login_path=aws_account_takeover_prevention["login_path"],
                         ),
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
                             password_field=wafv2.CfnWebACL.FieldIdentifierProperty(
-                                identifier=aws_account_takeover_prevention["password_field"]  # type: ignore
+                                identifier=aws_account_takeover_prevention["password_field"]
                             ),
                         ),
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
@@ -41,7 +41,7 @@ class WAFv2(Construct):
                         ),
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
                             username_field=wafv2.CfnWebACL.FieldIdentifierProperty(
-                                identifier=aws_account_takeover_prevention["username_field"]  # type: ignore
+                                identifier=aws_account_takeover_prevention["username_field"]
                             ),
                         ),
                     ],
