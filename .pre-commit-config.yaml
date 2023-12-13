@@ -29,17 +29,13 @@ repos:
     rev: v0.11.6
     hooks:
       - id: ssort
-  - repo: https://github.com/psf/black
-    rev: "23.12.0"
-    hooks:
-      - id: black
-        args: [ -l 120 ]
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.1.8'
+    rev: 'v0.1.7'
     hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [ --fix ]
+      - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v1.7.1"
     hooks:
@@ -47,7 +43,7 @@ repos:
         args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports]
         additional_dependencies:
           - "types-PyYAML"
-          - "pydantic>=1.10.4"
+          - "pydantic>=2.4.0"
           - "types-retry"
   - repo: https://github.com/myint/docformatter
     rev: "v1.7.5"
@@ -59,7 +55,7 @@ repos:
     hooks:
       - id: python-safety-dependencies-check
   - repo: https://github.com/PyCQA/bandit
-    rev: "1.7.6"
+    rev: "1.7.5"
     hooks:
       - id: bandit
         args: [ --skip=B101 ]
@@ -67,7 +63,7 @@ repos:
     rev: "2023.6.1"
     hooks:
       - id: shed
-        args: [ --refactor, --py39-plus ]
+        args: [ --refactor, --py311-plus ]
         types_or: [ markdown, rst ]
   - repo: https://github.com/yunojuno/pre-commit-xenon
     rev: v0.1
