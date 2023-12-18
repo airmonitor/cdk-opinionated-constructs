@@ -62,7 +62,6 @@ class AWSPythonLambdaFunction(Construct):
         self,
         code_path: str,
         env: cdk.Environment,
-        env_variables: dict,
         function_name: str,
         layers: list[lmb.ILayerVersion] | list[lmb.LayerVersion],
         reserved_concurrent_executions: None | int,
@@ -73,6 +72,7 @@ class AWSPythonLambdaFunction(Construct):
         signing_config: lmb.ICodeSigningConfig | None = None,
         tracing: bool = True,
         insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_229_0,
+        env_variables: None | dict = None,
         **kwargs,
     ) -> lmb.Function | lmb.IFunction:
         """Create lambda function.
@@ -96,6 +96,8 @@ class AWSPythonLambdaFunction(Construct):
             * vpc_subnets - ec2.SubnetSelection, in which subnet lambda will operate
         :return: Lambda function
         """
+        if env_variables is None:
+            env_variables = {}
         lambda_environment_default_variables = {
             "CLOUDWATCH_SAMPLING_RATE": "1",
             "REGION_NAME": env.region,
@@ -159,12 +161,12 @@ class AWSDockerLambdaFunction(Construct):
         self,
         code: lmb.DockerImageCode,
         env: cdk.Environment,
-        env_variables: dict,
         function_name: str,
         reserved_concurrent_executions: None | int,
         timeout: int,
         architecture: lmb.Architecture = lmb.Architecture.X86_64,
         memory_size: int = 256,
+        env_variables: None | dict = None,
         **kwargs,
     ) -> lmb.Function | lmb.IFunction:
         """Create lambda function.
@@ -184,6 +186,8 @@ class AWSDockerLambdaFunction(Construct):
             * ephemeral_storage_size - The size of the function’s /tmp directory in MiB. Default: 512 MiB
         :return: Lambda function
         """
+        if env_variables is None:
+            env_variables = {}
         lambda_environment_default_variables = {
             "CLOUDWATCH_SAMPLING_RATE": "1",
             "REGION_NAME": env.region,
