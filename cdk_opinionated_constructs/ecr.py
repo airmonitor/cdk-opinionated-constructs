@@ -2,9 +2,10 @@
 
 from typing import Literal
 
-from constructs import Construct
 import aws_cdk as cdk
 import aws_cdk.aws_ecr as ecr
+
+from constructs import Construct
 
 
 class ECR(Construct):
@@ -23,7 +24,7 @@ class ECR(Construct):
 
     def repository(
         self, repository_name: str, removal_policy: Literal["retain", "destroy"], **kwargs
-    ) -> ecr.Repository:
+    ) -> ecr.Repository | ecr.IRepository:
         """
         Create ecr repository with default lifecycle rule - max image count 10, tag immutability and image scan on push
         :param removal_policy: The type of removal policy to be applied when cloudformation stack will be deleted.

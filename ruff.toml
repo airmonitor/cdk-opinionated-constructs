@@ -2,12 +2,52 @@ line-length = 120
 target-version = "py311"
 [mccabe]
 # Flag errors (`C901`) whenever the complexity level exceeds 5.
-max-complexity = 5
+max-complexity = 8
+
 [isort]
 combine-as-imports = true
 lines-between-types = 1
+known-third-party = ["pydantic", "aws_lambda_powertools"]
 
 [lint]
 extend-select = [
   "UP",  # pyupgrade
+]
+
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "C", # flake8-comprehensions
+    "B", # flake8-bugbear
+]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "cdk.out",
+    ".vscode",
+    ".pytest_cache",
+    ".build",
+    ".mypy_cache",
+    ".github",
 ]

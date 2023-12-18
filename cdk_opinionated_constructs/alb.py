@@ -3,14 +3,16 @@ S3 bucket for storing access logs.
 
 Security parameters are set by default
 """
-from cdk_nag import NagSuppressions
-from cdk_opinionated_constructs.s3 import S3Bucket
-from constructs import Construct
 import aws_cdk as cdk
+import aws_cdk.aws_certificatemanager as certificate_manager
+import aws_cdk.aws_elasticloadbalancingv2 as albv2
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
-import aws_cdk.aws_elasticloadbalancingv2 as albv2
-import aws_cdk.aws_certificatemanager as certificate_manager
+
+from cdk_nag import NagPackSuppression, NagSuppressions
+from constructs import Construct
+
+from cdk_opinionated_constructs.s3 import S3Bucket
 
 
 class ApplicationLoadBalancer(Construct):
@@ -25,7 +27,7 @@ class ApplicationLoadBalancer(Construct):
         """
         super().__init__(scope, construct_id)
 
-    def create_access_logs_bucket(self, bucket_name: str, expiration_days: int) -> s3.Bucket:
+    def create_access_logs_bucket(self, bucket_name: str, expiration_days: int) -> s3.Bucket | s3.IBucket:
         """Create dedicated access logs bucket using opinionated cdk construct
         from cdk-opinionated-constructs.
 
@@ -63,11 +65,11 @@ class ApplicationLoadBalancer(Construct):
         NagSuppressions.add_resource_suppressions(
             alb_access_logs_bucket,
             [
-                {
-                    "id": "AwsSolutions-S1",
-                    "reason": "ALB access logs location, doesn't contain sensitive data"
-                    "it doesn't require another resource for storing access logs from it",
-                },
+                NagPackSuppression(
+                    id="AwsSolutions-S1",
+                    reason="ALB access logs location, doesn't contain sensitive data it doesn't require "
+                    "another resource for storing access logs from it",
+                ),
             ],
         )
 

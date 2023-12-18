@@ -6,8 +6,8 @@ Security parameters are set by default
 import aws_cdk as cdk
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_lambda as lmb
-from aws_cdk import aws_logs as logs
-from aws_cdk import aws_signer as signer
+
+from aws_cdk import aws_logs as logs, aws_signer as signer
 from constructs import Construct
 
 
@@ -41,7 +41,9 @@ class AWSPythonLambdaFunction(Construct):
 
         return lmb.CodeSigningConfig(self, "conde-signing-config", signing_profiles=[profile])
 
-    def create_lambda_layer(self, code_path: str, construct_id: str = "supporting_libraries") -> lmb.LayerVersion:
+    def create_lambda_layer(
+        self, code_path: str, construct_id: str = "supporting_libraries"
+    ) -> lmb.LayerVersion | lmb.ILayerVersion:
         """Create lambda layer.
 
         :param code_path: path which contains lambda layer directory
@@ -72,7 +74,7 @@ class AWSPythonLambdaFunction(Construct):
         tracing: bool = True,
         insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_229_0,
         **kwargs,
-    ) -> lmb.Function:
+    ) -> lmb.Function | lmb.IFunction:
         """Create lambda function.
 
         :param insights_version: The Lambda insights extension version
@@ -164,7 +166,7 @@ class AWSDockerLambdaFunction(Construct):
         architecture: lmb.Architecture = lmb.Architecture.X86_64,
         memory_size: int = 256,
         **kwargs,
-    ) -> lmb.Function:
+    ) -> lmb.Function | lmb.IFunction:
         """Create lambda function.
 
         :param architecture: Lambda CPU architecture, default ARM_64

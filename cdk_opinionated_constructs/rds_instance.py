@@ -3,11 +3,12 @@ S3 bucket for storing access logs.
 
 Security parameters are set by default
 """
-from constructs import Construct
 import aws_cdk as cdk
-import aws_cdk.aws_secretsmanager as secretsmanager
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_rds as rds
+import aws_cdk.aws_secretsmanager as secretsmanager
+
+from constructs import Construct
 
 
 class RDSInstance(Construct):
@@ -34,9 +35,9 @@ class RDSInstance(Construct):
         vpc: ec2.Vpc | ec2.IVpc,
         preferred_maintenance_window: str | None = "Sun:04:00-Sun:04:30",
         snapshot_identifier: str | None = None,
-        instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+        instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),  # noqa: B008
         **kwargs,
-    ) -> rds.DatabaseInstance:
+    ) -> rds.DatabaseInstance | rds.IDatabaseInstance:
         """Create Aurora RDS with PostgresSQL compatibility.
 
         :param subnet_group: The RDS subnet group

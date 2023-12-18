@@ -2,10 +2,10 @@
 
 Security parameters are set by default
 """
-from constructs import Construct
 import aws_cdk.aws_sns as sns
-from aws_cdk import aws_kms as kms
-from aws_cdk import aws_iam as iam
+
+from aws_cdk import aws_iam as iam, aws_kms as kms
+from constructs import Construct
 
 
 class SNSTopic(Construct):
@@ -21,7 +21,7 @@ class SNSTopic(Construct):
         """
         super().__init__(scope, id)
 
-    def create_sns_topic(self, topic_name: str, master_key: kms.IKey | None) -> sns.Topic:
+    def create_sns_topic(self, topic_name: str, master_key: kms.IKey | None) -> sns.Topic | sns.ITopic:
         """Create an SNS topic with resource policy that enforces encrypted
         access.
 

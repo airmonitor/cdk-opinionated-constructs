@@ -2,12 +2,13 @@
 
 Security parameters, logging are set by default
 """
-from constructs import Construct
+from typing import Any, Literal
+
 import aws_cdk as cdk
 import aws_cdk.aws_wafv2 as wafv2
-from aws_cdk import aws_logs as logs
 
-from typing import Any, Literal
+from aws_cdk import aws_logs as logs
+from constructs import Construct
 
 
 class WAFv2(Construct):
