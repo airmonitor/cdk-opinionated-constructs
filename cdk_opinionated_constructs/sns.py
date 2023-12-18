@@ -1,14 +1,11 @@
-# -*- coding: utf-8 -*-
 """Opinionated CDK construct to create an SNS topic.
 
 Security parameters are set by default
 """
-from constructs import Construct
 import aws_cdk.aws_sns as sns
-from aws_cdk import aws_kms as kms
-from aws_cdk import aws_iam as iam
 
-from typing import Union
+from aws_cdk import aws_iam as iam, aws_kms as kms
+from constructs import Construct
 
 
 class SNSTopic(Construct):
@@ -24,12 +21,13 @@ class SNSTopic(Construct):
         """
         super().__init__(scope, id)
 
-    def create_sns_topic(self, topic_name: str, master_key: Union[kms.IKey, None]) -> sns.Topic:
+    def create_sns_topic(self, topic_name: str, master_key: kms.IKey | None) -> sns.Topic | sns.ITopic:
         """Create an SNS topic with resource policy that enforces encrypted
         access.
 
         :param topic_name: The name of SNS is topic
-        :param master_key: The KMS key to encrypted messages going through sns topic
+        :param master_key: The KMS key to encrypted messages going
+            through sns topic
         :return: The CDK object for an SNS topic
         """
         topic = sns.Topic(self, id=topic_name, topic_name=topic_name, master_key=master_key)

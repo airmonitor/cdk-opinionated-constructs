@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 """Opinionated CDK construct to create AWS WAFv2.
 
 Security parameters, logging are set by default
 """
-from constructs import Construct
+from typing import Any, Literal
+
 import aws_cdk as cdk
 import aws_cdk.aws_wafv2 as wafv2
-from aws_cdk import aws_logs as logs
 
-from typing import Optional, Any, Dict, Literal, Union
+from aws_cdk import aws_logs as logs
+from constructs import Construct
 
 
 class WAFv2(Construct):
@@ -30,11 +30,11 @@ class WAFv2(Construct):
                     vendor_name="AWS",
                     managed_rule_group_configs=[
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
-                            login_path=aws_account_takeover_prevention["login_path"],  # type: ignore
+                            login_path=aws_account_takeover_prevention["login_path"],
                         ),
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
                             password_field=wafv2.CfnWebACL.FieldIdentifierProperty(
-                                identifier=aws_account_takeover_prevention["password_field"]  # type: ignore
+                                identifier=aws_account_takeover_prevention["password_field"]
                             ),
                         ),
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
@@ -42,7 +42,7 @@ class WAFv2(Construct):
                         ),
                         wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
                             username_field=wafv2.CfnWebACL.FieldIdentifierProperty(
-                                identifier=aws_account_takeover_prevention["username_field"]  # type: ignore
+                                identifier=aws_account_takeover_prevention["username_field"]
                             ),
                         ),
                     ],
@@ -173,28 +173,37 @@ class WAFv2(Construct):
     def web_acl(
         self,
         name: str,
-        rate_value: Union[int, None],
+        rate_value: int | None,
         aws_common_rule: bool = True,
-        aws_common_rule_ignore_list: Optional[list] = None,
+        aws_common_rule_ignore_list: list | None = None,
         aws_anony_list: bool = False,
         aws_bad_inputs_rule: bool = False,
         aws_sqli_rule: bool = False,
-        aws_account_takeover_prevention: Union[bool, Dict[Any, Any]] = False,
+        aws_account_takeover_prevention: bool | dict[Any, Any] = False,
         waf_scope: Literal["REGIONAL", "CLOUDFRONT"] = "REGIONAL",
     ) -> wafv2.CfnWebACL:
         """Create AWS WAF with opinionated default rules.
 
-        The minimal configuration will create WAF ACL with aws_reputation_list
+        The minimal configuration will create WAF ACL with
+        aws_reputation_list
 
-        :param aws_common_rule_ignore_list: List of strings that contain rules to be ignored.
-        :param aws_account_takeover_prevention: The definition for account takeover prevention rule
-        :param aws_sqli_rule: The WAF managed rule by AWS AWS-AWSManagedRulesSQLiRuleSet
-        :param aws_bad_inputs_rule: The WAF managed rule by AWS AWS-AWSManagedRulesKnownBadInputsRuleSet
-        :param aws_anony_list: The WAF managed rule by AWS AWS-AWSManagedRulesAnonymousIpList
-        :param aws_common_rule: The WAF managed rule by AWS AWS-AWSManagedRulesCommonRuleSet
-        :param rate_value: The number of packets per seconds for custom rate limiting
-        :param waf_scope: The WAF scope, it could be regional for API GW, Cognito and ALB or
-        CLOUDFRONT for cloudfront distributions
+        :param aws_common_rule_ignore_list: List of strings that contain
+            rules to be ignored.
+        :param aws_account_takeover_prevention: The definition for
+            account takeover prevention rule
+        :param aws_sqli_rule: The WAF managed rule by AWS AWS-
+            AWSManagedRulesSQLiRuleSet
+        :param aws_bad_inputs_rule: The WAF managed rule by AWS AWS-
+            AWSManagedRulesKnownBadInputsRuleSet
+        :param aws_anony_list: The WAF managed rule by AWS AWS-
+            AWSManagedRulesAnonymousIpList
+        :param aws_common_rule: The WAF managed rule by AWS AWS-
+            AWSManagedRulesCommonRuleSet
+        :param rate_value: The number of packets per seconds for custom
+            rate limiting
+        :param waf_scope: The WAF scope, it could be regional for API
+            GW, Cognito and ALB or CLOUDFRONT for cloudfront
+            distributions
         :param name: Then name of WAF ACL
         :return:
         """
@@ -255,7 +264,8 @@ class WAFv2(Construct):
     def web_acl_association(self, resource_arn, web_acl_arn: str) -> wafv2.CfnWebACLAssociation:
         """Associate AWS Resource with WAF.
 
-        :param resource_arn: The ARN of resource that will be protected by WAF
+        :param resource_arn: The ARN of resource that will be protected
+            by WAF
         :param web_acl_arn: The WEB Application Access Control List ARN
         :return: wafv2.CfnWebACLAssociation
         """

@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 """Opinionated CDK construct to create RDS PostgresSQL Instance with dedicated
 S3 bucket for storing access logs.
 
 Security parameters are set by default
 """
-from typing import Union
-from constructs import Construct
 import aws_cdk as cdk
-import aws_cdk.aws_secretsmanager as secretsmanager
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_rds as rds
+import aws_cdk.aws_secretsmanager as secretsmanager
+
+from constructs import Construct
 
 
 class RDSInstance(Construct):
@@ -29,29 +28,32 @@ class RDSInstance(Construct):
         self,
         database_name: str,
         engine: rds.IInstanceEngine,
-        secret: Union[secretsmanager.Secret, secretsmanager.ISecret],
+        secret: secretsmanager.Secret | secretsmanager.ISecret,
         security_group: ec2.SecurityGroup,
         stage: str,
         subnet_group: rds.SubnetGroup,
-        vpc: Union[ec2.Vpc, ec2.IVpc],
-        preferred_maintenance_window: Union[str, None] = "Sun:04:00-Sun:04:30",
-        snapshot_identifier: Union[str, None] = None,
-        instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),
+        vpc: ec2.Vpc | ec2.IVpc,
+        preferred_maintenance_window: str | None = "Sun:04:00-Sun:04:30",
+        snapshot_identifier: str | None = None,
+        instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),  # noqa: B008
         **kwargs,
-    ) -> rds.DatabaseInstance:
+    ) -> rds.DatabaseInstance | rds.IDatabaseInstance:
         """Create Aurora RDS with PostgresSQL compatibility.
 
         :param subnet_group: The RDS subnet group
         :param instance_type: Type of RDS instance
         :param engine: Database engine version
-        :param snapshot_identifier: The name of RDS snapshot to be used to create RDS instance from it.
-        :param preferred_maintenance_window: The RDS preferred maintenance window
+        :param snapshot_identifier: The name of RDS snapshot to be used
+            to create RDS instance from it.
+        :param preferred_maintenance_window: The RDS preferred
+            maintenance window
         :param secret: The existing secret in the AWS Secrets Manager
         :param database_name: The name of the database
         :param security_group: The AWS CDK EC2 security group
-        :param stage: Stage name
-        It contains configuration details about AWS account and resources
-        :param vpc: The AWS CDK VPC object in which the Security Group will be created
+        :param stage: Stage name It contains configuration details about
+            AWS account and resources
+        :param vpc: The AWS CDK VPC object in which the Security Group
+            will be created
         :return: The AWS CDK Serverless Cluster object
         """
 
