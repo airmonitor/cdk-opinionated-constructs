@@ -81,6 +81,7 @@ class ConfigurationVars(PipelinePluginsVars):
     project: str
     stage: Literal["dev", "ppe", "prod", "dr"]
     alarm_emails: list[EmailStr]
+    plugins: PipelinePluginsVars
 
 
 class NotificationVars(BaseModel):
