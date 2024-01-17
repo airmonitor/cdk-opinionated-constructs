@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 """Test AWS Lambda function construct."""
-from aws_cdk import Stack, Duration
-from cdk_opinionated_constructs.sns import SNSTopic
 
-import aws_cdk.aws_lambda as lmb
 import aws_cdk.aws_kms as kms
+import aws_cdk.aws_lambda as lmb
 import cdk_monitoring_constructs as cdk_monitoring
+
+from aws_cdk import Duration, Stack
+
+from cdk_opinionated_constructs.sns import SNSTopic
 
 
 class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
@@ -19,10 +20,9 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
     * similar
     """
 
-    # pylint: disable=W0613
-    def __init__(self, scope, name, env, props):
+    def __init__(self, scope, name, env, props):  # noqa: ARG002
         super().__init__(scope, name)
-        lmb_function: lmb.Function = props["lmb_function"]
+        lmb_function: lmb.Function | lmb.IFunction = props["lmb_function"]
 
         kms_key = kms.Key(self, id="kms_key", enable_key_rotation=True)
 
@@ -35,7 +35,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
             self,
             id="monitoring_facade",
             alarm_factory_defaults=cdk_monitoring.AlarmFactoryDefaults(
-                action=cdk_monitoring.SnsAlarmActionStrategy(on_alarm_topic=alarm_topic),
+                action=cdk_monitoring.SnsAlarmActionStrategy(on_alarm_topic=alarm_topic),  # type: ignore
                 alarm_name_prefix=f'{props["service_name"]}',
                 actions_enabled=True,
             ),

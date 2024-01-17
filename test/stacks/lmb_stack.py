@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Test AWS Lambda function construct."""
-from aws_cdk import Stack
-from constructs import Construct
-from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
+
 import aws_cdk.aws_lambda as lmb
 
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from constructs import Construct
+
+from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
 
 
 class TestAWSPythonLambdaFunctionStack(Stack):
@@ -52,20 +52,16 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         :return:
         """
         return [
-            {
-                "id": "AwsSolutions-L1",
-                "reason": "Suppressing false positive, lambda is using latest runtime available at the moment which"
-                "is python3.10",
-            },
-            {
-                "id": "AwsSolutions-IAM4",
-                "reason": "Using managed policies is allowed",
-            },
-            {
-                "id": "AwsSolutions-IAM5",
-                "reason": "There isn't a way to tailor IAM policy using more restrictive permissions for "
-                "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
-            },
+            NagPackSuppression(id="AwsSolutions-IAM4", reason="Using managed policies is allowed"),
+            NagPackSuppression(
+                id="AwsSolutions-IAM5",
+                reason="There isn't a way to tailor IAM policy using more restrictive "
+                "permissions for used API calls logs:CreateLogGroup, "
+                "xray:PutTelemetryRecords, xray:PutTraceSegments",
+            ),
+            NagPackSuppression(
+                id="AwsSolutions-L1", reason="The custom resource lambda runtime is managed by CDK itself"
+            ),
         ]
 
     @property

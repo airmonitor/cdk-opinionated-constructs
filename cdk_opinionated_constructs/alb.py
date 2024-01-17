@@ -3,6 +3,7 @@ S3 bucket for storing access logs.
 
 Security parameters are set by default
 """
+
 import aws_cdk as cdk
 import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
@@ -16,26 +17,31 @@ from cdk_opinionated_constructs.s3 import S3Bucket
 
 
 class ApplicationLoadBalancer(Construct):
-    """Create Application LB."""
-
-    # pylint: disable=W0235
     def __init__(self, scope: Construct, construct_id: str):
-        """
-
-        :param scope:
-        :param construct_id:
-        """
         super().__init__(scope, construct_id)
 
     def create_access_logs_bucket(self, bucket_name: str, expiration_days: int) -> s3.Bucket | s3.IBucket:
-        """Create dedicated access logs bucket using opinionated cdk construct
-        from cdk-opinionated-constructs.
+        """Creates an S3 bucket for ALB access logs and configures access
+        policies.
 
-        :param expiration_days: The number of days after which logs will
-            be deleted is
-        :param bucket_name: The name of S3 bucket
-        :return: CDK S3 IBucket object
+        Parameters:
+
+        - bucket_name: Name of the S3 bucket to create.
+        - expiration_days: Number of days before objects in the bucket expire.
+
+        Returns:
+            The created S3 bucket object.
+
+        It creates the bucket with S3 managed encryption enabled.
+
+        It adds a bucket policy to allow the ALB service to write access logs.
+
+        It adds a lifecycle rule to expire objects after the given number of days.
+
+        It suppresses some false positive alerts related to not having separate
+        access logs bucket.
         """
+
         alb_access_logs_bucket_construct = S3Bucket(self, id=f"alb_access_logs_{bucket_name}_construct")
         alb_access_logs_bucket = alb_access_logs_bucket_construct.create_bucket(
             bucket_name=bucket_name, encryption=s3.BucketEncryption.S3_MANAGED
@@ -79,11 +85,26 @@ class ApplicationLoadBalancer(Construct):
     def add_connections(
         alb: albv2.ApplicationLoadBalancer, certificates: list[certificate_manager.ICertificate], ports: list
     ):
-        """Create ALB listener and target.
+        """Adds listeners and target groups to an ALB based on a list of port
+        definitions.
 
-        :param alb: The CDK construct for Application Load Balancer
-        :param certificates: List of certificates from AWS Certificate Manager
-        :param ports: List of dictionaries that contain connection details
+        Parameters:
+
+        - alb: The ApplicationLoadBalancer to add listeners and targets to.
+        - certificates: List of ACM certificates to attach to the listeners.
+        - ports: List of port definitions, each containing:
+          - front_end_port: Frontend port number for listener
+          - back_end_port: Backend port number for target group
+          - back_end_protocol: Backend protocol (HTTP/HTTPS)
+          - targets: List of targets for target group
+          - deregistration_delay: Optional deregistration delay
+          - healthy_http_codes: Optional healthy HTTP codes for health checks
+
+        For each port definition, it will:
+
+        - Create an HTTPS listener on the frontend port, attaching the certificates
+        - Add a target group on the backend port, using provided targets
+        - Configure deregistration delay and health check codes if provided
 
         Example usage:
         add_connections(
@@ -101,6 +122,7 @@ class ApplicationLoadBalancer(Construct):
             ]
         )
         """
+
         for port_definition in ports:
             front_end_port_number = port_definition["front_end_port"]
 

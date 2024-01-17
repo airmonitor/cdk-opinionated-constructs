@@ -2,6 +2,7 @@
 
 Security parameters are set by default
 """
+
 import aws_cdk as cdk
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_kms as kms
@@ -15,14 +16,7 @@ class S3Bucket(Construct):
     enforced encryption in transit as well as in rest, versioning and lifecycle
     rules."""
 
-    # pylint: disable=W0235
-    # pylint: disable=W0622
-    def __init__(self, scope: Construct, id: str):
-        """
-
-        :param scope:
-        :param id:
-        """
+    def __init__(self, scope: Construct, id: str):  # noqa: A002
         super().__init__(scope, id)
 
     def create_bucket(
@@ -31,20 +25,36 @@ class S3Bucket(Construct):
         encryption: s3.BucketEncryption,
         kms_key: kms.IKey | None = None,
         server_access_logs_bucket: s3.IBucket | None = None,
-        enforce_ssl: bool = True,
+        enforce_ssl: bool = True,  # noqa: FBT001, FBT002
         **kwargs,
     ) -> s3.Bucket | s3.IBucket:
-        """Create S3 bucket.
+        """Creates an S3 bucket with opinionated security settings.
 
-        :param encryption: The type of encryption.
-        :param enforce_ssl: Bool value if SSL should be enforced.
-        :param kms_key: The kms to be used.
-        :param bucket_name: The name of S3 bucket.
-        :param server_access_logs_bucket: The CDK object for S3 bucket.
-        :param kwargs:
-         Event_bridge_enabled: bool - set to True if s3 events should be sent to event bridge
-         server_access_logs_prefix: str - in which prefix logs should be stored
-        :return: The S3 bucket CDK object
+        Parameters:
+
+        - bucket_name: Name of the S3 bucket.
+
+        - encryption: Encryption type like S3_MANAGED.
+
+        - kms_key: Optional KMS key for encryption.
+
+        - server_access_logs_bucket: Bucket to store access logs.
+
+        - enforce_ssl: Enforce SSL for all communications.
+
+        - kwargs: Other options like events, log prefix.
+
+        Returns: The S3 Bucket object.
+
+        It sets:
+
+        - Auto object delete on bucket removal
+        - Blocks all public access
+        - Enables default encryption
+        - Versioning and lifecycle rules
+        - Secure SSL policy
+
+        It can send logs to another bucket and integrate with EventBridge.
         """
 
         bucket = s3.Bucket(

@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """Test SNS construct against cdk-nag."""
-from aws_cdk import Stack
-from constructs import Construct
-from cdk_opinionated_constructs.sns import SNSTopic
+
 import aws_cdk.aws_kms as kms
 
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NIST80053R5Checks, PCIDSS321Checks, HIPAASecurityChecks
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, HIPAASecurityChecks, NIST80053R5Checks, PCIDSS321Checks
+from constructs import Construct
+
+from cdk_opinionated_constructs.sns import SNSTopic
 
 
 class TestSNSStack(Stack):

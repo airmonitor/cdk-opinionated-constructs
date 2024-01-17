@@ -2,6 +2,7 @@
 
 Security parameters are set by default
 """
+
 import aws_cdk as cdk
 import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
@@ -18,24 +19,31 @@ from cdk_opinionated_constructs.s3 import S3Bucket
 class NetworkLoadBalancer(Construct):
     """Create Network LB."""
 
-    # pylint: disable=W0235
     def __init__(self, scope: Construct, construct_id: str):
-        """
-
-        :param scope:
-        :param construct_id:
-        """
         super().__init__(scope, construct_id)
 
     def create_access_logs_bucket(self, bucket_name: str, expiration_days: int) -> s3.Bucket | s3.IBucket:
-        """Create dedicated access logs bucket using opinionated cdk construct
-        from cdk-opinionated-constructs.
+        """Creates an S3 bucket for ALB access logs with required permissions.
 
-        :param expiration_days: The number of days after which logs will
-            be deleted is
-        :param bucket_name: The name of S3 bucket
-        :return: CDK S3 IBucket object
+        Parameters:
+
+        - bucket_name: Name of the S3 bucket.
+        - expiration_days: Number of days before objects expire.
+
+        Returns:
+            The S3 Bucket object.
+
+        It creates the bucket with S3 managed encryption enabled.
+
+        It adds a bucket policy to allow delivery.logs.amazonaws.com service principal to write logs.
+
+        It allows the service principal to get bucket ACL.
+
+        It adds a lifecycle rule to expire objects after the given days.
+
+        It suppresses some false positive alerts from cfn-nag for this valid use case.
         """
+
         alb_access_logs_bucket_construct = S3Bucket(self, id=f"alb_access_logs_{bucket_name}_construct")
         alb_access_logs_bucket = alb_access_logs_bucket_construct.create_bucket(
             bucket_name=bucket_name, encryption=s3.BucketEncryption.S3_MANAGED
@@ -79,11 +87,32 @@ class NetworkLoadBalancer(Construct):
     def add_connections(
         nlb: albv2.NetworkLoadBalancer, certificates: list[certificate_manager.ICertificate], ports: list
     ):
-        """Create NLB listener and target.
+        """Adds listeners and target groups to a Network Load Balancer.
 
-        :param nlb: The CDK construct for Network Load Balancer
-        :param certificates: List of certificates from AWS Certificate Manager
-        :param ports: List of dictionaries that contain connection details
+        Parameters:
+
+        - nlb: The NLB object to add listeners and targets to.
+
+        - certificates: List of ACM certificates to add to listeners.
+
+        - ports: List of port definitions, each containing:
+
+          - front_end_protocol: Protocol for listener (TCP, TLS etc.)
+          - front_end_port: Listener port number
+          - back_end_protocol: Protocol for targets (TCP, HTTP etc.)
+          - back_end_port: Target group port
+          - targets: List of target IP addresses or ALBs
+          - target_type: 'instance' or 'alb'
+          - health_check_path: Path for health checks (default '/')
+          - stickiness: Whether to enable stickiness (true/false)
+
+        It creates a listener with provided certificates if given.
+
+        It adds a target group for each port definition.
+
+        It enables connection draining and custom health checks.
+
+        It enables stickiness if configured.
 
         Example usage:
         add_connections(
@@ -99,6 +128,7 @@ class NetworkLoadBalancer(Construct):
                 },
             ])
         """
+
         for port_definition in ports:
             front_end_protocol: albv2.Protocol = port_definition["front_end_protocol"]
             front_end_port: int = port_definition["front_end_port"]

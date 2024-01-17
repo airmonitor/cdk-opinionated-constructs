@@ -1,5 +1,3 @@
-"""Create AWS resources responsible for notifications."""
-
 from os import walk
 from pathlib import Path
 

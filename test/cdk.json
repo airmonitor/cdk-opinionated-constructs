@@ -32,6 +32,7 @@
     "@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption": true,
     "@aws-cdk/aws-apigateway:disableCloudWatchRole": true,
     "@aws-cdk/core:enablePartitionLiterals": true,
+    "@aws-cdk/core:suppressTemplateIndentation": true,
     "@aws-cdk/core:target-partitions": [
       "aws",
       "aws-cn"

@@ -1,9 +1,3 @@
-"""The pre-prerequisites stack which create resource which needs to exist
-before core stack will be created.
-
-Example is SSM parameter store entry ci/cd configuration values
-"""
-
 from os import walk
 from pathlib import Path
 
@@ -19,12 +13,24 @@ from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationV
 
 
 class IntegrationTestsStack(cdk.Stack):
-    """Create SSM Parameter required by CDK Pipelines.
+    """IntegrationTestsStack defines a CDK stack for integration tests
+    configuration.
 
-    As CDK pipeline can't contain empty stage to which additional jobs
-    will be added, this stack will create AWS SSM parameter store with
-    the content of used configuration file. It is done like this as a
-    workaround to the CDK pipelines limitations.
+    It loads configuration files from the cdk/config directory into a dict.
+    It creates a ConfigurationVars object from the combined props and config.
+
+    It stores the ConfigurationVars as a StringParameter in SSM, with a name built from
+    the config values.
+
+    It validates the stack against the AWS Solutions checklist.
+
+    Parameters:
+
+    - scope: The CDK scope constructing this stack.
+    - construct_id: ID for the stack construct.
+    - env: The CDK environment.
+    - props: Configuration properties passed to the stack.
+    - **kwargs: Additional stack options.
     """
 
     def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
