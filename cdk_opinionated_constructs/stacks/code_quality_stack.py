@@ -49,7 +49,6 @@ class CodeQualityStack(cdk.Stack):
                 file_path = Path(f"{dir_path}/{file_name}")
                 with file_path.open(encoding="utf-8") as f:
                     props_env |= yaml.safe_load(f)
-                    props = {**props_env, **props}
 
         ssm.StringParameter(
             self,
