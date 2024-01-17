@@ -4,8 +4,9 @@ import aws_cdk.aws_events as events
 import aws_cdk.aws_events_targets as events_targets
 import aws_cdk.aws_iam as iam
 
-from cdk.schemas.configuration_vars import ConfigurationVars, PipelineVars
 from constructs import Construct
+
+from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
 
 
 class PipelineTriggerStack(cdk.Stack):
@@ -40,11 +41,10 @@ class PipelineTriggerStack(cdk.Stack):
     def __init__(self, scope: Construct, construct_id: str, env: cdk.Environment, props: dict, **kwargs) -> None:
         super().__init__(scope, construct_id, env=env, **kwargs)
         config_vars = ConfigurationVars(**props)
-        pipeline_vars = PipelineVars(**props)
 
         # Filter all ssm parameters that have the name of the stage
         filtered_ssm_parameters = list(
-            filter(lambda x: config_vars.stage in x, pipeline_vars.plugins.pipeline_trigger_ssm_parameters)  # type: ignore
+            filter(lambda x: config_vars.stage in x, config_vars.plugins.pipeline_trigger_ssm_parameters)  # type: ignore
         )  # type: ignore
 
         event_pattern = events.EventPattern(

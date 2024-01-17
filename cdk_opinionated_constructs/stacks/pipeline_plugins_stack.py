@@ -42,7 +42,6 @@ class PipelinePluginsStack(cdk.Stack):
         super().__init__(scope, construct_id, env=env, **kwargs)
         props_env: dict[list, dict] = {}
 
-        # pylint: disable=W0612
         for dir_path, dir_names, files in walk(f"cdk/config/{props['stage']}", topdown=False):  # noqa
             for file_name in files:
                 file_path = Path(f"{dir_path}/{file_name}")

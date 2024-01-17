@@ -43,19 +43,18 @@ class InfrastructureTestsStack(cdk.Stack):
 
         super().__init__(scope, construct_id, env=env, **kwargs)
         props_env: dict[list, dict] = {}
+        config_vars = ConfigurationVars(**props)
 
         for dir_path, dir_names, files in walk(f"cdk/config/{props['stage']}", topdown=False):  # noqa
             for file_name in files:
                 file_path = Path(f"{dir_path}/{file_name}")
                 with file_path.open(encoding="utf-8") as f:
                     props_env |= yaml.safe_load(f)
-                    props = {**props_env, **props}
 
-        config_vars = ConfigurationVars(**props)
         ssm.StringParameter(
             self,
             id="config_file",
-            string_value=str(config_vars),
+            string_value=str(props_env),
             parameter_name=f"/{config_vars.project}/{config_vars.stage}/infrastructure/tests/config",
         )
 
