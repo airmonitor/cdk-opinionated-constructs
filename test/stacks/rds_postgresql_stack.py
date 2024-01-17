@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
 """Example code for Application Load Balancer cdk stack."""
-from aws_cdk import Stack
+
 import aws_cdk as cdk
-from constructs import Construct
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_rds as rds
-from cdk_nag import NagSuppressions
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks
 import aws_cdk.aws_secretsmanager as secretsmanager
+
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from constructs import Construct
+
 from cdk_opinionated_constructs.rds_instance import RDSInstance
 
 
@@ -33,7 +33,7 @@ class TestRDSPostgreSQLStack(Stack):
         security_group = ec2.SecurityGroup(
             self,
             id="security_group",
-            vpc=vpc,
+            vpc=vpc,  # type: ignore
             security_group_name="security_group_name",
             allow_all_outbound=False,
         )
@@ -42,7 +42,7 @@ class TestRDSPostgreSQLStack(Stack):
             self,
             id="rds_subnet_group",
             description="rds_subnet_group",
-            vpc=vpc,
+            vpc=vpc,  # type: ignore
             removal_policy=cdk.RemovalPolicy.DESTROY,
             vpc_subnets=ec2.SubnetSelection(
                 availability_zones=vpc.availability_zones, one_per_az=False, subnet_group_name="Private"
@@ -57,7 +57,11 @@ class TestRDSPostgreSQLStack(Stack):
             database_name=database_name,
             engine=rds.DatabaseInstanceEngine.postgres(version=rds.PostgresEngineVersion.VER_13_8),  # type: ignore
             publicly_accessible=False,
-            secret=secretsmanager.Secret.from_secret_name_v2(self, id="imported_secret", secret_name="secret-name"),
+            secret=secretsmanager.Secret.from_secret_name_v2(
+                self,
+                id="imported_secret",
+                secret_name="secret-name",  # noqa: S106
+            ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",
             stage="prod",
@@ -69,24 +73,18 @@ class TestRDSPostgreSQLStack(Stack):
         NagSuppressions.add_resource_suppressions(
             rds_instance,
             suppressions=[
-                {
-                    "id": "AwsSolutions-RDS11",
-                    "reason": "Default RDS port is allowed to be used.",
-                },
-                {
-                    "id": "AwsSolutions-RDS2",
-                    "reason": "The RDS encryption is managed on a snapshot level from which RDS is restored.",
-                },
+                NagPackSuppression(
+                    id="AwsSolutions-RDS2",
+                    reason="The RDS encryption is managed on a snapshot level from which RDS is restored.",
+                ),
+                NagPackSuppression(id="AwsSolutions-RDS11", reason="Default RDS port is allowed to be used."),
             ],
         )
 
         NagSuppressions.add_resource_suppressions(
             vpc,
             suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
+                NagPackSuppression(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here.")
             ],
         )
 

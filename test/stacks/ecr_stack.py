@@ -1,14 +1,31 @@
-# -*- coding: utf-8 -*-
 """Example code for ECR cdk stack."""
-from aws_cdk import Stack
+
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, HIPAASecurityChecks, NIST80053R5Checks, PCIDSS321Checks
 from constructs import Construct
+
 from cdk_opinionated_constructs.ecr import ECR
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NIST80053R5Checks, PCIDSS321Checks, HIPAASecurityChecks
 
 
 class TestECRStack(Stack):
-    """Test generated sns topic against AWS solutions checks."""
+    """TestECRStack defines a CDK stack that creates an ECR repository.
+
+    It creates an ECR construct and configures an ECR repository with provided
+    settings.
+
+    It validates the stack against the following checklists:
+
+    - AWS Solutions
+    - NIST 800-53 R5
+    - PCI DSS 3.2.1
+    - HIPAA Security
+
+    Parameters:
+
+    - scope: The CDK scope constructing this stack.
+    - construct_id: ID for the stack construct.
+    - **kwargs: Additional stack options.
+    """
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)

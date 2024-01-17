@@ -1,9 +1,3 @@
-"""The pre-prerequisites stack which create resource which needs to exist
-before core stack will be created.
-
-Example is SSM parameter store entry ci/cd configuration values
-"""
-
 from os import walk
 from pathlib import Path
 

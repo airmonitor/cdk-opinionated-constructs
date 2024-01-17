@@ -3,6 +3,7 @@ S3 bucket for storing access logs.
 
 Security parameters are set by default
 """
+
 import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_rds as rds
@@ -14,14 +15,7 @@ from constructs import Construct
 class RDSInstance(Construct):
     """Create AWS RDS DB Instance."""
 
-    # pylint: disable=W0235
-    # pylint: disable=W0622
     def __init__(self, scope: Construct, construct_id: str):
-        """
-
-        :param scope:
-        :param construct_id:
-        """
         super().__init__(scope, construct_id)
 
     def create_db_instance(
@@ -38,23 +32,41 @@ class RDSInstance(Construct):
         instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),  # noqa: B008
         **kwargs,
     ) -> rds.DatabaseInstance | rds.IDatabaseInstance:
-        """Create Aurora RDS with PostgresSQL compatibility.
+        """Creates an RDS PostgreSQL database instance.
 
-        :param subnet_group: The RDS subnet group
-        :param instance_type: Type of RDS instance
-        :param engine: Database engine version
-        :param snapshot_identifier: The name of RDS snapshot to be used
-            to create RDS instance from it.
-        :param preferred_maintenance_window: The RDS preferred
-            maintenance window
-        :param secret: The existing secret in the AWS Secrets Manager
-        :param database_name: The name of the database
-        :param security_group: The AWS CDK EC2 security group
-        :param stage: Stage name It contains configuration details about
-            AWS account and resources
-        :param vpc: The AWS CDK VPC object in which the Security Group
-            will be created
-        :return: The AWS CDK Serverless Cluster object
+        Parameters:
+
+        - database_name: Name of the database to create.
+
+        - engine: The database engine to use.
+
+        - secret: SecretsManager secret for database credentials.
+
+        - security_group: Security group for instance.
+
+        - stage: The deployment stage (prod/non-prod).
+
+        - subnet_group: Subnet group where instance will be placed.
+
+        - vpc: The VPC for instance.
+
+        - preferred_maintenance_window: When to perform maintenance.
+
+        - snapshot_identifier: Snapshot ID to restore from.
+
+        - instance_type: Instance type to use.
+
+        - kwargs: Other options like an encryption key.
+
+        Returns: The RDS database instance object.
+
+        It enables deletion protection, encryption, and performance insights for production.
+
+        It allows IAM auth, prevents version upgrades, limits storage size.
+
+        It sets backup retention and removal policy based on stage.
+
+        It can restore from a snapshot if snapshot ID is provided.
         """
 
         return (

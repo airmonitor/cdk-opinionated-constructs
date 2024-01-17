@@ -1,9 +1,3 @@
-"""The pre-prerequisites stack which create resource which needs to exist
-before core stack will be created.
-
-Example is SSM parameter store entry ci/cd configuration values
-"""
-
 from os import walk
 from pathlib import Path
 
@@ -19,14 +13,6 @@ from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationV
 
 
 class PipelinePluginsStack(cdk.Stack):
-    """Create SSM Parameter required by CDK Pipelines.
-
-    As CDK pipeline can't contain empty stage to which additional jobs
-    will be added, this stack will create AWS SSM parameter store with
-    the content of used configuration file. It is done like this as a
-    workaround to the CDK pipelines limitations.
-    """
-
     def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
         """Initializes the PipelinePluginsStack construct.
 

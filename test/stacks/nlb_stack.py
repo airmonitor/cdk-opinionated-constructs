@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
 """Example code for Network Load Balancer cdk stack."""
-from aws_cdk import Stack
-from constructs import Construct
 
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-from cdk_opinionated_constructs.nlb import NetworkLoadBalancer
 
-from cdk_nag import NagSuppressions
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from constructs import Construct
+
+from cdk_opinionated_constructs.nlb import NetworkLoadBalancer
 
 
 class TestNLBStack(Stack):
@@ -21,10 +19,7 @@ class TestNLBStack(Stack):
         NagSuppressions.add_resource_suppressions(
             vpc,
             suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
+                NagPackSuppression(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here.")
             ],
         )
 
@@ -36,7 +31,7 @@ class TestNLBStack(Stack):
             cross_zone_enabled=False,
             internet_facing=True,
             load_balancer_name=nlb_name,
-            vpc=vpc,
+            vpc=vpc,  # type: ignore
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
         )
 

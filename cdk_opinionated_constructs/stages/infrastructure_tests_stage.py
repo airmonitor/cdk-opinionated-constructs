@@ -1,6 +1,3 @@
-"""The CI/CD stage - implements jobs to validate code quality.
-"""
-
 import aws_cdk as cdk
 
 from constructs import Construct
@@ -9,21 +6,20 @@ from cdk_opinionated_constructs.stacks.infrastructure_tests_stack import Infrast
 
 
 class InfrastructureTestsStage(cdk.Stage):
-    """Create CI/CD stage with one stack and several jobs to check code quality
-    using: SonarQube, pre-commit and ansible-lint.
+    """InfrastructureTestsStage defines a CDK Stage for infrastructure testing.
 
+    It creates an InfrastructureTestsStack, passing along the stage props.
+
+    Parameters:
+
+    - scope: The CDK scope constructing this stage.
+    - construct_id: ID for the stage construct.
+    - env: The CDK environment.
+    - props: Configuration properties passed to the stage.
+    - **kwargs: Additional stage options.
     """
 
     def __init__(self, scope: Construct, construct_id: str, env: cdk.Environment, props: dict, **kwargs) -> None:
-        """Initialize default parameters from AWS CDK and configuration file.
-
-        :param scope:
-        :param construct_id:
-        :param env: The AWS CDK Environment class which provides AWS
-            Account ID and AWS Region.
-        :param props:
-        :param kwargs:
-        """
         super().__init__(scope, construct_id, env=env, **kwargs)
 
         InfrastructureTestsStack(

@@ -15,23 +15,27 @@ class AWSPythonLambdaFunction(Construct):
     """Create Lambda function and supported objects like lambda layer, signing
     profile, IAM role and policies."""
 
-    # pylint: disable=W0235
-    # pylint: disable=W0622
-    def __init__(self, scope: Construct, id: str):
-        """
-
-        :param scope:
-        :param id:
-        """
+    def __init__(self, scope: Construct, id: str):  # noqa: A002
         super().__init__(scope, id)
 
     def signing_config(self, signing_profile_name: str) -> lmb.ICodeSigningConfig:
-        """Create code signing config and profile to sign lambda code with help
-        from AWS Signer.
+        """Creates a code signing configuration for Lambda functions.
 
-        :param signing_profile_name: The name of signing profile
-        :return: AWS Lambda code signing config
+        Parameters:
+
+        - signing_profile_name: The name for the signing profile.
+
+        Returns:
+            The CodeSigningConfig object.
+
+        It creates a signing profile for AWS Lambda with SHA384 ECDSA.
+
+        This is then used to create a CodeSigningConfig with the profile.
+
+        The CodeSigningConfig can be passed to Lambda functions to enable
+        code signing.
         """
+
         profile = signer.SigningProfile(
             self,
             "signing-profile",
@@ -44,12 +48,21 @@ class AWSPythonLambdaFunction(Construct):
     def create_lambda_layer(
         self, code_path: str, construct_id: str = "supporting_libraries"
     ) -> lmb.LayerVersion | lmb.ILayerVersion:
-        """Create lambda layer.
+        """Creates a Lambda layer from a directory of assets.
 
-        :param code_path: path which contains lambda layer directory
-        :param construct_id: construct id
-        :return: Lambda layer
+        Parameters:
+
+        - code_path: Path to the directory containing the layer assets.
+        - construct_id: Optional ID for the layer construct.
+
+        Returns:
+            The Lambda LayerVersion object.
+
+        It creates a LayerVersion from the given asset directory.
+
+        The layer will be compatible with Python 3.11 runtimes.
         """
+
         return lmb.LayerVersion(
             self,
             id=construct_id,
@@ -57,7 +70,6 @@ class AWSPythonLambdaFunction(Construct):
             compatible_runtimes=[lmb.Runtime.PYTHON_3_11],  # type: ignore
         )
 
-    # pylint: disable=R0913
     def create_lambda_function(
         self,
         code_path: str,
@@ -70,32 +82,41 @@ class AWSPythonLambdaFunction(Construct):
         memory_size: int = 256,
         handler: str = "handler.handler",
         signing_config: lmb.ICodeSigningConfig | None = None,
-        tracing: bool = True,
+        tracing: bool = True,  # noqa: FBT001, FBT002
         insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_229_0,
         env_variables: None | dict = None,
         **kwargs,
     ) -> lmb.Function | lmb.IFunction:
-        """Create lambda function.
+        """Creates a Lambda function from a local asset directory.
 
-        :param insights_version: The Lambda insights extension version
-        :param tracing:  Enables tracing using AWS XRay
-        :param architecture: Lambda CPU architecture, default ARM_64
-        :param code_path: path which contains lambda function directory
-        :param env: The CDK Environment object which consist region and aws account id
-        :param env_variables: Dictionary which contain additional lambda env variables
-        :param function_name: The name of lambda function
-        :param handler: Lambda handler, default handler.handler
-        :param layers: Contains list of lambda layer objects
-        :param memory_size: Lambda memory size, default 256MB
-        :param reserved_concurrent_executions: The number of max concurrent lambda executions
-        :param signing_config: Contains signing config for lambda, default None
-        :param timeout: Lambda timeout in seconds,
-        :param kwargs:
-            * Security_groups - list of ec2.SecurityGroup, the vpc security groups to be assigned to lambda function
-            * vpc - the ec2.IVpc object, lambda will be assigned to this VPC
-            * vpc_subnets - ec2.SubnetSelection, in which subnet lambda will operate
-        :return: Lambda function
+        Parameters:
+
+        - code_path: Path to the directory containing the function code.
+        - env: The CDK environment.
+        - function_name: Name of the function.
+        - layers: List of layers to attach to the function.
+        - reserved_concurrent_executions: Max concurrent executions.
+        - timeout: Function timeout in seconds.
+        - architecture: CPU architecture - default ARM64.
+        - memory_size: Memory size in MB - default 256.
+        - handler: Handler name - default 'handler.handler'.
+        - signing_config: Optional code signing configuration.
+        - tracing: Enable Active Tracing - default True.
+        - insights_version: Lambda Insights version to enable.
+        - env_variables: Additional environment variables.
+        - kwargs: Additional options like VPC, filesystem, callbacks.
+
+        Returns:
+            The Lambda Function object.
+
+        It sets up Lambda best practices like:
+
+        - Initial policies for CloudWatch logging
+        - Environment variables for CloudWatch sampling & AWS region
+        - Enabling profiling & insights
+        - Retention of logs
         """
+
         if env_variables is None:
             env_variables = {}
         lambda_environment_default_variables = {
@@ -146,17 +167,9 @@ class AWSDockerLambdaFunction(Construct):
     """Create Lambda function based on docker image with support of signing
     profile, IAM role and policies."""
 
-    # pylint: disable=W0235
-    # pylint: disable=W0622
-    def __init__(self, scope: Construct, id: str):
-        """
-
-        :param scope:
-        :param id:
-        """
+    def __init__(self, scope: Construct, id: str):  # noqa: A002
         super().__init__(scope, id)
 
-    # pylint: disable=R0913
     def create_lambda_function(
         self,
         code: lmb.DockerImageCode,
@@ -169,23 +182,32 @@ class AWSDockerLambdaFunction(Construct):
         env_variables: None | dict = None,
         **kwargs,
     ) -> lmb.Function | lmb.IFunction:
-        """Create lambda function.
+        """Creates a Lambda function from a Docker image.
 
-        :param architecture: Lambda CPU architecture, default ARM_64
-        :param code: The AWS CDK lmb.Code object
-        :param env: The CDK Environment object which consists of region and aws account id
-        :param env_variables: Dictionary which contain additional lambda env variables
-        :param function_name: The name of lambda function
-        :param memory_size: Lambda memory size, default 256MB
-        :param reserved_concurrent_executions: The number of max concurrent lambda executions
-        :param timeout: Lambda timeout in seconds
-        :param kwargs:
-            * Security_groups - list of ec2.SecurityGroup, the vpc security groups to be assigned to lambda function
-            * vpc - the ec2.IVpc object, lambda will be assigned to this VPC
-            * vpc_subnets - ec2.SubnetSelection, in which subnet lambda will operate
-            * ephemeral_storage_size - The size of the function’s /tmp directory in MiB. Default: 512 MiB
-        :return: Lambda function
+        Parameters:
+
+        - code: DockerImageCode object for the image.
+        - env: The CDK environment.
+        - function_name: Name of the function.
+        - reserved_concurrent_executions: Max concurrent executions.
+        - timeout: Function timeout in seconds.
+        - architecture: CPU architecture - default X86_64.
+        - memory_size: Memory size in MB - default 256.
+        - env_variables: Additional environment variables.
+        - kwargs: Additional options like filesystem, callbacks.
+
+        Returns:
+            The Lambda DockerImageFunction object.
+
+        It sets up Lambda best practices like:
+
+        - Initial policies for CloudWatch logging
+        - Environment variables for CloudWatch sampling & AWS region
+        - Retention of logs
+
+        CodeGuru profiling is disabled due to incompatibility with FROM_IMAGE.
         """
+
         if env_variables is None:
             env_variables = {}
         lambda_environment_default_variables = {

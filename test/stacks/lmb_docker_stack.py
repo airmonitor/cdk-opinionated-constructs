@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
 """Test AWS Lambda docker function construct."""
-from aws_cdk import Stack
-from constructs import Construct
-from cdk_opinionated_constructs.lmb import AWSDockerLambdaFunction
-import aws_cdk.aws_lambda as lmb
-import aws_cdk.aws_ecr as ecr
-import aws_cdk.aws_ec2 as ec2
-import aws_cdk as cdk
 
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+import aws_cdk as cdk
+import aws_cdk.aws_ec2 as ec2
+import aws_cdk.aws_ecr as ecr
+import aws_cdk.aws_lambda as lmb
+
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from constructs import Construct
+
+from cdk_opinionated_constructs.lmb import AWSDockerLambdaFunction
 
 
 class TestAWSLambdaDockerFunctionStack(Stack):
@@ -43,7 +43,7 @@ class TestAWSLambdaDockerFunctionStack(Stack):
         lmb_construct = AWSDockerLambdaFunction(self, id="lmb_construct")
         lmb_function = lmb_construct.create_lambda_function(
             code=lmb.DockerImageCode.from_ecr(
-                repository=ecr_repository,
+                repository=ecr_repository,  # type: ignore
                 tag_or_digest="0",
             ),
             env=env,
@@ -75,15 +75,13 @@ class TestAWSLambdaDockerFunctionStack(Stack):
         :return:
         """
         return [
-            {
-                "id": "AwsSolutions-IAM4",
-                "reason": "Using managed policies is allowed",
-            },
-            {
-                "id": "AwsSolutions-IAM5",
-                "reason": "There isn't a way to tailor IAM policy using more restrictive permissions for "
-                "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
-            },
+            NagPackSuppression(id="AwsSolutions-IAM4", reason="Using managed policies is allowed"),
+            NagPackSuppression(
+                id="AwsSolutions-IAM5",
+                reason="There isn't a way to tailor IAM policy using more restrictive "
+                "permissions for used API calls logs:CreateLogGroup, "
+                "xray:PutTelemetryRecords, xray:PutTraceSegments",
+            ),
         ]
 
     @property

@@ -2,6 +2,7 @@
 
 Security parameters, logging are set by default
 """
+
 from typing import Any, Literal
 
 import aws_cdk as cdk
@@ -14,12 +15,30 @@ from constructs import Construct
 class WAFv2(Construct):
     """Implement a v2 WAF where logs are sent to the AWS CloudWatch logs."""
 
-    # pylint: disable=W0235
     def __init__(self, scope: Construct, construct_id: str) -> None:
         super().__init__(scope, construct_id)
 
     @staticmethod
     def __aws_account_takeover_prevention(aws_account_takeover_prevention):
+        """Creates a WAF rule to enable AWS account takeover prevention.
+
+        Parameters:
+
+        - aws_account_takeover_prevention: Dictionary containing:
+
+          - login_path: The login page path
+          - password_field: Password field identifier
+          - username_field: Username field identifier
+
+        It creates a rule to use the AWSManagedRulesATPRuleSet managed rule set.
+
+        This is configured with the provided login path, password, and username fields.
+
+        It enables CloudWatch metrics and sampled request logging.
+
+        Returns the rule property to add to the WAF WebACL.
+        """
+
         return wafv2.CfnWebACL.RuleProperty(
             name="AWS-AWSManagedRulesATPRuleSet",
             priority=6,
@@ -57,6 +76,18 @@ class WAFv2(Construct):
 
     @staticmethod
     def __aws_sqli_rule():
+        """Creates a WAF rule to enable AWS managed SQL injection protection.
+
+        It creates a rule to use the AWSManagedRulesSQLiRuleSet managed
+        rule set.
+
+        This enables protection against SQL injection attacks.
+
+        It enables CloudWatch metrics and sampled request logging.
+
+        Returns the rule property to add to the WAF WebACL.
+        """
+
         return wafv2.CfnWebACL.RuleProperty(
             name="AWS-AWSManagedRulesSQLiRuleSet",
             priority=5,
@@ -76,6 +107,18 @@ class WAFv2(Construct):
 
     @staticmethod
     def __aws_bad_inputs_rule():
+        """Creates a WAF rule to block known bad inputs.
+
+        It creates a rule using the AWSManagedRulesKnownBadInputsRuleSet
+        managed rule set.
+
+        This protects against input-based attacks like XSS, SQLi, etc.
+
+        It enables CloudWatch metrics and sampled request logging.
+
+        Returns the rule property to add to the WAF WebACL.
+        """
+
         return wafv2.CfnWebACL.RuleProperty(
             name="AWS-AWSManagedRulesKnownBadInputsRuleSet",
             priority=4,
@@ -95,6 +138,21 @@ class WAFv2(Construct):
 
     @staticmethod
     def __rate_list(rate_value: int):
+        """Creates a WAF rate-based rule to limit requests per IP.
+
+        Parameters:
+
+        - rate_value: The maximum requests per 5 minutes per IP.
+
+        It creates a rule to limit requests per IP based on the rate value.
+
+        Requests exceeding the limit will be blocked.
+
+        It enables CloudWatch metrics and sampled request logging.
+
+        Returns the rule property to add to the WAF WebACL.
+        """
+
         return wafv2.CfnWebACL.RuleProperty(
             name=f"Custom-RateLimit{rate_value}",
             priority=1,
@@ -114,6 +172,20 @@ class WAFv2(Construct):
 
     @staticmethod
     def __aws_ip_reputation_list():
+        """Creates a WAF rule to block requests from known malicious IPs.
+
+        It creates a rule using the
+        AWSManagedRulesAmazonIpReputationList managed rule set.
+
+        This blocks requests from known malicious IP addresses.
+
+        It runs with the highest priority to block bad IPs early.
+
+        It enables CloudWatch metrics and sampled request logging.
+
+        Returns the rule property to add to the WAF WebACL.
+        """
+
         return wafv2.CfnWebACL.RuleProperty(
             name="AWS-AWSManagedRulesAmazonIpReputationList",
             priority=0,
@@ -133,6 +205,25 @@ class WAFv2(Construct):
 
     @staticmethod
     def __aws_common_rule(aws_common_excluded_rules):
+        """Creates a WAF rule using the AWSManagedRulesCommonRuleSet.
+
+        Parameters:
+
+        - aws_common_excluded_rules: List of rule names to exclude from the common rule set.
+
+        It creates a rule using the AWSManagedRulesCommonRuleSet managed rule group.
+
+        This enables a broad set of common protections like XSS, protocol violations, etc.
+
+        It excludes any rules specified in the aws_common_excluded_rules list.
+
+        This allows customizing the enabled protections.
+
+        It enables CloudWatch metrics and sampled request logging.
+
+        Returns the rule property to add to the WAF WebACL.
+        """
+
         return wafv2.CfnWebACL.RuleProperty(
             name="AWS-AWSManagedRulesCommonRuleSet",
             priority=2,
@@ -153,6 +244,18 @@ class WAFv2(Construct):
 
     @staticmethod
     def __aws_anonymous_list():
+        """Creates a WAF rule to block requests from anonymous proxy servers.
+
+        It creates a rule using the AWSManagedRulesAnonymousIpList
+        managed rule set.
+
+        This blocks requests from known anonymous proxy servers.
+
+        It enables CloudWatch metrics and sampled request logging.
+
+        Returns the rule property to add to the WAF WebACL.
+        """
+
         return wafv2.CfnWebACL.RuleProperty(
             name="AWS-AWSManagedRulesAnonymousIpList",
             priority=3,
@@ -174,38 +277,39 @@ class WAFv2(Construct):
         self,
         name: str,
         rate_value: int | None,
-        aws_common_rule: bool = True,
+        aws_common_rule: bool = True,  # noqa: FBT001, FBT002
         aws_common_rule_ignore_list: list | None = None,
-        aws_anony_list: bool = False,
-        aws_bad_inputs_rule: bool = False,
-        aws_sqli_rule: bool = False,
-        aws_account_takeover_prevention: bool | dict[Any, Any] = False,
+        aws_anony_list: bool = False,  # noqa: FBT001, FBT002
+        aws_bad_inputs_rule: bool = False,  # noqa: FBT001, FBT002
+        aws_sqli_rule: bool = False,  # noqa: FBT001, FBT002
+        aws_account_takeover_prevention: bool | dict[Any, Any] = False,  # noqa: FBT001, FBT002
         waf_scope: Literal["REGIONAL", "CLOUDFRONT"] = "REGIONAL",
     ) -> wafv2.CfnWebACL:
-        """Create AWS WAF with opinionated default rules.
+        """Creates a WAF WebACL with configured rules.
 
-        The minimal configuration will create WAF ACL with
-        aws_reputation_list
+        Parameters:
 
-        :param aws_common_rule_ignore_list: List of strings that contain
-            rules to be ignored.
-        :param aws_account_takeover_prevention: The definition for
-            account takeover prevention rule
-        :param aws_sqli_rule: The WAF managed rule by AWS AWS-
-            AWSManagedRulesSQLiRuleSet
-        :param aws_bad_inputs_rule: The WAF managed rule by AWS AWS-
-            AWSManagedRulesKnownBadInputsRuleSet
-        :param aws_anony_list: The WAF managed rule by AWS AWS-
-            AWSManagedRulesAnonymousIpList
-        :param aws_common_rule: The WAF managed rule by AWS AWS-
-            AWSManagedRulesCommonRuleSet
-        :param rate_value: The number of packets per seconds for custom
-            rate limiting
-        :param waf_scope: The WAF scope, it could be regional for API
-            GW, Cognito and ALB or CLOUDFRONT for cloudfront
-            distributions
-        :param name: Then name of WAF ACL
-        :return:
+        - name: Name of the WebACL.
+        - rate_value: Rate limit per IP if enabled.
+        - aws_common_rule: Whether to enable AWS common rules.
+        - aws_common_rule_ignore_list: List of common rules to exclude.
+        - aws_anony_list: Whether to enable anonymous IP blocking.
+        - aws_bad_inputs_rule: Whether to enable bad inputs rule.
+        - aws_sqli_rule: Whether to enable SQLi rule.
+        - aws_account_takeover_prevention: Config for account takeover prevention.
+        - waf_scope: WAF scope - regional or Cloudfront.
+
+        It enables the AWS IP reputation list rule by default.
+
+        It adds additional rules based on input params:
+        - Rate limit
+        - AWS common rules
+        - Anonymous IP blocking
+        - Bad inputs blocking
+        - SQLi blocking
+        - Account takeover prevention
+
+        Returns the configured CfnWebACL.
         """
 
         # 0. Reputation List. The first rule is enabled by default
@@ -262,22 +366,37 @@ class WAFv2(Construct):
         )
 
     def web_acl_association(self, resource_arn, web_acl_arn: str) -> wafv2.CfnWebACLAssociation:
-        """Associate AWS Resource with WAF.
+        """Associates a WAF WebACL with a resource.
 
-        :param resource_arn: The ARN of resource that will be protected
-            by WAF
-        :param web_acl_arn: The WEB Application Access Control List ARN
-        :return: wafv2.CfnWebACLAssociation
+        Parameters:
+
+        - resource_arn: ARN of the resource to associate the WebACL with.
+        - web_acl_arn: ARN of the WebACL to associate.
+
+        Creates an association between the WebACL and the resource.
+
+        This applies the WebACL rules to the resource.
+
+        Returns the CfnWebACLAssociation.
         """
+
         return wafv2.CfnWebACLAssociation(self, "ACLAssociation", resource_arn=resource_arn, web_acl_arn=web_acl_arn)
 
     def web_acl_log(self, web_acl_arn: str, log_group_name: str) -> wafv2.CfnLoggingConfiguration:
-        """Configure provided a log group as a target for WAF log destination.
+        """Creates a WAF logging configuration to send logs to CloudWatch Logs.
 
-        :param web_acl_arn: The WEB Application Access Control List ARN
-        :param log_group_name: The name of log group
-        :return: AWS CDK WAFv2.CfnLoggingConfiguration
+        Parameters:
+
+        - web_acl_arn: ARN of the WAF WebACL to enable logging for.
+        - log_group_name: Name of the CloudWatch Logs group to send logs to.
+
+        It creates a CloudWatch Logs group with 1-week retention.
+
+        It configures the WAF WebACL to send logs to the Logs group.
+
+        Returns the CfnLoggingConfiguration to enable logging.
         """
+
         log_group = logs.LogGroup(
             self,
             id="web_acl_log_group",

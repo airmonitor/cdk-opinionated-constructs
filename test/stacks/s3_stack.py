@@ -1,13 +1,13 @@
-# -*- coding: utf-8 -*-
 """Test S3 construct against cdk-nag."""
-from aws_cdk import Stack
-from constructs import Construct
-from cdk_opinionated_constructs.s3 import S3Bucket
+
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_s3 as s3
 
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Aspects, Stack
+from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from constructs import Construct
+
+from cdk_opinionated_constructs.s3 import S3Bucket
 
 
 class TestS3Stack(Stack):
@@ -25,11 +25,11 @@ class TestS3Stack(Stack):
         NagSuppressions.add_resource_suppressions(
             access_logs_bucket,
             [
-                {
-                    "id": "AwsSolutions-S1",
-                    "reason": "This is the access logs bucket, "
+                NagPackSuppression(
+                    id="AwsSolutions-S1",
+                    reason="This is the access logs bucket, "
                     "it doesn't require another resource for storing access logs from it",
-                },
+                )
             ],
         )
 

@@ -6,38 +6,80 @@ import boto3
 
 from botocore.config import Config
 
-aws_region = sys.argv[2]
-boto3_config = Config(region_name=aws_region)
 
-cloudwatch = boto3.client("cloudwatch", config=boto3_config)
+def create_cloudwatch_client(region_name):
+    """Creates a Boto3 CloudWatch client for the given region.
 
-# Specify the metric details
-metric_name = "Invocations"
-namespace = "AWS/Lambda"
-function_name = sys.argv[1]
+    Parameters:
 
-# Calculate the start and end times for the metric query
-end_time = datetime.now(UTC)
-start_time = end_time - timedelta(minutes=25)
+    - region_name: The AWS region name.
 
-# Get the metric statistics
-response = cloudwatch.get_metric_statistics(
-    Namespace=namespace,
-    MetricName=metric_name,
-    Dimensions=[{"Name": "FunctionName", "Value": function_name}],
-    StartTime=start_time,
-    EndTime=end_time,
-    Period=300,  # 5-minute intervals
-    Statistics=["Sum"],
-)
+    Returns:
+        The CloudWatch client instance.
+    """
 
-# Extract the metric data points
-datapoints = response["Datapoints"]
+    boto3_config = Config(region_name=region_name)
+    return boto3.client("cloudwatch", config=boto3_config)
 
-# Sort the datapoints by timestamp
-datapoints.sort(key=lambda x: x["Timestamp"])
-# Print the metric data
-if datapoints:
+
+def get_metric_statistics(
+    *,
+    client: boto3.client,
+    namespace: str,
+    metric_name: str,
+    function_name: str,
+    start_time: datetime,
+    end_time: datetime,
+):
+    """Fetches CloudWatch metric statistics for a Lambda function.
+
+    Parameters:
+
+    - client: The Boto3 CloudWatch client.
+    - namespace: The namespace for the metric.
+    - metric_name: The name of the CloudWatch metric.
+    - function_name: The name of the Lambda function.
+    - start_time: The start time for the query.
+    - end_time: The end time for the query.
+
+    Returns:
+        The list of datapoints returned by CloudWatch.
+    """
+
+    response = client.get_metric_statistics(
+        Namespace=namespace,
+        MetricName=metric_name,
+        Dimensions=[{"Name": "FunctionName", "Value": function_name}],
+        StartTime=start_time,
+        EndTime=end_time,
+        Period=300,  # 5-minute intervals
+        Statistics=["Sum"],
+    )
+    return response.get("Datapoints", [])
+
+
+def print_metric_data(datapoints):
+    """Prints CloudWatch metric data for a Lambda function and checks for
+    successful invocations.
+
+    Parameters:
+
+    - datapoints: The list of CloudWatch datapoints.
+
+    It sorts the datapoints by timestamp and prints each one.
+
+    It checks the Sum value - if greater than 0, the Lambda was invoked successfully.
+    If 0, the Lambda failed to invoke.
+
+    Exits with status code 0 for success, 1 for failure.
+    """
+
+    if not datapoints:
+        print("No datapoints found")
+        sys.exit(1)
+
+    datapoints.sort(key=lambda x: x["Timestamp"])
+
     for datapoint in datapoints:
         timestamp = datapoint["Timestamp"]
         value = datapoint["Sum"]
@@ -49,6 +91,47 @@ if datapoints:
         else:
             print("Lambda was invoked incorrectly")
             sys.exit(1)
-else:
-    print("No datapoints found")
-    sys.exit(1)
+
+
+def main():
+    """The main function to fetch and print Lambda invocation metric data.
+
+    It requires two command line arguments - the function name and AWS region.
+
+    It creates a CloudWatch client for the given region.
+
+    It gets the datapoints for the Lambda Invocations metric over the last 25 minutes.
+
+    It prints the datapoints and checks if the Lambda was invoked successfully.
+
+    Parameters:
+
+    - None
+    """
+
+    if len(sys.argv) != 3:
+        print("Usage: python script.py <function_name> <aws_region>")
+        sys.exit(1)
+
+    function_name = sys.argv[1]
+    aws_region = sys.argv[2]
+
+    cloudwatch = create_cloudwatch_client(aws_region)
+
+    end_time = datetime.now(UTC)
+    start_time = end_time - timedelta(minutes=25)
+
+    datapoints = get_metric_statistics(
+        client=cloudwatch,
+        namespace="AWS/Lambda",
+        metric_name="Invocations",
+        function_name=function_name,
+        start_time=start_time,
+        end_time=end_time,
+    )
+
+    print_metric_data(datapoints)
+
+
+if __name__ == "__main__":
+    main()

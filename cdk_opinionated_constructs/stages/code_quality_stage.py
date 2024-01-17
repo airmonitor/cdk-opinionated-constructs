@@ -9,21 +9,21 @@ from cdk_opinionated_constructs.stacks.code_quality_stack import CodeQualityStac
 
 
 class CodeQualityStage(cdk.Stage):
-    """Create CI/CD stage with one stack and several jobs to check code quality
-    using: SonarQube, pre-commit and ansible-lint.
+    """The CodeQualityStage class implements the CI/CD code quality validation
+    stage.
 
+    Parameters:
+
+    - scope (Construct): The parent construct that this stage will be added to.
+    - construct_id (str): The id of this construct.
+    - env (cdk.Environment): The CDK environment.
+    - props (dict): Properties passed to the CodeQualityStack.
+    - **kwargs: Additional keyword arguments passed to the base Stage constructor.
+
+    The stage contains a single CodeQualityStack which implements the code quality jobs.
     """
 
     def __init__(self, scope: Construct, construct_id: str, env: cdk.Environment, props: dict, **kwargs) -> None:
-        """Initialize default parameters from AWS CDK and configuration file.
-
-        :param scope:
-        :param construct_id:
-        :param env: The AWS CDK Environment class which provides AWS
-            Account ID and AWS Region.
-        :param props:
-        :param kwargs:
-        """
         super().__init__(scope, construct_id, env=env, **kwargs)
 
         CodeQualityStack(
