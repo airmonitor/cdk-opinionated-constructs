@@ -31,7 +31,7 @@ class AWSPythonLambdaFunction(Construct):
             self,
             "log-group",
             log_group_name=f"/service/lambda/{log_group_name}",
-            log_group_class=logs.LogGroupClass.INFREQUENT_ACCESS,
+            log_group_class=logs.LogGroupClass.STANDARD,
             retention=logs.RetentionDays.ONE_WEEK,
             removal_policy=cdk.RemovalPolicy.DESTROY,
         )
@@ -201,7 +201,7 @@ class AWSDockerLambdaFunction(Construct):
             self,
             "log-group",
             log_group_name=f"/service/lambda/{log_group_name}",
-            log_group_class=logs.LogGroupClass.INFREQUENT_ACCESS,
+            log_group_class=logs.LogGroupClass.STANDARD,
             retention=logs.RetentionDays.ONE_WEEK,
             removal_policy=cdk.RemovalPolicy.DESTROY,
         )
