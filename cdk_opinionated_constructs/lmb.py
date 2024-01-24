@@ -18,6 +18,24 @@ class AWSPythonLambdaFunction(Construct):
     def __init__(self, scope: Construct, id: str):  # noqa: A002
         super().__init__(scope, id)
 
+    def create_log_group(self, log_group_name: str):
+        """Creates a log group for the Lambda function.
+
+        Returns:
+            The LogGroup object.
+
+        It creates a log group with the given name.
+        """
+
+        return logs.LogGroup(
+            self,
+            "log-group",
+            log_group_name=f"/service/lambda/{log_group_name}",
+            log_group_class=logs.LogGroupClass.INFREQUENT_ACCESS,
+            retention=logs.RetentionDays.ONE_WEEK,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+        )
+
     def signing_config(self, signing_profile_name: str) -> lmb.ICodeSigningConfig:
         """Creates a code signing configuration for Lambda functions.
 
@@ -148,7 +166,7 @@ class AWSPythonLambdaFunction(Construct):
             ],
             insights_version=insights_version,
             layers=layers,
-            log_retention=logs.RetentionDays.ONE_WEEK,
+            log_group=self.create_log_group(function_name),  # type: ignore
             memory_size=memory_size,
             on_success=kwargs.get("on_success"),
             on_failure=kwargs.get("on_failure"),
@@ -169,6 +187,24 @@ class AWSDockerLambdaFunction(Construct):
 
     def __init__(self, scope: Construct, id: str):  # noqa: A002
         super().__init__(scope, id)
+
+    def create_log_group(self, log_group_name: str):
+        """Creates a log group for the Lambda function.
+
+        Returns:
+            The LogGroup object.
+
+        It creates a log group with the given name.
+        """
+
+        return logs.LogGroup(
+            self,
+            "log-group",
+            log_group_name=f"/service/lambda/{log_group_name}",
+            log_group_class=logs.LogGroupClass.INFREQUENT_ACCESS,
+            retention=logs.RetentionDays.ONE_WEEK,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+        )
 
     def create_lambda_function(
         self,
@@ -236,7 +272,7 @@ class AWSDockerLambdaFunction(Construct):
                     resources=["arn:aws:logs:*:*:log-group:/aws/lambda-insights:*"],
                 ),
             ],
-            log_retention=logs.RetentionDays.ONE_WEEK,
+            log_group=self.create_log_group(function_name),  # type: ignore
             memory_size=memory_size,
             on_failure=kwargs.get("on_failure"),
             on_success=kwargs.get("on_success"),
