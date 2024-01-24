@@ -18,47 +18,62 @@ class ECR(Construct):
     def repository(
         self, repository_name: str, removal_policy: Literal["retain", "destroy"], **kwargs
     ) -> ecr.Repository | ecr.IRepository:
-        """Creates an ECR repository with security best practices enabled.
+        """Creates an ECR repository with the given name and removal policy.
 
         Parameters:
-
-        - repository_name: Name of the repository to create.
-        - removal_policy: Removal policy when stack is deleted - 'retain' or 'destroy'.
-        - max_image_age: Optional max image age in days before cleanup.
-        - max_image_count: Optional max number of images to retain.
+        - repository_name (str): The name for the ECR repository.
+        - removal_policy (Literal["retain", "destroy"]): The removal policy to use.
+        - max_image_age (int, optional): The maximum age in days for images before cleanup.
+        - max_image_count (int, optional): The maximum number of images to retain.
 
         Returns:
-            The created ECR repository object.
+        - ecr.Repository | ecr.IRepository: The created ECR repository resource.
 
-        The repository is created with:
+        The repository will have encryption, image scanning on push, and immutable
+        tagging enabled. A lifecycle rule will be added based on the max_image_age
+        and max_image_count if provided.
 
-        - Immutable image tagging enabled
-        - Lifecycle rules based on max_image_age and max_image_count
-        - Removal policy when stack is deleted
+        The removal_policy will be set to either RETAIN or DESTROY based on the
+        removal_policy parameter.
         """
 
         removal_policy_map = {"retain": cdk.RemovalPolicy.RETAIN, "destroy": cdk.RemovalPolicy.DESTROY}
 
-        max_image_age = None
-        max_image_count = None
+        lifecycle_rules: None | list = None
 
-        if kwargs.get("max_image_age"):
-            max_image_age = cdk.Duration.days(kwargs.get("max_image_age"))
+        max_image_count = kwargs.get("max_image_count")
+        max_image_age = kwargs.get("max_image_age")
 
-        if kwargs.get("max_image_count"):
-            max_image_age = max_image_count
+        if max_image_age:
+            max_image_age = cdk.Duration.days(max_image_age)
+            lifecycle_rules = [
+                ecr.LifecycleRule(
+                    max_image_age=max_image_age,
+                )
+            ]
+        if max_image_count:
+            lifecycle_rules = [
+                ecr.LifecycleRule(
+                    max_image_count=max_image_count,
+                )
+            ]
 
+        if max_image_age and max_image_count:
+            lifecycle_rules = [
+                ecr.LifecycleRule(
+                    max_image_count=max_image_count,
+                ),
+                ecr.LifecycleRule(
+                    max_image_age=max_image_age,
+                ),
+            ]
         return ecr.Repository(
             self,
             id=repository_name,
+            encryption=ecr.RepositoryEncryption.AES_256,  # type: ignore
             image_scan_on_push=True,
             image_tag_mutability=ecr.TagMutability.IMMUTABLE,
-            lifecycle_rules=[
-                ecr.LifecycleRule(
-                    max_image_count=max_image_count,
-                    max_image_age=max_image_age,
-                )
-            ],
-            repository_name=repository_name,
             removal_policy=removal_policy_map[removal_policy],
+            repository_name=repository_name,
+            lifecycle_rules=lifecycle_rules,
         )
