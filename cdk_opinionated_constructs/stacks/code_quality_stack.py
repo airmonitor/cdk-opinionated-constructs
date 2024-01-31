@@ -16,6 +16,7 @@ from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
+from cdk_opinionated_constructs.stacks import count_characters_number, reduce_items_number, set_ssm_parameter_tier_type
 
 
 class CodeQualityStack(cdk.Stack):
@@ -49,12 +50,17 @@ class CodeQualityStack(cdk.Stack):
                 file_path = Path(f"{dir_path}/{file_name}")
                 with file_path.open(encoding="utf-8") as f:
                     props_env |= yaml.safe_load(f)
+                    props = {**props_env, **props}
+
+        character_number = count_characters_number(props_env)
+        ssm_parameter_value = reduce_items_number(values=props_env)
 
         ssm.StringParameter(
             self,
             id="config_file",
-            string_value=str(props_env),
+            string_value=str(ssm_parameter_value),
             parameter_name=f"/{config_vars.project}/{config_vars.stage}/config",
+            tier=set_ssm_parameter_tier_type(character_number=character_number),
         )
 
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
