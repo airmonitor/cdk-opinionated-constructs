@@ -50,6 +50,12 @@ clean:
 	@echo "Cleaning up..."
 	rm -rf $(VENV)
 
+build_upload:
+	@echo "Building and uploading to PyPi"
+	rm -rf dist/*
+	python3 -m build
+	twine upload dist/*
+	rm -rf dist/*
 
 help:
 	@echo "Usage: make [target]"
