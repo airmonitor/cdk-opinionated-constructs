@@ -15,7 +15,7 @@ from cdk_nag import NagPackSuppression
 from cdk_opinionated_constructs.utils import apply_tags
 
 
-def count_characters_number(values: dict[list, dict]) -> int:
+def count_characters_number(values: dict[list, dict] | dict[str, str]) -> int:
     """Counts the number of characters in the values.
 
     Parameters:

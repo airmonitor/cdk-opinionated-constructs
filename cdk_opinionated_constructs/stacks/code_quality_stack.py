@@ -52,8 +52,8 @@ class CodeQualityStack(cdk.Stack):
                     props_env |= yaml.safe_load(f)
                     props = {**props_env, **props}
 
-        character_number = count_characters_number(props_env)
         ssm_parameter_value = reduce_items_number(values=props_env)
+        character_number = count_characters_number(ssm_parameter_value)
 
         ssm.StringParameter(
             self,
