@@ -15,7 +15,7 @@ from cdk_nag import NagPackSuppression
 from cdk_opinionated_constructs.utils import apply_tags
 
 
-def count_characters_number(values: dict[list, dict]) -> int:
+def count_characters_number(values: dict[list, dict] | dict[str, str]) -> int:
     """Counts the number of characters in the values.
 
     Parameters:
@@ -63,7 +63,7 @@ def set_ssm_parameter_tier_type(*, character_number: int) -> ssm.ParameterTier:
     """
 
     tier_type = ssm.ParameterTier.STANDARD
-    if 4069 >= character_number <= 8192:
+    if 4069 <= character_number <= 8192:
         tier_type = ssm.ParameterTier.ADVANCED
     return tier_type
 
