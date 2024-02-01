@@ -63,7 +63,7 @@ def set_ssm_parameter_tier_type(*, character_number: int) -> ssm.ParameterTier:
     """
 
     tier_type = ssm.ParameterTier.STANDARD
-    if 4069 >= character_number <= 8192:
+    if 4069 <= character_number <= 8192:
         tier_type = ssm.ParameterTier.ADVANCED
     return tier_type
 
