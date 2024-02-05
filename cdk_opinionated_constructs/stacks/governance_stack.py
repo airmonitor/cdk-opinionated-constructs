@@ -10,9 +10,8 @@ import yaml
 from aws_cdk import Aspects
 from aws_cdk.aws_budgets import CfnBudget as Budget
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars, GovernanceVars
+from constructs import Construct
 
 
 class GovernanceStack(cdk.Stack):

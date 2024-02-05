@@ -1,12 +1,12 @@
 line-length = 120
 target-version = "py311"
-[mccabe]
+[lint.mccabe]
 max-complexity = 15
 
-[isort]
+[lint.isort]
 combine-as-imports = true
 lines-between-types = 1
-known-third-party = ["pydantic", "aws_lambda_powertools"]
+known-third-party = ["pydantic", "aws_lambda_powertools", "cdk_opinionated_constructs"]
 
 [format]
 preview = true

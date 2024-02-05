@@ -4,9 +4,8 @@ import aws_cdk.aws_events as events
 import aws_cdk.aws_events_targets as events_targets
 import aws_cdk.aws_iam as iam
 
-from constructs import Construct
-
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
+from constructs import Construct
 
 
 class PipelineTriggerStack(cdk.Stack):

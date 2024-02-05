@@ -1,9 +1,8 @@
 import aws_cdk as cdk
 
-from constructs import Construct
-
 from cdk_opinionated_constructs.stacks.governance_stack import GovernanceStack
 from cdk_opinionated_constructs.stacks.notifications_stack import NotificationsStack
+from constructs import Construct
 
 
 class NotificationsStage(cdk.Stage):

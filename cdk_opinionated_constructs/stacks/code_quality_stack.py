@@ -4,19 +4,15 @@ before core stack will be created.
 Example is SSM parameter store entry ci/cd configuration values
 """
 
-from os import walk
-from pathlib import Path
-
 import aws_cdk as cdk
 import aws_cdk.aws_ssm as ssm
-import yaml
 
 from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks
-from constructs import Construct
-
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
 from cdk_opinionated_constructs.stacks import count_characters_number, reduce_items_number, set_ssm_parameter_tier_type
+from cdk_opinionated_constructs.utils import load_properties
+from constructs import Construct
 
 
 class CodeQualityStack(cdk.Stack):
@@ -42,17 +38,9 @@ class CodeQualityStack(cdk.Stack):
 
     def __init__(self, scope: Construct, construct_id: str, env, props, **kwargs) -> None:
         super().__init__(scope, construct_id, env=env, **kwargs)
-        props_env: dict[list, dict] = {}
         config_vars = ConfigurationVars(**props)
 
-        for dir_path, dir_names, files in walk(f"cdk/config/{config_vars.stage}", topdown=False):  # noqa
-            for file_name in files:
-                file_path = Path(f"{dir_path}/{file_name}")
-                with file_path.open(encoding="utf-8") as f:
-                    props_env |= yaml.safe_load(f)
-                    props = {**props_env, **props}
-
-        ssm_parameter_value = reduce_items_number(values=props_env)
+        ssm_parameter_value = reduce_items_number(values=load_properties(stage=config_vars.stage))
         character_number = count_characters_number(ssm_parameter_value)
 
         ssm.StringParameter(

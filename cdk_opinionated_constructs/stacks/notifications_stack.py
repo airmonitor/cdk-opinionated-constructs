@@ -1,20 +1,16 @@
-from os import walk
-from pathlib import Path
-
 import aws_cdk as cdk
 import aws_cdk.aws_chatbot as chatbot
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_logs as logs
 import aws_cdk.aws_sns_subscriptions as sns_subscriptions
 import aws_cdk.aws_ssm as ssm
-import yaml
 
 from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars, NotificationVars
 from cdk_opinionated_constructs.sns import SNSTopic
+from cdk_opinionated_constructs.utils import load_properties
+from constructs import Construct
 
 
 class NotificationsStack(cdk.Stack):
@@ -59,15 +55,9 @@ class NotificationsStack(cdk.Stack):
         super().__init__(scope, construct_id, env=env, **kwargs)
         config_vars = ConfigurationVars(**props)
 
-        props_env: dict[list, dict] = {}
-        for dir_path, dir_names, files in walk(f"cdk/config/{config_vars.stage}", topdown=False):  # noqa
-            for file_name in files:
-                file_path = Path(f"{dir_path}/{file_name}")
-                with file_path.open(encoding="utf-8") as f:
-                    props_env |= yaml.safe_load(f)
-        props["slack_channel_id_alarms"] = props_env["slack_channel_id_alarms"]  # type: ignore
+        props_env = load_properties(stage=config_vars.stage)
 
-        notifications_vars = NotificationVars(**props)
+        notifications_vars = NotificationVars(**props_env)
 
         sns_construct = SNSTopic(self, id="topic_construct")
         sns_topic = sns_construct.create_sns_topic(

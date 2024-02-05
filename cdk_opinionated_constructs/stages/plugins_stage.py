@@ -1,10 +1,9 @@
 import aws_cdk as cdk
 
-from constructs import Construct
-
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
 from cdk_opinionated_constructs.stacks.pipeline_plugins_stack import PipelinePluginsStack
 from cdk_opinionated_constructs.stacks.pipeline_trigger_stack import PipelineTriggerStack
+from constructs import Construct
 
 
 class PluginsStage(cdk.Stage):

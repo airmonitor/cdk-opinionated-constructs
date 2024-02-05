@@ -11,7 +11,6 @@ import aws_cdk.aws_ssm as ssm
 from aws_cdk.aws_codestarnotifications import DetailType, NotificationRule
 from cdk.schemas.configuration_vars import PipelineVars
 from cdk_nag import NagPackSuppression
-
 from cdk_opinionated_constructs.utils import apply_tags
 
 

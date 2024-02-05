@@ -3,9 +3,8 @@
 
 import aws_cdk as cdk
 
-from constructs import Construct
-
 from cdk_opinionated_constructs.stacks.code_quality_stack import CodeQualityStack
+from constructs import Construct
 
 
 class CodeQualityStage(cdk.Stage):
