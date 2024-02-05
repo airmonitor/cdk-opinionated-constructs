@@ -81,6 +81,11 @@ def load_properties(stage: str) -> dict:
 
     props_tags = props["tags"]
     conf_tags = props_env["tags"]  # type: ignore
-    updated_props = {**props_env, **props, "tags": {**props_tags, **conf_tags}}
+    updated_props = {
+        **props_env,
+        **props,
+        "tags": {**props_tags, **conf_tags},
+        "slack_channel_id_alarms": props_env["slack_channel_id_alarms"],  # type: ignore
+    }
 
     return updated_props
