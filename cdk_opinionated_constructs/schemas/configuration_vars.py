@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr, PositiveFloat
+from pydantic import BaseModel, EmailStr, PositiveFloat, constr
 
 
 class Observability(BaseModel):
@@ -78,21 +78,33 @@ class ConfigurationVars(PipelinePluginsVars):
     stage: Literal["dev", "ppe", "prod", "dr"]
 
 
+class ApplicationTags(BaseModel):
+    """Defines the ApplicationTags model.
+
+    This model represents the tags associated with an AWS application, specifically the AWS Resource Group ARN.
+
+    Attributes:
+        awsApplication (constr | None): The ARN of the AWS Resource Group, which must match a specific pattern.
+        This field is optional.
+    """
+
+    awsApplication: constr(pattern=r"^arn:aws:resource-groups:*") | None = None  # type: ignore
+
+
 class GovernanceVars(ConfigurationVars):
     """Defines the GovernanceVars model.
 
-    This model contains governance configuration variables for a CDK pipeline stack.
-
-    Parameters:
-      - None
+    This model extends ConfigurationVars and adds governance-specific configuration variables.
 
     Attributes:
 
-      - budget_limit_monthly (int | None): Monthly budget limit for the application.
-      optional.
+      - budget_limit_monthly (int | None): The monthly budget limit.
+
+      - tags (ApplicationTags): The tags to apply to the application.
     """
 
     budget_limit_monthly: int | None = None
+    tags: ApplicationTags
 
 
 class NotificationVars(BaseModel):
