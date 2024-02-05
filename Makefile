@@ -65,6 +65,7 @@ help:
 	@echo "  activate   : Activate the virtual environment"
 	@echo "  update     : Download and update custom configuration files"
 	@echo "  clean      : Remove the virtual environment"
+	@echo "  build_upload	: Build python package and upload it to the pypi repository"
 	@echo "  help       : Display this help message"
 
 
