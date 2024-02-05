@@ -1,8 +1,7 @@
 import aws_cdk as cdk
 
-from constructs import Construct
-
 from cdk_opinionated_constructs.stacks.infrastructure_tests_stack import InfrastructureTestsStack
+from constructs import Construct
 
 
 class InfrastructureTestsStage(cdk.Stage):

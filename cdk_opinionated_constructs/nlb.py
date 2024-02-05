@@ -11,9 +11,8 @@ import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
 
 from cdk_nag import NagPackSuppression, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.s3 import S3Bucket
+from constructs import Construct
 
 
 class NetworkLoadBalancer(Construct):
