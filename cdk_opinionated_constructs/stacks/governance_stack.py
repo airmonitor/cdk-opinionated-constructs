@@ -135,7 +135,7 @@ class GovernanceStack(cdk.Stack):
                     budget_limit=Budget.SpendProperty(amount=amount[period], unit="USD"),
                     budget_name=budget_name,
                     budget_type="COST",
-                    cost_filters={"TagKeyValue": [f"user:awsApplication{governance_vars.tags.awsApplication}"]},
+                    cost_filters={"TagKeyValue": [f"user:awsApplication${governance_vars.tags.awsApplication}"]},
                     time_unit=period,
                 ),
                 notifications_with_subscribers=[
@@ -158,7 +158,7 @@ class GovernanceStack(cdk.Stack):
                 budget_limit=Budget.SpendProperty(amount=amount[period], unit="USD"),
                 budget_name=budget_name,
                 budget_type="COST",
-                cost_filters={"TagKeyValue": [f"user:awsApplication{governance_vars.tags.awsApplication}"]},
+                cost_filters={"TagKeyValue": [f"user:awsApplication${governance_vars.tags.awsApplication}"]},
                 time_unit=period,
             ),
             notifications_with_subscribers=[
