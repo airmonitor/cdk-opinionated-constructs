@@ -43,7 +43,10 @@ class GovernanceStack(cdk.Stack):
                 file_path = Path(f"{dir_path}/{file_name}")
                 with file_path.open(encoding="utf-8") as f:
                     props_env |= yaml.safe_load(f)
-                    updated_props = {**props_env, **props}
+
+        props_tags = props["tags"]
+        conf_tags = props_env["tags"]  # type: ignore
+        updated_props = {**props_env, **props, "tags": {**props_tags, **conf_tags}}
 
         governance_vars = GovernanceVars(**updated_props)
 
@@ -71,18 +74,20 @@ class GovernanceStack(cdk.Stack):
 
         bill_sns_subscribers = Budget.SubscriberProperty(address=bill_sns_topic.topic_arn, subscription_type="SNS")
 
-        if governance_vars.budget_limit_monthly:
+        if governance_vars.budget_limit_monthly and governance_vars.tags.awsApplication:
             monthly_budget_limit = governance_vars.budget_limit_monthly
             self.budget_alarms(
                 sns_subscribers=bill_sns_subscribers,
                 period="DAILY",
                 config_vars=config_vars,
+                governance_vars=governance_vars,
                 monthly_budget_limit=monthly_budget_limit,
             )
             self.budget_alarms(
                 sns_subscribers=bill_sns_subscribers,
                 period="MONTHLY",
                 config_vars=config_vars,
+                governance_vars=governance_vars,
                 monthly_budget_limit=monthly_budget_limit,
             )
 
@@ -94,30 +99,28 @@ class GovernanceStack(cdk.Stack):
         sns_subscribers: Budget.SubscriberProperty,
         period: str,
         config_vars: ConfigurationVars,
+        governance_vars: GovernanceVars,
         monthly_budget_limit: float,
         budget_threshold: int = 95,
     ) -> None:
         """Creates budget alarms for both forecasted and actual spend.
 
-        This method sets up AWS Budgets to monitor the spend against the monthly budget limit.
-        It creates two types of budgets: one for forecasted spend (if the period is not daily)
-        and another for actual spend. Notifications are sent to the provided SNS subscribers
-        when the spend exceeds the specified threshold percentage of the monthly budget limit.
+        This method sets up AWS Budgets with alarms for when the forecasted or actual
+        costs exceed the specified threshold. It supports different periods (e.g., DAILY, MONTHLY)
+        and allows for setting a monthly budget limit. Notifications for breaching the budget
+        are sent to the provided SNS subscribers.
 
         Parameters:
-        - sns_subscribers: An instance of Budget.SubscriberProperty representing the subscribers
-          to be notified when the budget threshold is exceeded.
-        - period: The period for the budget, either "DAILY" or "MONTHLY".
-        - config_vars: An instance of ConfigurationVars containing configuration variables like
-          project and stage names.
+        - sns_subscribers: An instance of Budget.SubscriberProperty to receive notifications.
+        - period: The period for the budget, e.g., 'DAILY' or 'MONTHLY'.
+        - config_vars: Configuration variables containing project and stage names.
+        - governance_vars: Governance-related variables, including tags.
         - monthly_budget_limit: The monthly budget limit in USD.
-        - budget_threshold: The threshold percentage at which to trigger the notification
-          (default is 95%).
+        - budget_threshold: The threshold percentage for triggering the alarm (default is 95%).
 
         Returns:
         None
         """
-
         amount = {
             "DAILY": monthly_budget_limit / 30,
             "MONTHLY": monthly_budget_limit,
@@ -133,7 +136,7 @@ class GovernanceStack(cdk.Stack):
                     budget_limit=Budget.SpendProperty(amount=amount[period], unit="USD"),
                     budget_name=budget_name,
                     budget_type="COST",
-                    cost_filters={"TagKeyValue": [f"user:Name${config_vars.project}"]},
+                    cost_filters={"TagKeyValue": [f"user:awsApplication{governance_vars.tags.awsApplication}"]},
                     time_unit=period,
                 ),
                 notifications_with_subscribers=[
@@ -156,7 +159,7 @@ class GovernanceStack(cdk.Stack):
                 budget_limit=Budget.SpendProperty(amount=amount[period], unit="USD"),
                 budget_name=budget_name,
                 budget_type="COST",
-                cost_filters={"TagKeyValue": [f"user:Name${config_vars.project}"]},
+                cost_filters={"TagKeyValue": [f"user:awsApplication{governance_vars.tags.awsApplication}"]},
                 time_unit=period,
             ),
             notifications_with_subscribers=[
