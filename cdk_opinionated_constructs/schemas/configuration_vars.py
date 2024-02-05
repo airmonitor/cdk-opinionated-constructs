@@ -59,29 +59,40 @@ class PipelinePluginsVars(BaseModel):
 class ConfigurationVars(PipelinePluginsVars):
     """Defines the ConfigurationVars model.
 
+    This model extends PipelinePluginsVars and adds additional configuration variables.
+
+    Attributes:
+
+      - alarm_emails (list[EmailStr]): List of emails to receive alarm notifications.
+
+      - plugins (PipelinePluginsVars): Pipeline plugins configuration.
+
+      - project (str): The name of the project.
+
+      - stage (Literal["dev", "ppe", "prod", "dr"]): The deployment stage.
+    """
+
+    alarm_emails: list[EmailStr]
+    plugins: PipelinePluginsVars
+    project: str
+    stage: Literal["dev", "ppe", "prod", "dr"]
+
+
+class GovernanceVars(ConfigurationVars):
+    """Defines the GovernanceVars model.
+
+    This model contains governance configuration variables for a CDK pipeline stack.
+
     Parameters:
       - None
 
     Attributes:
 
-      - stage (Literal["dev", "ppe", "prod", "dr"]): The deployment stage.
-      constrained to "dev", "ppe", "prod" or "dr".
-
-      - alarm_emails (list[EmailStr]): A list of emails to receive alarm notifications.
-
-      - project (str): The project name.
-
-    Functionality:
-
-      - extends the PipelineVars model with additional configuration attributes.
-      - Constrains stage to a predefined set of options.
-      - Allows configuring multiple alarm notification emails.
+      - budget_limit_monthly (int | None): Monthly budget limit for the application.
+      optional.
     """
 
-    project: str
-    stage: Literal["dev", "ppe", "prod", "dr"]
-    alarm_emails: list[EmailStr]
-    plugins: PipelinePluginsVars
+    budget_limit_monthly: int | None = None
 
 
 class NotificationVars(BaseModel):
