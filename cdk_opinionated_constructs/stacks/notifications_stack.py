@@ -76,6 +76,17 @@ class NotificationsStack(cdk.Stack):
             ),
         )
 
+        # grant aws budgets permissions to publish to the topic
+        sns_topic.add_to_resource_policy(
+            statement=iam.PolicyStatement(
+                sid="AWSBudgetsPolicy",
+                actions=["sns:Publish"],
+                resources=[sns_topic.topic_arn],
+                principals=[iam.ServicePrincipal(service="budgets.amazonaws.com")],
+                effect=iam.Effect.ALLOW,
+            ),
+        )
+
         ssm.StringParameter(
             self,
             id="sns_topic_ssm_param",
