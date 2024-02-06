@@ -1,16 +1,12 @@
-from os import walk
-from pathlib import Path
-
 import aws_cdk as cdk
-import aws_cdk.aws_iam as iam
 import aws_cdk.aws_sns as sns
 import aws_cdk.aws_ssm as ssm
-import yaml
 
 from aws_cdk import Aspects
 from aws_cdk.aws_budgets import CfnBudget as Budget
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars, GovernanceVars
+from cdk_opinionated_constructs.utils import load_properties
 from constructs import Construct
 
 
@@ -33,21 +29,11 @@ class GovernanceStack(cdk.Stack):
             **kwargs: Additional keyword arguments.
         """
         super().__init__(scope, construct_id, env=env, **kwargs)
-
-        props_env: dict[list, dict] = {}
         config_vars = ConfigurationVars(**props)
 
-        for dir_path, dir_names, files in walk(f"cdk/config/{config_vars.stage}", topdown=False):  # noqa
-            for file_name in files:
-                file_path = Path(f"{dir_path}/{file_name}")
-                with file_path.open(encoding="utf-8") as f:
-                    props_env |= yaml.safe_load(f)
+        props_env = load_properties(stage=config_vars.stage)
 
-        props_tags = props["tags"]
-        conf_tags = props_env["tags"]  # type: ignore
-        updated_props = {**props_env, **props, "tags": {**props_tags, **conf_tags}}
-
-        governance_vars = GovernanceVars(**updated_props)
+        governance_vars = GovernanceVars(**props_env)
 
         bill_sns_topic = sns.Topic.from_topic_arn(
             self,
@@ -56,14 +42,6 @@ class GovernanceStack(cdk.Stack):
                 self,
                 parameter_name=f"/{config_vars.project}/{config_vars.stage}/topic/alarm/arn",
             ),
-        )
-        bill_sns_topic.add_to_resource_policy(
-            iam.PolicyStatement(
-                effect=iam.Effect.ALLOW,
-                principals=[iam.ServicePrincipal(service="budgets.amazonaws.com")],
-                actions=["SNS:Publish"],
-                resources=[bill_sns_topic.topic_arn],
-            )
         )
 
         NagSuppressions.add_resource_suppressions(
