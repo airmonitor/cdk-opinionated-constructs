@@ -61,8 +61,7 @@ class NotificationsStack(cdk.Stack):
 
         sns_construct = SNSTopic(self, id="topic_construct")
         sns_topic = sns_construct.create_sns_topic(
-            topic_name=f"{config_vars.project}-{config_vars.stage}-alarms",
-            master_key=None,
+            topic_name=f"{config_vars.project}-{config_vars.stage}-alarms", master_key=None
         )
 
         # grant cloudwatch permissions to publish to the topic

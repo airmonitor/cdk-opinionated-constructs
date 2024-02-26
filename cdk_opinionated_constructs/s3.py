@@ -4,7 +4,6 @@ Security parameters are set by default
 """
 
 import aws_cdk as cdk
-import aws_cdk.aws_iam as iam
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_s3 as s3
 
@@ -70,6 +69,8 @@ class S3Bucket(Construct):
             bucket_name=bucket_name,
             encryption=encryption,
             encryption_key=kms_key,
+            enforce_ssl=bool(enforce_ssl),
+            minimum_tls_version=1.2,
             event_bridge_enabled=bool(kwargs.get("event_bridge_enabled")),
             lifecycle_rules=[
                 s3.LifecycleRule(
@@ -88,17 +89,5 @@ class S3Bucket(Construct):
             server_access_logs_bucket=server_access_logs_bucket,
             versioned=True,
         )
-
-        if enforce_ssl:
-            bucket.add_to_resource_policy(
-                iam.PolicyStatement(
-                    sid="EnforceTLSv12orHigher",
-                    principals=[iam.AnyPrincipal()],
-                    actions=["*"],
-                    effect=iam.Effect.DENY,
-                    resources=[bucket.bucket_arn, f"{bucket.bucket_arn}/*"],
-                    conditions={"Bool": {"aws:SecureTransport": "false"}, "NumericLessThan": {"s3:TlsVersion": 1.2}},
-                )
-            )
 
         return bucket

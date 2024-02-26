@@ -7,6 +7,7 @@ CDK constructs with added security configuration
 ## S3 Bucket example:
 ```python
 """Test S3 construct against cdk-nag."""
+
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_s3 as s3
 from aws_cdk import Aspects, Stack
@@ -54,6 +55,7 @@ class TestS3Stack(Stack):
 
 ```python
 """Test SNS construct against cdk-nag."""
+
 import aws_cdk.aws_kms as kms
 from aws_cdk import Aspects, Stack
 from cdk_nag import (
@@ -87,6 +89,7 @@ class TestSNSStack(Stack):
 
 ```python
 """Test AWS Lambda function construct.."""
+
 import aws_cdk.aws_lambda as lmb
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
@@ -151,8 +154,10 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         ]
 ```
 ## AWS Lambda monitoring example:
+
 ```python
 """Test AWS Lambda function construct."""
+
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_lambda as lmb
 import cdk_monitoring_constructs as cdk_monitoring
@@ -254,6 +259,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
 ## AWS Lambda Docker example:
 ```python
 """Test AWS Lambda docker function construct."""
+
 import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_ecr as ecr
@@ -352,6 +358,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
 
 ```python
 """Test AWS WAFv2 construct against cdk-nag."""
+
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
 from aws_cdk import Aspects, Stack
@@ -432,6 +439,7 @@ class TestWAFv2Stack(Stack):
 
 ```python
 """Example code for Application Load Balancer cdk stack."""
+
 import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
@@ -534,6 +542,7 @@ class TestECRStack(Stack):
 ## Network Load Balancer example
 ```python
 """Example code for Network Load Balancer cdk stack."""
+
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
 from aws_cdk import Aspects, Stack
@@ -599,6 +608,7 @@ class TestNLBStack(Stack):
 ## RDS PostgresSQL Instance example
 ```python
 """Example code for Application Load Balancer cdk stack."""
+
 import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_kms as kms
@@ -700,6 +710,7 @@ class TestRDSPostgresSQLStack(Stack):
 ## RDS MySQL Instance example
 ```python
 """Example code for Application Load Balancer cdk stack."""
+
 import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_kms as kms
