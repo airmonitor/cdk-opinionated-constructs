@@ -111,7 +111,7 @@ def main():
     cloudwatch = create_cloudwatch_client(aws_region)
 
     end_time = datetime.now(UTC)
-    start_time = end_time - timedelta(minutes=25)
+    start_time = end_time - timedelta(minutes=10)
 
     datapoints = get_metric_statistics(cloudwatch, "AWS/Lambda", "Errors", function_name, start_time, end_time)
 
