@@ -1,5 +1,4 @@
-"""The CI/CD stage - implements jobs to validate code quality.
-"""
+"""The CI/CD stage - implements jobs to validate code quality."""
 
 import aws_cdk as cdk
 
