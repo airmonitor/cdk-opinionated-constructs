@@ -69,13 +69,13 @@ class ConfigurationVars(PipelinePluginsVars):
 
       - project (str): The name of the project.
 
-      - stage (Literal["dev", "ppe", "prod", "dr"]): The deployment stage.
+      - stage (str): The deployment stage.
     """
 
     alarm_emails: list[EmailStr]
     plugins: PipelinePluginsVars
     project: str
-    stage: Literal["dev", "ppe", "prod", "dr"]
+    stage: str
 
 
 class ApplicationTags(BaseModel):
