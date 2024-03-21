@@ -20,38 +20,31 @@ class NotificationsStack(cdk.Stack):
     """
 
     def __init__(self, scope: Construct, construct_id: str, env: cdk.Environment, props: dict, **kwargs) -> None:
-        """Initializes the NotificationsStack construct.
-
-        Parameters:
-        - scope (Construct): The parent construct.
-        - construct_id (str): The construct ID.
-        - env (cdk.Environment): The CDK environment.
-        - props (dict): Stack configuration properties.
-        - **kwargs: Additional keyword arguments passed to the Stack constructor.
-
-        The constructor does the following:
-
-        1. Call the parent Stack constructor.
-
-        2. Loads configuration variables from YAML files.
-
-        3. Create a NotificationVars object from props.
-
-        4. Creates an SNS topic for alarms using the SNSTopic construct.
-
-        5. Grants CloudWatch permissions to publish to the SNS topic.
-
-        6. Creates an SSM parameter to store the SNS topic ARN.
-
-        7. Subscribe an email address to the SNS topic.
-
-        8. Conditionally create a Chatbot Slack channel subscription if Slack credentials are provided.
-
-        9. Adds CFN-NAG suppression.
-
-        10. Validates the stack against the AWS Solutions checklist using Aspects.
         """
+        Parameters:
+        scope (Construct): The scope in which to define this construct.
+        construct_id (str): The scoped construct ID. Must be unique amongst siblings in the same scope.
+        env (cdk.Environment): The deployment environment (account/region) where the stack will be deployed.
+        props (dict): The properties for the notifications stack.
+        **kwargs: Additional keyword arguments.
 
+        Functionality:
+        Initializes a new instance of the NotificationsStack class,
+        which creates a notification CloudFormation stack.
+        This stack includes an SNS topic
+        configured with specific policies for CloudWatch and AWS Budgets to publish messages.
+        It also supports sending notifications to an email address and optionally to a Slack channel via AWS Chatbot.
+
+        Arguments:
+        scope: The scope in which this stack is defined.
+        construct_id: The unique ID for this stack.
+        env: The AWS environment (account and region) where the stack will be deployed.
+        props: A dictionary containing configuration properties for the stack,
+        such as project name, stage, and notification settings.
+
+        Returns:
+        None
+        """
         super().__init__(scope, construct_id, env=env, **kwargs)
         config_vars = ConfigurationVars(**props)
 
@@ -131,6 +124,12 @@ class NotificationsStack(cdk.Stack):
             chatbot_iam_role.add_to_policy(
                 iam.PolicyStatement(
                     actions=["cloudwatch:Describe*", "cloudwatch:Get*", "cloudwatch:List*"],
+                    resources=["*"],
+                ),
+            )
+            chatbot_iam_role.add_to_policy(
+                iam.PolicyStatement(
+                    actions=["codepipeline:RetryStageExecution"],
                     resources=["*"],
                 ),
             )
