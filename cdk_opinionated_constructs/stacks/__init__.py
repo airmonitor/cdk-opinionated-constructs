@@ -23,10 +23,7 @@ def count_characters_number(values: dict[list, dict] | dict[str, str]) -> int:
     Returns:
       - The number of characters.
     """
-
-    total_value_characters = sum(len(str(v)) for v in values.values())
-    total_key_characters = sum(len(str(v)) for v in values)
-    return total_key_characters + total_value_characters
+    return len(str(values))
 
 
 def reduce_items_number(

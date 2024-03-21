@@ -4,7 +4,7 @@ import aws_cdk.aws_ssm as ssm
 from aws_cdk import Aspects
 from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
-from cdk_opinionated_constructs.stacks import count_characters_number, reduce_items_number, set_ssm_parameter_tier_type
+from cdk_opinionated_constructs.stacks import reduce_items_number, set_ssm_parameter_tier_type
 from cdk_opinionated_constructs.utils import load_properties
 from constructs import Construct
 
@@ -42,7 +42,6 @@ class ServicesTestsStack(cdk.Stack):
         config_vars = ConfigurationVars(**props)
 
         props_env = load_properties(stage=config_vars.stage)
-        character_number = count_characters_number(props_env)
         ssm_parameter_value = reduce_items_number(values=props_env)
 
         ssm.StringParameter(
@@ -50,7 +49,7 @@ class ServicesTestsStack(cdk.Stack):
             id="config_file",
             string_value=str(ssm_parameter_value),
             parameter_name=f"/{config_vars.project}/{config_vars.stage}/services/tests/config",
-            tier=set_ssm_parameter_tier_type(character_number=character_number),
+            tier=set_ssm_parameter_tier_type(character_number=len(str(ssm_parameter_value))),
         )
 
         Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))

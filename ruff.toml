@@ -1,12 +1,5 @@
 line-length = 120
 target-version = "py311"
-[lint.mccabe]
-max-complexity = 15
-
-[lint.isort]
-combine-as-imports = true
-lines-between-types = 1
-known-third-party = ["pydantic", "aws_lambda_powertools", "cdk_opinionated_constructs"]
 
 [format]
 preview = true
@@ -66,8 +59,7 @@ ignore = [
     "FA100", # Enable this rule when drop support to Python 3.7,
     "COM812",
     "ISC001",
-    "PLR0917",
-    "S101"
+    "PLR0917"
 ]
 
 exclude = [
@@ -99,3 +91,11 @@ exclude = [
     ".mypy_cache",
     ".github",
 ]
+
+[lint.mccabe]
+max-complexity = 15
+
+[lint.isort]
+combine-as-imports = true
+lines-between-types = 1
+known-third-party = ["pydantic", "aws_lambda_powertools", "cdk_opinionated_constructs"]
