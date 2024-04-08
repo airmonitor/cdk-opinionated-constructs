@@ -86,9 +86,16 @@ class NotificationsStack(cdk.Stack):
             parameter_name=f"/{config_vars.project}/{config_vars.stage}/topic/alarm/arn",
         )
 
-        sns_topic.add_subscription(
-            topic_subscription=sns_subscriptions.EmailSubscription(email_address=props["ci_cd_notification_email"]),
-        )
+        if ci_cd_notification_email := props.get("ci_cd_notification_email"):
+            sns_topic.add_subscription(
+                topic_subscription=sns_subscriptions.EmailSubscription(email_address=ci_cd_notification_email),
+            )
+
+        if alarm_emails := props.get("alarm_emails"):
+            for email in alarm_emails:
+                sns_topic.add_subscription(
+                    topic_subscription=sns_subscriptions.EmailSubscription(email_address=email),
+                )
 
         if notifications_vars.slack_workspace_id and notifications_vars.slack_channel_id_alarms:
             chatbot_iam_role = iam.Role(
