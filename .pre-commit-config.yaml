@@ -4,7 +4,7 @@ default_language_version:
   python: python3.11
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: check-added-large-files
       - id: check-ast
@@ -31,7 +31,7 @@ repos:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.3.3'
+    rev: 'v0.3.5'
     hooks:
       - id: ruff
         args: [ --fix]
@@ -71,7 +71,7 @@ repos:
     hooks:
       - id: gitleaks
   - repo: https://github.com/returntocorp/semgrep # semgrep does not support linux arm64
-    rev: 'v1.66.0'
+    rev: 'v1.67.0'
     hooks:
       - id: semgrep
         # See semgrep.dev/rulesets to select a ruleset and copy its URL
