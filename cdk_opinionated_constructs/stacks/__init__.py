@@ -204,34 +204,37 @@ def pipeline_trigger(self, pipeline_vars: PipelineVars, props: dict, schedule: e
     apply_tags(props=props, resource=trigger)  # type: ignore
 
 
-def create_pipeline_notifications(self, notifications_sns_topic: sns.Topic | sns.ITopic, pipeline_vars: PipelineVars):
-    """Creates notifications for the pipeline.
-
+def create_pipeline_notifications(
+    self,
+    notifications_sns_topic: sns.Topic | sns.ITopic,
+    pipeline_vars: PipelineVars,
+    use_chatbot: bool = True,  # noqa: FBT001, FBT002
+):
+    """
     Parameters:
-
-    notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic to publish notifications to.
-
-    pipeline_vars (PipelineVars): A Pydantic model containing pipeline configuration values like
-    notification email, Slack workspace ID, etc.
+        notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic for pipeline notifications.
+        pipeline_vars (PipelineVars): A model containing pipeline configuration values.
+        use_chatbot (bool, optional): Flag to enable or disable Slack notifications using Chatbot. Defaults to True.
 
     Functionality:
+        1. Enables SNS notifications if the recipient email address is provided in `pipeline_vars`.
+        2. Enables pipeline notifications if the Slack CI/CD channel ID is provided in `pipeline_vars`.
+        3. Enables Slack notifications using AWS Chatbot if the Slack workspace ID, CI/CD channel ID,
+        and `use_chatbot` flag are provided.
 
-    1. if a notification email address is provided in pipeline_vars, enable email notifications by calling
-    pipeline_email_notifications()
-
-    2. enable default pipeline notifications by calling pipeline_notifications()
-
-    3. if Slack workspace ID and channel ID are provided in pipeline_vars, enable Slack notifications by
-    creating a SlackChannelConfiguration construct
+        The function configures notifications based on the provided configuration values in `pipeline_vars`.
+        It uses the `notifications_sns_topic` to send notifications via email or Slack.
+        If `use_chatbot` is set to True and the required Slack configuration values are provided,
+        it creates a Slack channel configuration using AWS Chatbot.
     """
-
     # Enable SNS notifications if the recipient email address was provided
     if pipeline_vars.ci_cd_notification_email:
         pipeline_email_notifications(sns_topic=notifications_sns_topic)
     if pipeline_vars.slack_ci_cd_channel_id:
         pipeline_notifications(self, sns_topic=notifications_sns_topic)
+
     # Enable Slack notifications if recipient workspace and channel slack were provided.
-    if pipeline_vars.slack_workspace_id and pipeline_vars.slack_ci_cd_channel_id:
+    if pipeline_vars.slack_workspace_id and pipeline_vars.slack_ci_cd_channel_id and use_chatbot:
         chatbot.SlackChannelConfiguration(
             self,
             "chatbot",
