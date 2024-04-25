@@ -136,6 +136,11 @@ def pipeline_notifications(self, sns_topic: sns.ITopic) -> None:
         detail_type=DetailType.FULL,
         events=[
             "codepipeline-pipeline-pipeline-execution-failed",
+            "codepipeline-pipeline-pipeline-execution-canceled",
+            "codepipeline-pipeline-pipeline-execution-started",
+            "codepipeline-pipeline-pipeline-execution-resumed",
+            "codepipeline-pipeline-pipeline-execution-succeeded",
+            "codepipeline-pipeline-pipeline-execution-superseded",
             "codepipeline-pipeline-action-execution-failed",
             "codepipeline-pipeline-stage-execution-failed",
             "codepipeline-pipeline-manual-approval-failed",
