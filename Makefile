@@ -24,10 +24,12 @@ activate:
 
 install:
 	@echo "Installing dependencies from requirements files"
+	pip install uv pur
 	pip install --upgrade pip
-	pip install -r requirements.txt
-	pip install -r requirements-dev.txt
-	pip install pre-commit pytest
+	pip install --upgrade pip
+	uv pip install -r test/requirements.txt
+	uv pip install -r test/requirements-dev.txt
+	uv pip install pre-commit pytest pytest-snapshot
 
 pre-commit:
 	@echo "Running pre-commit"
@@ -44,6 +46,8 @@ test:
 
 update:
 	@echo "Updating used tools and scripts"
+	pur -r test/requirements.txt
+	pur -r test/requirements-dev.txt
 	pre-commit autoupdate
 
 clean:
