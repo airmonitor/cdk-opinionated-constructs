@@ -1,3 +1,4 @@
+import operator
 import sys
 
 from datetime import UTC, datetime, timedelta
@@ -70,7 +71,7 @@ def print_metric_data(datapoints):
         print("No datapoints found")
         sys.exit(1)
 
-    datapoints.sort(key=lambda x: x["Timestamp"])
+    datapoints.sort(key=operator.itemgetter("Timestamp"))
 
     for datapoint in datapoints:
         timestamp = datapoint["Timestamp"]
