@@ -94,7 +94,7 @@ def print_metric_data(datapoints):
             sys.exit(1)
 
 
-def main():
+def main(time_delta_minutes=10):
     """The main function to fetch and print Lambda invocation metric data.
 
     It requires two command line arguments - the function name and AWS region.
@@ -110,17 +110,20 @@ def main():
     - None
     """
 
-    if len(sys.argv) != 3:
-        print("Usage: python script.py <function_name> <aws_region>")
+    if len(sys.argv) < 3 or len(sys.argv) > 4:
+        print("Usage: python script.py <function_name> <aws_region> [time_delta_minutes]")
         sys.exit(1)
 
     function_name = sys.argv[1]
     aws_region = sys.argv[2]
 
+    if len(sys.argv) == 4:
+        time_delta_minutes = int(sys.argv[3])
+
     cloudwatch = create_cloudwatch_client(aws_region)
 
     end_time = datetime.now(UTC)
-    start_time = end_time - timedelta(minutes=10)
+    start_time = end_time - timedelta(minutes=time_delta_minutes)
 
     datapoints = get_metric_statistics(
         client=cloudwatch,
