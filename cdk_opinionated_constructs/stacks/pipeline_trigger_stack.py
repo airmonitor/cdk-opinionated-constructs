@@ -42,7 +42,7 @@ class PipelineTriggerStack(cdk.Stack):
         config_vars = ConfigurationVars(**props)
 
         # Filter all ssm parameters that have the name of the stage
-        filtered_ssm_parameters = list(
+        filtered_ssm_parameters: list[str] = list(
             filter(lambda x: config_vars.stage in x, config_vars.plugins.pipeline_trigger_ssm_parameters)  # type: ignore
         )  # type: ignore
 
