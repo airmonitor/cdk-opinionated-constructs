@@ -70,15 +70,3 @@ repos:
     rev: v8.18.4
     hooks:
       - id: gitleaks
-  - repo: https://github.com/returntocorp/semgrep # semgrep does not support linux arm64
-    rev: 'v1.73.0'
-    hooks:
-      - id: semgrep
-        # See semgrep.dev/rulesets to select a ruleset and copy its URL
-        exclude: "cdk/config/config-ci-cd.yaml"
-        args: [
-        '--config', 'p/python',
-        '--config', 'p/default',
-        '--error',
-        '--skip-unknown-extensions',
-        ]
