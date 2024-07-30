@@ -274,7 +274,7 @@ class WAFv2(Construct):
         )
 
     @staticmethod
-    def __aws_bot_control_rule(count: bool = False):  # noqa: FBT001 FBT002
+    def __aws_bot_control_rule(count: bool = False):  # noqa: FBT001, FBT002
         if count:
             override_action = wafv2.CfnWebACL.OverrideActionProperty(count={})
         else:
@@ -315,6 +315,7 @@ class WAFv2(Construct):
         aws_sqli_rule: bool = False,  # noqa: FBT001, FBT002
         aws_account_takeover_prevention: bool | dict[Any, Any] = False,  # noqa: FBT001, FBT002
         aws_bot_control_rule: bool = False,  # noqa: FBT001, FBT002
+        aws_bot_control_count: bool = False,  # noqa: FBT001, FBT002
         waf_scope: Literal["REGIONAL", "CLOUDFRONT"] = "REGIONAL",
     ) -> wafv2.CfnWebACL:
         """Creates a WAF WebACL with configured rules.
@@ -330,6 +331,7 @@ class WAFv2(Construct):
         - aws_sqli_rule: Whether to enable SQLi rule.
         - aws_account_takeover_prevention: Config for account takeover prevention.
         - aws_bot_control: Whether to enable AWS Bot Control rule.
+        - aws_bot_control_count: Whether to count AWS Bot Control rule.
         - waf_scope: WAF scope - regional or Cloudfront.
 
         It enables the AWS IP reputation list rule by default.
@@ -389,7 +391,10 @@ class WAFv2(Construct):
 
         if aws_bot_control_rule:
             # 7. Bot Control Rule
-            aws_bot_control_rule = self.__aws_bot_control_rule()
+            if aws_bot_control_count:
+                aws_bot_control_rule = self.__aws_bot_control_rule(count=True)
+            else:
+                aws_bot_control_rule = self.__aws_bot_control_rule()
             waf_rules.append(aws_bot_control_rule)
 
         return wafv2.CfnWebACL(
