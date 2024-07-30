@@ -22,6 +22,7 @@ setup(
         "pydantic>=2.5.0",
         "pydantic-core>=2.14.0",
         "pyyaml>=6.0.0",
+        "tenacity>=8.0.1",
     ],
     python_requires=">=3.11",
 )

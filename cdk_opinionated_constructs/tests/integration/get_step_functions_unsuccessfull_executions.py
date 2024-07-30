@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 import boto3
 
 from botocore.config import Config
+from tenacity import retry, stop_after_delay, wait_fixed
 
 
 def create_cloudwatch_client(region_name):
@@ -51,6 +52,30 @@ def print_metric_data(datapoints):
             sys.exit(0)
 
 
+@retry(stop=stop_after_delay(300), wait=wait_fixed(10))
+def get_metric_statistics_with_retry(*args, **kwargs):
+    """
+    Parameters:
+        *args: Variable length argument list to be passed to the get_metric_statistics function.
+        **kwargs: Arbitrary keyword arguments to be passed to the get_metric_statistics function.
+
+    Functionality:
+        Calls the get_metric_statistics function with the provided arguments and retries the operation
+        if no datapoints are found. The function uses the @retry decorator to implement the retry logic.
+
+    Returns:
+        list: A list of datapoints returned by the get_metric_statistics function.
+
+    Raises:
+        ValueError: If no datapoints are found after retrying.
+    """
+
+    datapoints = get_metric_statistics(*args, **kwargs)
+    if not datapoints:
+        raise ValueError("No datapoints found")
+    return datapoints
+
+
 def main(time_delta_minutes=10):
     """The main function to fetch and print Step Functions error metric
     data."""
@@ -71,10 +96,14 @@ def main(time_delta_minutes=10):
 
     for execution_type in ("ExecutionsFailed", "ExecutionsTimedOut", "ExecutionsAborted"):
         metric_name = execution_type
-        datapoints = get_metric_statistics(
-            cloudwatch, "AWS/States", metric_name, state_machine_arn, start_time, end_time
-        )
-        print_metric_data(datapoints)
+        try:
+            datapoints = get_metric_statistics_with_retry(
+                cloudwatch, "AWS/States", metric_name, state_machine_arn, start_time, end_time
+            )
+            print_metric_data(datapoints)
+        except ValueError as e:
+            print(f"Error for {metric_name}: {e}")
+            continue
 
 
 if __name__ == "__main__":
