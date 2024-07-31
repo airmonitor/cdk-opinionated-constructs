@@ -273,6 +273,37 @@ class WAFv2(Construct):
             ),
         )
 
+    @staticmethod
+    def __aws_bot_control_rule(count: bool = False):  # noqa: FBT001, FBT002
+        if count:
+            override_action = wafv2.CfnWebACL.OverrideActionProperty(count={})
+        else:
+            override_action = wafv2.CfnWebACL.OverrideActionProperty(none={})
+
+        return wafv2.CfnWebACL.RuleProperty(
+            name="AWS-AWSManagedRulesBotControlRuleSet",
+            priority=7,
+            override_action=override_action,
+            statement=wafv2.CfnWebACL.StatementProperty(
+                managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                    name="AWSManagedRulesBotControlRuleSet",
+                    vendor_name="AWS",
+                    managed_rule_group_configs=[
+                        wafv2.CfnWebACL.ManagedRuleGroupConfigProperty(
+                            aws_managed_rules_bot_control_rule_set=wafv2.CfnWebACL.AWSManagedRulesBotControlRuleSetProperty(
+                                inspection_level="COMMON"
+                            )
+                        )
+                    ],
+                )
+            ),
+            visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled=True,
+                metric_name="AWS-AWSManagedRulesBotControlRuleSet",
+                sampled_requests_enabled=True,
+            ),
+        )
+
     def web_acl(
         self,
         name: str,
@@ -283,6 +314,8 @@ class WAFv2(Construct):
         aws_bad_inputs_rule: bool = False,  # noqa: FBT001, FBT002
         aws_sqli_rule: bool = False,  # noqa: FBT001, FBT002
         aws_account_takeover_prevention: bool | dict[Any, Any] = False,  # noqa: FBT001, FBT002
+        aws_bot_control_rule: bool = False,  # noqa: FBT001, FBT002
+        aws_bot_control_count: bool = False,  # noqa: FBT001, FBT002
         waf_scope: Literal["REGIONAL", "CLOUDFRONT"] = "REGIONAL",
     ) -> wafv2.CfnWebACL:
         """Creates a WAF WebACL with configured rules.
@@ -297,6 +330,8 @@ class WAFv2(Construct):
         - aws_bad_inputs_rule: Whether to enable bad inputs rule.
         - aws_sqli_rule: Whether to enable SQLi rule.
         - aws_account_takeover_prevention: Config for account takeover prevention.
+        - aws_bot_control: Whether to enable AWS Bot Control rule.
+        - aws_bot_control_count: Whether to count AWS Bot Control rule.
         - waf_scope: WAF scope - regional or Cloudfront.
 
         It enables the AWS IP reputation list rule by default.
@@ -308,6 +343,7 @@ class WAFv2(Construct):
         - Bad inputs blocking
         - SQLi blocking
         - Account takeover prevention
+        - Bot Control
 
         Returns the configured CfnWebACL.
         """
@@ -352,6 +388,14 @@ class WAFv2(Construct):
                 aws_account_takeover_prevention
             )
             waf_rules.append(aws_account_takeover_prevention_rule)
+
+        if aws_bot_control_rule:
+            # 7. Bot Control Rule
+            if aws_bot_control_count:
+                aws_bot_control_rule = self.__aws_bot_control_rule(count=True)
+            else:
+                aws_bot_control_rule = self.__aws_bot_control_rule()
+            waf_rules.append(aws_bot_control_rule)
 
         return wafv2.CfnWebACL(
             self,
