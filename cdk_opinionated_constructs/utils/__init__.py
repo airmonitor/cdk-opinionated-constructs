@@ -50,42 +50,53 @@ def apply_tags(props: dict, resource: cdk.Stack | cdk.Stage) -> Stack | Stage:
     return resource
 
 
-def load_properties(stage: str) -> dict:
-    """Loads configuration properties from YAML files.
-
-    Returns:
-        props (dict): Dictionary containing configuration properties loaded from YAML files.
-
-    Functionality:
-        1. Load base config properties from cdk/config/config-ci-cd.yaml into prop dict.
-        2. Set props['stage'] to value of STAGE environment variable.
-        3. Walk the directory tree under cdk/config/<STAGE> and load properties from
-           each .yaml file into props_env dict.
-        4. Merge props_env into props to produce final props dict containing
-           properties from all config files.
-        5. Return populated props dict.
-    """
-
+def _load_base_properties(stage: str) -> dict:
+    """Loads base properties from the config-ci-cd.yaml file."""
     config_file_path = Path("cdk/config/config-ci-cd.yaml")
     with config_file_path.open(encoding="utf-8") as file:
         props = yaml.safe_load(file)
         props["stage"] = stage
+    return props
 
-    props_env: dict[list, dict] = {}
 
-    for dir_path, dir_names, files in walk(f"cdk/config/{stage}", topdown=False):  # noqa
+def _load_stage_properties(stage: str) -> dict:
+    """Loads stage-specific properties from files in the stage directory."""
+    props_env: dict[str, str] = {}
+    for dir_path, _, files in walk(f"cdk/config/{stage}", topdown=False):
         for file_name in files:
             file_path = Path(f"{dir_path}/{file_name}")
             with file_path.open(encoding="utf-8") as f:
-                props_env |= yaml.safe_load(f)
+                props_env.update(yaml.safe_load(f) or {})
+    return props_env
 
-    props_tags = props["tags"]
-    conf_tags = props_env["tags"]  # type: ignore
+
+def load_properties(stage: str) -> dict:
+    """Loads properties from YAML configuration files.
+
+    Args:
+        stage (str): The deployment stage (e.g., 'dev', 'prod').
+
+    Returns:
+        dict: A dictionary containing the loaded properties.
+    """
+
+    props = _load_base_properties(stage)
+    props_env = _load_stage_properties(stage)
+
+    # Merge tags, giving precedence to stage-specific tags
+    props_tags = props.get("tags", {})
+    conf_tags = props_env.get("tags", {})
     updated_props = {
         **props_env,
         **props,
         "tags": {**props_tags, **conf_tags},
-        "slack_channel_id_alarms": props_env["slack_channel_id_alarms"],  # type: ignore
     }
+
+    # Add optional properties if they exist in stage-specific config
+    optional_keys = ["slack_channel_id_alarms", "ms_teams_channel_id_alarms"]
+    for key in optional_keys:
+        value = props_env.get(key)
+        if value:
+            updated_props[key] = value
 
     return updated_props

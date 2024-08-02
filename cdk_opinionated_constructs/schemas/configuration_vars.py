@@ -120,12 +120,12 @@ class NotificationVars(BaseModel):
         slack_channel_id_alarms (str | None): The ID of the Slack channel for alarms.
         slack_workspace_id (str | None): The ID of the Slack workspace.
         ms_teams_team_id (str | None): The ID of the Microsoft Teams team.
-        ms_teams_channel_id (str | None): The ID of the Microsoft Teams channel.
+        ms_teams_channel_id_alarms (str | None): The ID of the Microsoft Teams channel.
         ms_teams_tenant_id (str | None): The ID of the Microsoft Teams tenant.
     """
 
     slack_channel_id_alarms: str | None = None
     slack_workspace_id: str | None = None
     ms_teams_team_id: str | None = None
-    ms_teams_channel_id: str | None = None
+    ms_teams_channel_id_alarms: str | None = None
     ms_teams_tenant_id: str | None = None
