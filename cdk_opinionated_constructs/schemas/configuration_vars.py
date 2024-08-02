@@ -110,23 +110,22 @@ class GovernanceVars(ConfigurationVars):
 class NotificationVars(BaseModel):
     """Defines the NotificationVars model.
 
-    Parameters:
-      - None
-
-    Attributes:
-
-      - slack_channel_id_alarms (constr | None): Optional Slack channel for alarm notifications.
-      constrained to 11 characters.
-
-      - slack_workspace_id (constr): Required Slack workspace ID. Constrained to 11 characters.
-
     Functionality:
+        - Represents configuration variables for notification services.
+        - Inherits from pydantic's BaseModel for data validation.
+        - All fields are optional and can be None.
+        - Provides fields for both Slack and Microsoft Teams notification configurations.
 
-      - defines a Pydantic model for notification configuration.
-      - Allows configuring different Slack channels for alarms and general notifications.
-      - slack_workspace_id is required.
-      other attributes are optional.
+    Arguments:
+        slack_channel_id_alarms (str | None): The ID of the Slack channel for alarms.
+        slack_workspace_id (str | None): The ID of the Slack workspace.
+        ms_teams_team_id (str | None): The ID of the Microsoft Teams team.
+        ms_teams_channel_id (str | None): The ID of the Microsoft Teams channel.
+        ms_teams_tenant_id (str | None): The ID of the Microsoft Teams tenant.
     """
 
-    slack_channel_id_alarms: str
+    slack_channel_id_alarms: str | None = None
     slack_workspace_id: str | None = None
+    ms_teams_team_id: str | None = None
+    ms_teams_channel_id: str | None = None
+    ms_teams_tenant_id: str | None = None
