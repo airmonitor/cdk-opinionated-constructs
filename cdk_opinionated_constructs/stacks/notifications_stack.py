@@ -146,7 +146,7 @@ class NotificationsStack(cdk.Stack):
             configuration_name=f"{config_vars.project}-{config_vars.stage}-ms-teams",
             iam_role_arn=chatbot_iam_role.role_arn,
             team_id=notifications_vars.ms_teams_team_id,
-            teams_channel_id=notifications_vars.ms_teams_channel_id,
+            teams_channel_id=notifications_vars.ms_teams_channel_id_alarms,
             teams_tenant_id=notifications_vars.ms_teams_tenant_id,
             logging_level="ERROR",
             sns_topic_arns=[self._sns_topic.topic_arn],
@@ -166,7 +166,7 @@ class NotificationsStack(cdk.Stack):
             chatbot_iam_role = self._create_chatbot_iam_role()
             if notifications_vars.slack_workspace_id and notifications_vars.slack_channel_id_alarms:
                 self._add_slack_integration(config_vars, notifications_vars, chatbot_iam_role)
-            if notifications_vars.ms_teams_team_id and notifications_vars.ms_teams_channel_id:
+            if notifications_vars.ms_teams_team_id and notifications_vars.ms_teams_channel_id_alarms:
                 self._add_ms_teams_integration(config_vars, notifications_vars, chatbot_iam_role)
 
         # Validate stack against AWS Solutions checklist
