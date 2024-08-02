@@ -270,7 +270,7 @@ def _configure_pipeline_ms_teams_notifications(
             scope,
             "ci-cd-ms-teams-chatbot",
             configuration_name=f"{pipeline_vars.project}-ci-cd",
-            notification_topics=[notifications_sns_topic],
+            sns_topic_arns=[notifications_sns_topic.topic_arn],
             team_id=pipeline_vars.ms_teams_team_id,
             teams_channel_id=pipeline_vars.ms_teams_ci_cd_channel_id,
             teams_tenant_id=pipeline_vars.ms_teams_tenant_id,
