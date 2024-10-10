@@ -137,13 +137,23 @@ class NotificationsStack(cdk.Stack):
         )
 
     def _add_ms_teams_integration(
-        self, config_vars: ConfigurationVars, notifications_vars: NotificationVars, chatbot_iam_role: iam.Role
+        self,
+        config_vars: ConfigurationVars,
+        notifications_vars: NotificationVars,
+        chatbot_iam_role: iam.Role,
+        name_prefix: str | None,
     ):
         """Configures MS Teams integration for notifications."""
+
+        configuration_name = f"{config_vars.project}-{config_vars.stage}-ms-teams"
+
+        if name_prefix:
+            configuration_name = f"{config_vars.project}-{config_vars.stage}-{name_prefix}-ms-teams"
+
         chatbot.CfnMicrosoftTeamsChannelConfiguration(
             self,
             "ms_teams_chatbot",
-            configuration_name=f"{config_vars.project}-{config_vars.stage}-ms-teams",
+            configuration_name=configuration_name,
             iam_role_arn=chatbot_iam_role.role_arn,
             team_id=notifications_vars.ms_teams_team_id,
             teams_channel_id=notifications_vars.ms_teams_channel_id_alarms,
@@ -152,8 +162,8 @@ class NotificationsStack(cdk.Stack):
             sns_topic_arns=[self._sns_topic.topic_arn],
         )
 
-    def __init__(self, scope: Construct, construct_id: str, env: cdk.Environment, props: dict, **kwargs) -> None:
-        super().__init__(scope, construct_id, env=env, **kwargs)
+    def __init__(self, scope: Construct, construct_id: str, env: cdk.Environment, props: dict) -> None:
+        super().__init__(scope, construct_id, env=env)
         config_vars = ConfigurationVars(**props)
         props_env = load_properties(stage=config_vars.stage)
         notifications_vars = NotificationVars(**props_env)
@@ -167,7 +177,9 @@ class NotificationsStack(cdk.Stack):
             if notifications_vars.slack_workspace_id and notifications_vars.slack_channel_id_alarms:
                 self._add_slack_integration(config_vars, notifications_vars, chatbot_iam_role)
             if notifications_vars.ms_teams_team_id and notifications_vars.ms_teams_channel_id_alarms:
-                self._add_ms_teams_integration(config_vars, notifications_vars, chatbot_iam_role)
+                self._add_ms_teams_integration(
+                    config_vars, notifications_vars, chatbot_iam_role, name_prefix=props.get("ms_teams_prefix")
+                )
 
         # Validate stack against AWS Solutions checklist
         NagSuppressions.add_stack_suppressions(self, self.nag_suppression())
