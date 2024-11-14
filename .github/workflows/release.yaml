@@ -68,7 +68,7 @@ jobs:
           generate_release_notes: true
 
   setup_and_build:
-    name: Upload release to PyPI
+    name: Setup and build
     needs: [code_quality]
     runs-on: ubuntu-latest
     environment:
