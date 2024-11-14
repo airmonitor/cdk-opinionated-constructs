@@ -12,6 +12,30 @@ env:
   OWNER: "airmonitor"
 
 jobs:
+  code_quality:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          make venv
+          . .venv/bin/activate
+          make install
+
+      - name: Run pre-commit
+        run: |
+          . .venv/bin/activate
+          make pre-commit
+
   create-release:
     runs-on: ubuntu-latest
     permissions:
@@ -44,11 +68,17 @@ jobs:
           generate_release_notes: true
 
   setup_and_build:
+    name: Upload release to PyPI
+    needs: [code_quality]
     runs-on: ubuntu-latest
+    environment:
+      name: release
     permissions:
       contents: write
-
+      id-token: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.13'
@@ -60,14 +90,15 @@ jobs:
           . .venv/bin/activate
           make install
 
-      - name: Run pre-commit
-        run: |
-          . .venv/bin/activate
-          make pre-commit
-
       - name: Build
         run: |
           uv build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
 
   pypi_publish:
     name: Upload release to PyPI
