@@ -8,7 +8,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="cdk-opinionated-constructs",
-    version="3.12.1",
+    version="3.13.1",
     description="AWS CDK constructs come without added security configurations.",
     long_description="The idea behind this project is to create secured constructs from the start. \n"
     "Supported constructs: ALB, ECR, LMB, NLB, S3, SNS, WAF, RDS",
@@ -16,11 +16,11 @@ setup(
     package_dir={"": "."},
     packages=find_packages(where="."),
     install_requires=[
-        "aws-cdk-lib>=2.98.0",
-        "constructs>=10.2.69",
+        "aws-cdk-lib>=2.167.0",
+        "constructs>=10.4.2",
         "cdk-monitoring-constructs>=6.0.0",
-        "pydantic>=2.5.0",
-        "pydantic-core>=2.14.0",
+        "pydantic>=2.9.0",
+        "pydantic-core>=2.23.0",
         "pyyaml>=6.0.0",
         "tenacity>=8.0.1",
     ],

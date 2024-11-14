@@ -24,11 +24,12 @@ jobs:
 
     - name: Install dependencies
       run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
         npm install -g aws-cdk
         cd test
-        python -m venv .venv
+        make venv
         source .venv/bin/activate
-        pip install -r requirements.txt
+        make install
 
     - name: Invoke CDK synth
       env:
