@@ -67,12 +67,15 @@ jobs:
           prerelease: ${{ steps.check_prerelease.outputs.IS_PRERELEASE }}
           generate_release_notes: true
 
-  setup_and_build:
-    needs: [code_quality]
+  pypi_publish:
+    name: Upload release to PyPI
+    needs: [code_quality, setup_and_build]
     runs-on: ubuntu-latest
+    environment:
+      name: release
     permissions:
       contents: write
-
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -95,16 +98,6 @@ jobs:
       - name: Build
         run: |
           uv build
-
-  pypi_publish:
-    name: Upload release to PyPI
-    needs: [code_quality, setup_and_build]
-    runs-on: ubuntu-latest
-    environment:
-      name: release
-    permissions:
-      id-token: write
-    steps:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
