@@ -69,7 +69,7 @@ jobs:
 
   pypi_publish:
     name: Upload release to PyPI
-    needs: [code_quality, setup_and_build]
+    needs: [code_quality]
     runs-on: ubuntu-latest
     environment:
       name: release
