@@ -1,8 +1,8 @@
 # Makefile for setting up and activating a Python virtual environment
 
 # Set the desired Python interpreter (change if needed)
-PYTHON := python3.11
-
+PYTHON := python3.13
+VERSION := 3.13.1
 # Virtual environment directory
 VENV := .venv
 
@@ -14,7 +14,7 @@ all: venv activate install
 # Create the virtual environment
 venv:
 	@echo "Creating Python virtual environment..."
-	$(PYTHON) -m venv $(VENV)
+	uv venv --python $(PYTHON) $(VENV)
 
 # Activate the virtual environment
 activate:
@@ -24,11 +24,14 @@ activate:
 
 install:
 	@echo "Installing dependencies from requirements files"
-	pip install uv pur
 	pip install --upgrade pip
-	pip install --upgrade pip
-	uv pip install -r test/requirements.txt
-	uv pip install -r test/requirements-dev.txt
+	pip install uv
+	uv pip install --system --native-tls --upgrade pip
+	uv pip install --system --native-tls pre-commit pytest pytest-snapshot
+
+local_install:
+	@echo "Installing dependencies from requirements files"
+	uv pip install --upgrade pip
 	uv pip install pre-commit pytest pytest-snapshot
 
 pre-commit:
@@ -46,19 +49,28 @@ test:
 
 update:
 	@echo "Updating used tools and scripts"
-	pur -r test/requirements.txt
-	pur -r test/requirements-dev.txt
 	pre-commit autoupdate
 
 clean:
 	@echo "Cleaning up..."
 	rm -rf $(VENV)
 
+build:
+	@echo "Building and uploading to PyPi"
+	rm -rf dist/*
+	uv build
+
+
+upload:
+	@echo "Building and uploading to PyPi"
+	uv publish --token $(PYPI_TOKEN)
+	rm -rf dist/*
+
 build_upload:
 	@echo "Building and uploading to PyPi"
 	rm -rf dist/*
-	python3 -m build
-	twine upload dist/*
+	uv build
+	uv publish --token $(PYPI_TOKEN)
 	rm -rf dist/*
 
 help:
