@@ -85,7 +85,7 @@ class AWSPythonLambdaFunction(Construct):
             self,
             id=construct_id,
             code=lmb.Code.from_asset(code_path),
-            compatible_runtimes=[lmb.Runtime.PYTHON_3_11],  # type: ignore
+            compatible_runtimes=[lmb.Runtime.PYTHON_3_13],  # type: ignore
         )
 
     def create_lambda_function(
@@ -172,7 +172,7 @@ class AWSPythonLambdaFunction(Construct):
             on_failure=kwargs.get("on_failure"),
             profiling=True,
             reserved_concurrent_executions=reserved_concurrent_executions,
-            runtime=lmb.Runtime.PYTHON_3_11,  # type: ignore
+            runtime=lmb.Runtime.PYTHON_3_13,  # type: ignore
             security_groups=kwargs.get("security_groups"),
             timeout=cdk.Duration.seconds(timeout),
             tracing=lmb.Tracing.ACTIVE if tracing else lmb.Tracing.DISABLED,
