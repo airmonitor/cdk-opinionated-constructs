@@ -19,9 +19,8 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
+
 
       - name: Get tag name
         id: get_tag
@@ -50,6 +49,10 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
       - name: Install dependencies
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
