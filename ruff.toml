@@ -59,7 +59,8 @@ ignore = [
     "FA100", # Enable this rule when drop support to Python 3.7,
     "COM812",
     "ISC001",
-    "PLR0917"
+    "PLR0917",
+    "RUF036"
 ]
 
 exclude = [
