@@ -24,8 +24,8 @@ class TrivySecurityHubConfig:
             Stores configuration parameters needed for creating and importing security findings.
 
         """
-        self.sts = boto3.client("sts")
-        self.security_hub = boto3.client("securityhub")
+        self.sts = boto3.client("sts", region_name=aws_region)
+        self.security_hub = boto3.client("securityhub", region_name=aws_region)
         self.aws_account = aws_account
         self.aws_region = aws_region
         self.project_name = project_name
