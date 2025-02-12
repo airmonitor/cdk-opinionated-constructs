@@ -2,7 +2,7 @@
 
 # Set the desired Python interpreter (change if needed)
 PYTHON := python3.11
-VERSION := 3.14.3
+VERSION := 3.15.0
 # Virtual environment directory
 VENV := .venv
 
@@ -11,30 +11,32 @@ STAGE?=ppe
 # Default target
 all: venv activate install
 
-# Create the virtual environment
-venv:
+venv: # Create new Python virtual environment
 	@echo "Creating Python virtual environment..."
-	uv venv --python $(PYTHON) $(VENV)
+	uv venv --seed --python $(PYTHON) $(VENV)
 
-# Activate the virtual environment
-activate:
+activate: # Activate Python virtual environment
 	@echo "Activating Python virtual environment..."
 	@echo "Run 'deactivate' to exit the virtual environment."
 	@. $(VENV)/bin/activate
 
-install:
+install: # Install all project dependencies and development tools
 	@echo "Installing dependencies from requirements files"
 	pip install --upgrade pip
 	pip install uv
 	uv pip install --system --native-tls --upgrade pip
+	uv pip install --system --native-tls -r requirements.txt
+	uv pip install --system --native-tls -r requirements-dev.txt
 	uv pip install --system --native-tls pre-commit pytest pytest-snapshot
 
-local_install:
+local_install: # Install minimal set of local development dependencies
 	@echo "Installing dependencies from requirements files"
-	uv pip install --upgrade pip
+	uv pip install pur
+	uv pip install -r requirements.txt
 	uv pip install pre-commit pytest pytest-snapshot
 
-pre-commit:
+
+pre-commit: # Run code quality checks on all Python files
 	@echo "Running pre-commit"
 	pre-commit run --files cdk_opinionated_constructs/*.py
 	pre-commit run --files cdk_opinionated_constructs/schemas/*.py
@@ -43,11 +45,11 @@ pre-commit:
 	pre-commit run --files cdk_opinionated_constructs/tests/integration/*.py
 	pre-commit run --files cdk_opinionated_constructs/utils/*.py
 
-test:
+tests: # Run infrastructure tests for specified stage
 	@echo "Running pytest for stage "
 	STAGE=$(STAGE) pytest -v cdk/tests/infrastructure/
 
-update:
+update: # Update all dependencies and tools to latest versions
 	@echo "Updating used tools and scripts"
 	pre-commit autoupdate
 
