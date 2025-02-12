@@ -6,8 +6,9 @@ import aws_cdk.aws_elasticloadbalancingv2 as albv2
 
 from aws_cdk import Aspects, Duration, Stack
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
-from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from constructs import Construct
+
+from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 
 
 class TestALBStack(Stack):
@@ -89,7 +90,6 @@ class TestALBStack(Stack):
                     "targets": [],
                     "healthy_http_codes": "200,302",
                     "deregistration_delay": Duration.minutes(1),
-                    "health_check_path": "/health-check",
                 }
             ],
         )
