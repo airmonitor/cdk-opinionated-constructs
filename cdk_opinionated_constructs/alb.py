@@ -98,7 +98,7 @@ class ApplicationLoadBalancer(Construct):
           - targets: List of targets for target group
           - deregistration_delay: Optional deregistration delay
           - healthy_http_codes: Optional healthy HTTP codes for health checks
-          - path: Optional path for health checks
+          - health_check_path: Optional path for health checks
 
         For each port definition, it will:
 
@@ -117,7 +117,8 @@ class ApplicationLoadBalancer(Construct):
                     "back_end_protocol": albv2.ApplicationProtocol.HTTPS,
                     "targets": [service],
                     "healthy_http_codes": "200,302",
-                    "deregistration_delay": cdk.Duration.minutes(1)
+                    "deregistration_delay": cdk.Duration.minutes(1),
+                    "health_check_path": "/health",
                 }
             ]
         )
@@ -144,7 +145,7 @@ class ApplicationLoadBalancer(Construct):
                 health_check=albv2.HealthCheck(
                     enabled=True,
                     healthy_http_codes=port_definition.get("healthy_http_codes"),
-                    path=port_definition.get("path"),
+                    path=port_definition.get("health_check_path"),
                 ),
                 port=back_end_port,
                 protocol=port_definition["back_end_protocol"],
