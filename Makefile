@@ -22,12 +22,8 @@ activate: # Activate Python virtual environment
 
 install: # Install all project dependencies and development tools
 	@echo "Installing dependencies from requirements files"
-	pip install --upgrade pip
-	pip install uv
-	uv pip install --system --native-tls --upgrade pip
-	uv pip install --system --native-tls -r requirements.txt
-	uv pip install --system --native-tls -r requirements-dev.txt
-	uv pip install --system --native-tls pre-commit pytest pytest-snapshot
+	uv pip install --upgrade pip
+	uv pip install pre-commit pytest pytest-snapshot
 
 local_install: # Install minimal set of local development dependencies
 	@echo "Installing dependencies from requirements files"
@@ -53,7 +49,7 @@ update: # Update all dependencies and tools to latest versions
 	@echo "Updating used tools and scripts"
 	pre-commit autoupdate
 
-clean:
+clean: # Remove virtual environment and cleanup project files
 	@echo "Cleaning up..."
 	rm -rf $(VENV)
 
@@ -61,7 +57,6 @@ build:
 	@echo "Building and uploading to PyPi"
 	rm -rf dist/*
 	uv build
-
 
 upload:
 	@echo "Building and uploading to PyPi"
@@ -75,16 +70,10 @@ build_upload:
 	uv publish --token $(PYPI_TOKEN)
 	rm -rf dist/*
 
-help:
-	@echo "Usage: make [target]"
-	@echo "Targets:"
-	@echo "  all        : Set up the virtual environment (default target)"
-	@echo "  venv       : Create the virtual environment"
-	@echo "  activate   : Activate the virtual environment"
-	@echo "  update     : Download and update custom configuration files"
-	@echo "  clean      : Remove the virtual environment"
-	@echo "  build_upload	: Build python package and upload it to the pypi repository"
-	@echo "  help       : Display this help message"
+help: # Display this help message
+	@printf "\n\033[1;32mAvailable commands: \033[00m\n\n"
+	@awk 'BEGIN {FS = ":.*#"; printf "\033[36m%-30s\033[0m %s\n", "target", "help"} /^[a-zA-Z0-9_-]+:.*?#/ { printf "\033[36m%-30s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
 
 
 .PHONY: all venv activate test clean pre-commit update help
