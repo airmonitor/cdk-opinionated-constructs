@@ -2,7 +2,7 @@
 
 # Set the desired Python interpreter (change if needed)
 PYTHON := python3.11
-VERSION := 3.15.7
+VERSION := 3.15.9
 # Virtual environment directory
 VENV := .venv
 
