@@ -105,36 +105,47 @@ class AWSPythonLambdaFunction(Construct):
         env_variables: None | dict = None,
         **kwargs,
     ) -> lmb.Function | lmb.IFunction:
-        """Creates a Lambda function from a local asset directory.
+        """Creates an AWS Lambda function with opinionated defaults and security settings.
 
         Parameters:
+            code_path (str): Path to the Lambda function code directory
+            env (cdk.Environment): AWS CDK environment object containing region/account information
+            function_name (str): Name of the Lambda function
+            layers (list): List of Lambda layers to attach to the function
+            reserved_concurrent_executions (int | None): Maximum number of concurrent executions
+            timeout (int): Function timeout in seconds
+            architecture (lmb.Architecture): CPU architecture, defaults to ARM64
+            memory_size (int): Memory allocation in MB, defaults to 256
+            handler (str): Function handler path, defaults to "handler.handler"
+            signing_config (lmb.ICodeSigningConfig | None): Code signing configuration
+            tracing (bool): Enable X-Ray tracing, defaults to True
+            insights_version (lmb.LambdaInsightsVersion | None): Lambda Insights version
+            env_variables (dict | None): Additional environment variables
 
-        - code_path: Path to the directory containing the function code.
-        - env: The CDK environment.
-        - function_name: Name of the function.
-        - layers: List of layers to attach to the function.
-        - reserved_concurrent_executions: Max concurrent executions.
-        - timeout: Function timeout in seconds.
-        - architecture: CPU architecture - default ARM64.
-        - memory_size: Memory size in MB - default 256.
-        - handler: Handler name - default 'handler.handler'.
-        - signing_config: Optional code signing configuration.
-        - tracing: Enable Active Tracing - default True.
-        - insights_version: Lambda Insights version to enable.
-        - env_variables: Additional environment variables.
-        - kwargs: Additional options like VPC, filesystem, callbacks.
+        Functionality:
+            Creates a Lambda function with the following features:
+            - Configures CloudWatch logging with custom log groups
+            - Sets up IAM permissions for logging
+            - Enables Lambda Insights monitoring
+            - Configures X-Ray tracing
+            - Supports code signing
+            - Sets default environment variables
+            - Supports VPC configuration
+            - Enables CodeGuru profiling
+
+        Arguments:
+            **kwargs: Additional arguments including:
+                - filesystem: Lambda file system configuration
+                - on_success: Success destination
+                - on_failure: Failure destination
+                - ephemeral_storage_size: Temporary storage size
+                - security_groups: VPC security groups
+                - vpc: VPC configuration
+                - vpc_subnets: VPC subnet selection
 
         Returns:
-            The Lambda Function object.
-
-        It sets up Lambda best practices like:
-
-        - Initial policies for CloudWatch logging
-        - Environment variables for CloudWatch sampling & AWS region
-        - Enabling profiling & insights
-        - Retention of logs
+            lmb.Function | lmb.IFunction: Created Lambda function instance
         """
-
         if env_variables is None:
             env_variables = {}
         lambda_environment_default_variables = {
@@ -170,6 +181,7 @@ class AWSPythonLambdaFunction(Construct):
             memory_size=memory_size,
             on_success=kwargs.get("on_success"),
             on_failure=kwargs.get("on_failure"),
+            ephemeral_storage_size=kwargs.get("ephemeral_storage_size"),
             profiling=True,
             reserved_concurrent_executions=reserved_concurrent_executions,
             runtime=lmb.Runtime.PYTHON_3_11,  # type: ignore
