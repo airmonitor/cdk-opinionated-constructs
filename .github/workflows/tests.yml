@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Node.js
       uses: actions/setup-node@v3
@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.11"
+        python-version: "3.13"
 
     - name: Install dependencies
       run: |
@@ -28,7 +28,7 @@ jobs:
         npm install -g aws-cdk
         cd test
         make venv
-        source .venv/bin/activate
+        . .venv/bin/activate
         make install
 
     - name: Invoke CDK synth
