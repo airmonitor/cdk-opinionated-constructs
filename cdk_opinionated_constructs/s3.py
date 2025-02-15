@@ -91,3 +91,74 @@ class S3Bucket(Construct):
         )
 
         return bucket
+
+    def create_cloudfront_bucket(
+        self,
+        bucket_name: str,
+        encryption: s3.BucketEncryption,
+        kms_key: kms.IKey | None = None,
+        server_access_logs_bucket: s3.IBucket | None = None,
+        enforce_ssl: bool = True,  # noqa: FBT001, FBT002
+        **kwargs,
+    ) -> s3.Bucket | s3.IBucket:
+        """
+        Parameters:
+            bucket_name (str): Name of the S3 bucket to be created
+            encryption (s3.BucketEncryption): Type of encryption to be used for the bucket
+            kms_key (kms.IKey | None): Optional KMS key for bucket encryption
+            server_access_logs_bucket (s3.IBucket | None): Optional bucket for storing server access logs
+            enforce_ssl (bool): Flag to enforce SSL for all bucket communications, defaults to True
+            **kwargs: Additional keyword arguments for bucket configuration
+
+        Functionality:
+            Creates an S3 bucket specifically configured for CloudFront usage with enhanced security settings:
+            - Sets object ownership to OBJECT_WRITER
+            - Enables automatic object deletion on bucket removal
+            - Blocks all public access
+            - Configures encryption settings
+            - Enforces SSL and TLS 1.2
+            - Sets up lifecycle rules for version management
+            - Configures server access logging
+            - Enables versioning
+            - Supports EventBridge integration through kwargs
+
+        Returns:
+            s3.Bucket | s3.IBucket: The created S3 bucket instance
+        """
+
+        bucket = s3.Bucket(
+            self,
+            id=bucket_name,
+            object_ownership=s3.ObjectOwnership.OBJECT_WRITER,
+            auto_delete_objects=True,
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=True,
+                block_public_policy=True,
+                ignore_public_acls=True,
+                restrict_public_buckets=True,
+            ),
+            bucket_name=bucket_name,
+            encryption=encryption,
+            encryption_key=kms_key,
+            enforce_ssl=bool(enforce_ssl),
+            minimum_tls_version=1.2,
+            event_bridge_enabled=bool(kwargs.get("event_bridge_enabled")),
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    enabled=True,
+                    noncurrent_version_expiration=cdk.Duration.days(amount=1),
+                ),
+                s3.LifecycleRule(
+                    enabled=True,
+                    expired_object_delete_marker=True,
+                    abort_incomplete_multipart_upload_after=cdk.Duration.days(7),
+                ),
+            ],
+            public_read_access=False,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+            server_access_logs_prefix=kwargs.get("server_access_logs_prefix"),
+            server_access_logs_bucket=server_access_logs_bucket,
+            versioned=True,
+        )
+
+        return bucket
