@@ -68,7 +68,7 @@ jobs:
           generate_release_notes: true
 
   setup_and_build:
-    name: Setup and build
+    name: Upload release to PyPI
     needs: [code_quality]
     runs-on: ubuntu-latest
     environment:
@@ -95,7 +95,7 @@ jobs:
           uv build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
@@ -110,7 +110,7 @@ jobs:
       id-token: write
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
