@@ -1,8 +1,8 @@
 # Makefile for setting up and activating a Python virtual environment
 
 # Set the desired Python interpreter (change if needed)
-PYTHON := python3.11
-VERSION := 3.15.11
+PYTHON := python3.13
+VERSION := 4.1.1
 # Virtual environment directory
 VENV := .venv
 
