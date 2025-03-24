@@ -78,14 +78,14 @@ class AWSPythonLambdaFunction(Construct):
 
         It creates a LayerVersion from the given asset directory.
 
-        The layer will be compatible with Python 3.11 runtimes.
+        The layer will be compatible with Python 3.13 runtimes.
         """
 
         return lmb.LayerVersion(
             self,
             id=construct_id,
             code=lmb.Code.from_asset(code_path),
-            compatible_runtimes=[lmb.Runtime.PYTHON_3_11],  # type: ignore
+            compatible_runtimes=[lmb.Runtime.PYTHON_3_13],  # type: ignore
         )
 
     def create_lambda_function(
@@ -184,7 +184,7 @@ class AWSPythonLambdaFunction(Construct):
             ephemeral_storage_size=kwargs.get("ephemeral_storage_size"),
             profiling=True,
             reserved_concurrent_executions=reserved_concurrent_executions,
-            runtime=lmb.Runtime.PYTHON_3_11,  # type: ignore
+            runtime=lmb.Runtime.PYTHON_3_13,  # type: ignore
             security_groups=kwargs.get("security_groups"),
             timeout=cdk.Duration.seconds(timeout),
             tracing=lmb.Tracing.ACTIVE if tracing else lmb.Tracing.DISABLED,
