@@ -1,3 +1,12 @@
+"""
+Trivy Docker Image Security Hub Parser
+
+This tool parses Trivy vulnerability scan results and imports them into AWS Security Hub.
+It supports Trivy JSON format (SchemaVersion 2).
+
+Generated with: trivy image --timeout 60m --no-progress -f json -o results.json --severity HIGH,CRITICAL <image>
+"""
+
 import datetime
 import json
 import re
@@ -351,7 +360,7 @@ def main(  # noqa: PLR0912
     with results_path.open() as json_file:
         data = json.load(json_file)
 
-        # Extract container info from ArtifactName if not provided
+        # Extract container info from Trivy format
         if not container_name or not container_tag:
             artifact_name = data.get("ArtifactName", "")
             extracted_name, extracted_tag = extract_container_info(artifact_name)
@@ -367,7 +376,7 @@ def main(  # noqa: PLR0912
         )
         finding_builder = SecurityHubFindingBuilder(config)
 
-        # Extract image metadata - combine top-level metadata with nested image config
+        # Extract image metadata from Trivy format
         image_info = data.get("Metadata", {})
         if "ImageConfig" in image_info:
             # Add any relevant fields from ImageConfig to the top level
@@ -378,6 +387,7 @@ def main(  # noqa: PLR0912
         # Track if we found any vulnerabilities
         vulnerabilities_found = False
 
+        # Process vulnerabilities from Trivy format
         for result in data.get("Results", []):
             vulnerabilities = result.get("Vulnerabilities", [])
             if not vulnerabilities:

@@ -21,6 +21,7 @@ repos:
       - id: end-of-file-fixer
       - id: pretty-format-json
         args: [ '--no-sort-keys' ]
+        exclude: ^cdk\.context\.json$
       - id: requirements-txt-fixer
       - id: trailing-whitespace
       - id: detect-aws-credentials
@@ -31,42 +32,38 @@ repos:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.8.4'
+    rev: 'v0.11.11'
     hooks:
       - id: ruff
         args: [ --fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.14.0"
+    rev: "v1.15.0"
     hooks:
       - id: mypy
-        args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports]
+        args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports, --no-warn-unused-ignores]
         additional_dependencies:
           - "types-PyYAML"
           - "pydantic>=2.5.2"
           - "types-retry"
           - "types-requests"
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    rev: "v1.3.3"
-    hooks:
-      - id: python-safety-dependencies-check
   - repo: https://github.com/Zac-HD/shed
     rev: "2024.10.1"
     hooks:
       - id: shed
-        args: [ --refactor, --py311-plus ]
+        args: [ --refactor, --py313-plus ]
         types_or: [ markdown, rst ]
   - repo: https://github.com/rubik/xenon
     rev: v0.9.3
     hooks:
       - id: xenon
-        args: ["--max-average=A", "--max-modules=A", "--max-absolute=C", "-e 'tests/*,.venv/*,cdk.out/*'"]
+        args: ["--max-average=C", "--max-modules=C", "--max-absolute=C", "-e 'cdk/tests/infrastructure/*,.venv/*,cdk.out/*'"]
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.22.0
+    rev: v8.26.0
     hooks:
       - id: gitleaks
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.2
+    rev: 1.8.3
     hooks:
       - id: bandit
   - repo: https://github.com/hadolint/hadolint
@@ -79,6 +76,14 @@ repos:
       -   id: detect-secrets
           exclude: (cdk.context.json|cdk/tests/infrastructure/snapshots/test_s3_stack/test_snapshot/ppe.yaml)
   - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.5.0
+    rev: 0.9.1
     hooks:
       - id: uv-secure
+  - repo: https://github.com/hukkin/mdformat
+    rev: 0.7.22
+    hooks:
+    - id: mdformat
+      args: ["--number"]
+      additional_dependencies:
+      - mdformat-gfm
+      - mdformat-black
