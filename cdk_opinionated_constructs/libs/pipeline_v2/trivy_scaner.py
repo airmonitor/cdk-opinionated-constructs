@@ -4,7 +4,7 @@ import aws_cdk.aws_codebuild as codebuild
 
 from aws_cdk import Environment
 from cdk.schemas.configuration_vars import PipelineVars
-from cdk.stages.logic import (
+from cdk_opinionated_constructs.stages.logic import (
     apply_default_permissions,
     assume_role_commands,
     attach_role,
@@ -21,7 +21,7 @@ def _create_trivy_install_commands(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    cdk_opinionated_constructs_version: str = "4.2.0",
+    cdk_opinionated_constructs_version: str = "4.2.1",
     trivy_version: str = "0.62.0",
 ) -> dict[str, list[str] | list[str | Any]]:
     """

@@ -6,7 +6,7 @@ import aws_cdk.aws_s3 as s3
 
 from aws_cdk import Environment
 from cdk.schemas.configuration_vars import PipelineVars
-from cdk.stages.logic import (
+from cdk_opinionated_constructs.stages.logic import (
     apply_default_permissions,
     assume_role_commands,
     attach_role,

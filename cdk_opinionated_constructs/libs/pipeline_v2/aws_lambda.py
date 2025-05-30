@@ -4,7 +4,7 @@ import aws_cdk.aws_codebuild as codebuild
 
 from aws_cdk import Environment
 from cdk.schemas.configuration_vars import PipelineVars
-from cdk.stages.logic import (
+from cdk_opinionated_constructs.stages.logic import (
     apply_default_permissions,
     default_install_commands,
     get_build_image_for_architecture,
