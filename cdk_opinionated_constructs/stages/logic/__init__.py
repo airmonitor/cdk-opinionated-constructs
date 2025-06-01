@@ -1,11 +1,11 @@
 from typing import Any, Literal
 
-import aws_cdk as cdk
 import aws_cdk.aws_codebuild as codebuild
 import aws_cdk.aws_codepipeline as codepipeline
 import aws_cdk.aws_codepipeline_actions as codepipeline_actions
 import aws_cdk.aws_iam as iam
 
+from aws_cdk import Environment
 from cdk.schemas.configuration_vars import PipelineVars
 
 runtime_versions = {"nodejs": "22", "python": "3.13"}
@@ -19,14 +19,14 @@ revert_to_original_role_command = "unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 
 
 def assume_role_commands(
-    env: cdk.Environment,
+    env: Environment,
     pipeline_vars: PipelineVars,
     stage_name: str,
     role_name: str,
 ) -> list[str]:
     """
     Parameters:
-        env (cdk.Environment): The AWS environment containing account information
+        env (Environment): The AWS environment containing account information
         pipeline_vars (PipelineVars): Configuration variables for the pipeline
         stage_name (str): Name of the deployment stage
         role_name (str): Base name of the IAM role to assume
@@ -55,7 +55,7 @@ def assume_role_commands(
 
 def attach_role(
     project: codebuild.PipelineProject,
-    env: cdk.Environment,
+    env: Environment,
     pipeline_vars: PipelineVars,
     stage_name: str,
     role_name: str,
@@ -63,7 +63,7 @@ def attach_role(
     """
     Parameters:
         project (codebuild.PipelineProject): The CodeBuild project to which the role policy will be attached
-        env (cdk.Environment): The AWS environment containing account information
+        env (Environment): The AWS environment containing account information
         pipeline_vars (PipelineVars): Configuration variables for the pipeline
         stage_name (str): Name of the deployment stage
         role_name (str): Base name of the IAM role to be attached
@@ -86,11 +86,11 @@ def attach_role(
     )
 
 
-def apply_default_permissions(project: codebuild.PipelineProject, env: cdk.Environment) -> None:
+def apply_default_permissions(project: codebuild.PipelineProject, env: Environment) -> None:
     """
     Parameters:
         project (codebuild.PipelineProject): The CodeBuild pipeline project to which permissions will be applied
-        env (cdk.Environment): The CDK environment object containing account and region information
+        env (Environment): The CDK environment object containing account and region information
 
     Functionality:
         Applies a comprehensive set of default IAM permissions to a CodeBuild pipeline project to enable CDK operations.
