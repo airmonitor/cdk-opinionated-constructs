@@ -24,12 +24,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        npm install -g aws-cdk
-        cd test
-        make venv
-        . .venv/bin/activate
-        make install
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          make venv
+          . .venv/bin/activate
+          make install
+          npm install -g aws-cdk
 
     - name: Invoke CDK synth
       env:
@@ -38,6 +37,6 @@ jobs:
         CDK_DEFAULT_ACCOUNT: ${{ secrets.CDK_DEFAULT_ACCOUNT }}
         CDK_DEFAULT_REGION: ${{ secrets.CDK_DEFAULT_REGION }}
       run: |
+        . .venv/bin/activate
         cd test
-        source .venv/bin/activate
         cdk synth

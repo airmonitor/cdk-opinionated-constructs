@@ -40,6 +40,7 @@ pre-commit: # Run code quality checks on all Python files
 	pre-commit run --files cdk_opinionated_constructs/stages/*.py
 	pre-commit run --files cdk_opinionated_constructs/tests/integration/*.py
 	pre-commit run --files cdk_opinionated_constructs/utils/*.py
+	pre-commit run --files cdk_opinionated_constructs/libs/pipeline_v2/*.py
 
 tests: # Run infrastructure tests for specified stage
 	@echo "Running pytest for stage "

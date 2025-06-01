@@ -61,7 +61,8 @@ ignore = [
     "ISC001",
     "PLR0917",
     "RUF036",
-    "PLR1702"
+    "PLR1702",
+    "RUF052"
 ]
 
 exclude = [
