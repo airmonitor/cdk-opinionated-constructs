@@ -21,8 +21,8 @@ def _create_trivy_install_commands(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    cdk_opinionated_constructs_version: str = "4.2.1",
-    trivy_version: str = "0.62.0",
+    cdk_opinionated_constructs_version: str = "4.2.2",
+    trivy_version: str = "0.63.0",
 ) -> dict[str, list[str] | list[str | Any]]:
     """
     Parameters:
@@ -32,8 +32,8 @@ def _create_trivy_install_commands(
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for installing the
             appropriate Trivy version
         cdk_opinionated_constructs_version (str): Version of cdk-opinionated-constructs
-            to use for the Trivy parser script, defaults to "4.1.4"
-        trivy_version (str): Version of Trivy to install, defaults to "0.62.0"
+            to use for the Trivy parser script, defaults to "4.2.2"
+        trivy_version (str): Version of Trivy to install, defaults to "0.63.0"
 
     Functionality:
         Generates installation and execution commands for Trivy security scanner
