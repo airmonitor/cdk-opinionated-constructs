@@ -59,6 +59,7 @@ def _create_trivy_install_commands(
         f"wget https://raw.githubusercontent.com/airmonitor/cdk-opinionated-constructs/refs/heads/"
         f"{cdk_opinionated_constructs_version}/cdk_opinionated_constructs/utils/"
         f"trivy_docker_image_security_hub_parser.py",
+        "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
     ]
 
     if cpu_architecture == "amd64":
@@ -110,6 +111,28 @@ def _create_trivy_install_commands(
         f"--results-file trivy_image_scan_result.json",
         "echo #################################################",
         "trivy image --scanners vuln,misconfig,secret $IMAGE_URI --timeout 60m --severity CRITICAL,HIGH --exit-code 1 ",
+        "echo #################################################",
+        "echo Scanning SBOM vulnerabilities...",
+        "syft $IMAGE_URI -o spdx-json > /tmp/sbom.spdx.json",
+        "trivy sbom "
+        " --timeout 60m"
+        " --no-progress"
+        " --scanners vuln"
+        " -f json "
+        " -o sbom_trivy_results.json "
+        "--severity HIGH,CRITICAL"
+        " /tmp/sbom.spdx.json",
+        "echo #################################################",
+        "echo sending trivy SBOM results to Security Hub...",
+        f"python3 trivy_docker_image_security_hub_parser.py "
+        f"--aws-account {env.account} "
+        f"--aws-region {env.region} "
+        f"--project-name {pipeline_vars.project} "
+        f"--container-name {pipeline_vars.project}-{stage_name} "
+        f"--container-tag $IMAGE_TAG "
+        f"--results-file sbom_trivy_results.json",
+        "echo #################################################",
+        "trivy sbom --scanners vuln --timeout 60m --severity CRITICAL,HIGH --exit-code 1 /tmp/sbom.spdx.json",
     ]
 
     return {"install_commands": _install_commands, "commands": commands}
