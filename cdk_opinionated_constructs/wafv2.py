@@ -304,6 +304,54 @@ class WAFv2(Construct):
             ),
         )
 
+    @staticmethod
+    def __aws_php_application_rule(count: bool = False):  # noqa: FBT001, FBT002
+        if count:
+            override_action = wafv2.CfnWebACL.OverrideActionProperty(count={})
+        else:
+            override_action = wafv2.CfnWebACL.OverrideActionProperty(none={})
+
+        return wafv2.CfnWebACL.RuleProperty(
+            name="AWS-AWSManagedRulesPHPRuleSet",
+            priority=7,
+            override_action=override_action,
+            statement=wafv2.CfnWebACL.StatementProperty(
+                managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                    name="AWSManagedRulesPHPRuleSet",
+                    vendor_name="AWS",
+                )
+            ),
+            visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled=True,
+                metric_name="AWS-AWSManagedRulesPHPRuleSet",
+                sampled_requests_enabled=True,
+            ),
+        )
+
+    @staticmethod
+    def __aws_posix_operating_system_rule(count: bool = False):  # noqa: FBT001, FBT002
+        if count:
+            override_action = wafv2.CfnWebACL.OverrideActionProperty(count={})
+        else:
+            override_action = wafv2.CfnWebACL.OverrideActionProperty(none={})
+
+        return wafv2.CfnWebACL.RuleProperty(
+            name="AWS-AWSManagedRulesUnixRuleSet",
+            priority=8,
+            override_action=override_action,
+            statement=wafv2.CfnWebACL.StatementProperty(
+                managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                    name="AWSManagedRulesUnixRuleSet",
+                    vendor_name="AWS",
+                )
+            ),
+            visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled=True,
+                metric_name="AWS-AWSManagedRulesUnixRuleSet",
+                sampled_requests_enabled=True,
+            ),
+        )
+
     def web_acl(
         self,
         name: str,
@@ -316,36 +364,40 @@ class WAFv2(Construct):
         aws_account_takeover_prevention: bool | dict[Any, Any] = False,  # noqa: FBT001, FBT002
         aws_bot_control_rule: bool = False,  # noqa: FBT001, FBT002
         aws_bot_control_count: bool = False,  # noqa: FBT001, FBT002
+        aws_php_application_rule: bool = False,  # noqa: FBT001, FBT002
+        aws_posix_operating_system_rule: bool = False,  # noqa: FBT001, FBT002
         waf_scope: Literal["REGIONAL", "CLOUDFRONT"] = "REGIONAL",
     ) -> wafv2.CfnWebACL:
-        """Creates a WAF WebACL with configured rules.
-
+        """
         Parameters:
+            self (WAFv2): The current WAFv2 construct object
+            name (str): The name for the Web ACL
+            rate_value (int | None): Rate limit value for rate-based rule; None to disable rate limiting
+            aws_common_rule (bool): Whether to enable AWS Common Rule Set (default: True)
+            aws_common_rule_ignore_list (list | None): List of rule names to exclude from Common Rule Set
+            aws_anony_list (bool): Whether to enable Anonymous IP List rule (default: False)
+            aws_bad_inputs_rule (bool): Whether to enable Known Bad Inputs rule (default: False)
+            aws_sqli_rule (bool): Whether to enable SQL Injection rule (default: False)
+            aws_account_takeover_prevention (bool | dict[Any, Any]): Account takeover prevention configuration;
+            False to disable or dict with configuration (default: False)
+            aws_bot_control_rule (bool): Whether to enable Bot Control rule (default: False)
+            aws_bot_control_count (bool): Whether Bot Control rule should count instead of block (default: False)
+            aws_php_application_rule (bool): Whether to enable PHP Application rule (default: False)
+            aws_posix_operating_system_rule (bool): Whether to enable POSIX Operating System rule (default: False)
+            waf_scope (Literal["REGIONAL", "CLOUDFRONT"]): Scope of the
+            Web ACL - REGIONAL for ALB/API Gateway or CLOUDFRONT for CloudFront (default: "REGIONAL")
 
-        - name: Name of the WebACL.
-        - rate_value: Rate limit per IP if enabled.
-        - aws_common_rule: Whether to enable AWS common rules.
-        - aws_common_rule_ignore_list: List of common rules to exclude.
-        - aws_anony_list: Whether to enable anonymous IP blocking.
-        - aws_bad_inputs_rule: Whether to enable bad inputs rule.
-        - aws_sqli_rule: Whether to enable SQLi rule.
-        - aws_account_takeover_prevention: Config for account takeover prevention.
-        - aws_bot_control: Whether to enable AWS Bot Control rule.
-        - aws_bot_control_count: Whether to count AWS Bot Control rule.
-        - waf_scope: WAF scope - regional or Cloudfront.
+        Functionality:
+            Creates and configures an AWS WAFv2 Web ACL with customizable rule sets for web application protection.
+            Automatically includes IP reputation list rule and conditionally adds other
+            security rules based on parameters.
+            Builds a comprehensive rule set including rate limiting, common attack patterns, anonymous IP blocking,
+            bad input detection, SQL injection protection, account takeover prevention, bot control, and
+            application-specific rules.
+            Configures CloudWatch metrics and sampled request logging for monitoring and analysis.
 
-        It enables the AWS IP reputation list rule by default.
-
-        It adds additional rules based on input params:
-        - Rate limit
-        - AWS common rules
-        - Anonymous IP blocking
-        - Bad inputs blocking
-        - SQLi blocking
-        - Account takeover prevention
-        - Bot Control
-
-        Returns the configured CfnWebACL.
+        Returns:
+            wafv2.CfnWebACL: A configured WAFv2 Web ACL CloudFormation resource with the specified rules and settings
         """
 
         # 0. Reputation List. The first rule is enabled by default
@@ -396,6 +448,16 @@ class WAFv2(Construct):
             else:
                 aws_bot_control_rule = self.__aws_bot_control_rule()
             waf_rules.append(aws_bot_control_rule)
+
+        if aws_php_application_rule:
+            # 8. PHP Application Rule
+            aws_php_application_rule = self.__aws_php_application_rule()
+            waf_rules.append(aws_php_application_rule)
+
+        if aws_posix_operating_system_rule:
+            # 9. POSIX Operating System Rule
+            aws_posix_operating_system_rule = self.__aws_posix_operating_system_rule()
+            waf_rules.append(aws_posix_operating_system_rule)
 
         return wafv2.CfnWebACL(
             self,
