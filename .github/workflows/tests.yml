@@ -7,21 +7,17 @@ on:
 jobs:
   synth:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: 18.x
-
+        node-version: 20.x
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.13"
-
     - name: Install dependencies
       run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -38,5 +34,4 @@ jobs:
       run: |
         . .venv/bin/activate
         cd test
-        npm install -g aws-cdk
         cdk synth

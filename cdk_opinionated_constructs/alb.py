@@ -99,6 +99,7 @@ class ApplicationLoadBalancer(Construct):
           - deregistration_delay: Optional deregistration delay
           - healthy_http_codes: Optional healthy HTTP codes for health checks
           - health_check_path: Optional path for health checks
+          - stickiness_cookie_duration (optional): Optional stickiness cookie duration (cdk.Duration)
 
         For each port definition, it will:
 
@@ -119,6 +120,7 @@ class ApplicationLoadBalancer(Construct):
                     "healthy_http_codes": "200,302",
                     "deregistration_delay": cdk.Duration.minutes(1),
                     "health_check_path": "/health",
+                    "stickiness_cookie_duration": cdk.Duration.days(1),
                 }
             ]
         )
@@ -139,8 +141,10 @@ class ApplicationLoadBalancer(Construct):
             back_end_port = port_definition["back_end_port"]
             listener.add_targets(
                 id=f"{back_end_port}_target",
-                enable_anomaly_mitigation=True,
-                load_balancing_algorithm_type=albv2.TargetGroupLoadBalancingAlgorithmType.WEIGHTED_RANDOM,
+                enable_anomaly_mitigation=not port_definition.get("stickiness_cookie_duration"),
+                load_balancing_algorithm_type=albv2.TargetGroupLoadBalancingAlgorithmType.ROUND_ROBIN
+                if port_definition.get("stickiness_cookie_duration")
+                else albv2.TargetGroupLoadBalancingAlgorithmType.WEIGHTED_RANDOM,
                 deregistration_delay=port_definition.get("deregistration_delay"),
                 health_check=albv2.HealthCheck(
                     enabled=True,
@@ -150,4 +154,5 @@ class ApplicationLoadBalancer(Construct):
                 port=back_end_port,
                 protocol=port_definition["back_end_protocol"],
                 targets=port_definition["targets"],
+                stickiness_cookie_duration=port_definition.get("stickiness_cookie_duration"),
             )
