@@ -9,6 +9,7 @@ from cdk_opinionated_constructs.stages.logic import (
     attach_role,
     default_install_commands,
     get_build_image_for_architecture,
+    revert_to_original_role_command,
     runtime_versions,
 )
 
@@ -68,6 +69,10 @@ def _create_docker_build_commands(
         f"--type String --overwrite",
         f'aws ssm put-parameter --name "{image_uri_param}" '
         f'--region {env.region} --value "$ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION" '
+        f"--type String --overwrite",
+        revert_to_original_role_command,
+        f'aws ssm put-parameter --name "{image_tag_param}" '
+        f'--region {env.region} --value "$CODEBUILD_RESOLVED_SOURCE_VERSION" '
         f"--type String --overwrite",
     ]
 
