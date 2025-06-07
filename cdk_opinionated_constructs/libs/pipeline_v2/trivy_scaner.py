@@ -21,7 +21,7 @@ def _create_trivy_install_commands(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    cdk_opinionated_constructs_version: str = "4.2.5",
+    cdk_opinionated_constructs_version: str = "4.3.3",
     trivy_version: str = "0.63.0",
 ) -> dict[str, list[str] | list[str | Any]]:
     """

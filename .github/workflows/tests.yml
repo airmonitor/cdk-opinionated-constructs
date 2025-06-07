@@ -34,4 +34,7 @@ jobs:
       run: |
         . .venv/bin/activate
         cd test
+        uv pip install -r requirements.txt
+        uv pip install -r requirements-dev.txt
+        npm install -g aws-cdk
         cdk synth
