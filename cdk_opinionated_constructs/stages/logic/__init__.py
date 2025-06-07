@@ -90,15 +90,16 @@ def apply_default_permissions(project: codebuild.PipelineProject, env: Environme
     """
     Parameters:
         project (codebuild.PipelineProject): The CodeBuild pipeline project to which permissions will be applied
-        env (Environment): The CDK environment object containing account and region information
+        env (Environment): AWS environment object containing account and region information
 
     Functionality:
-        Applies a comprehensive set of default IAM permissions to a CodeBuild pipeline project to enable CDK operations.
-        The function adds multiple policy statements to the project's role, including:
-        - S3 permissions for CDK asset operations (GetObject, PutObject, ListBucket, GetBucketLocation)
+        Applies a comprehensive set of default IAM permissions to a CodeBuild pipeline project for AWS CDK operations.
+        The function adds multiple policy statements to the project's IAM role:
+        - S3 permissions for CDK asset management (GetObject, PutObject, ListBucket, GetBucketLocation)
         - STS permissions for role assumption and session tagging
-        - SSM permissions for parameter retrieval
-        - CloudFormation permissions for stack management operations
+        - SSM Parameter Store permissions for getting and putting parameters
+        - CloudFormation permissions for complete stack lifecycle management
+        (create, update, delete, describe operations)
         - IAM PassRole permissions for CDK execution roles across all AWS regions
 
     Returns:
@@ -119,7 +120,7 @@ def apply_default_permissions(project: codebuild.PipelineProject, env: Environme
     )
     project.add_to_role_policy(
         iam.PolicyStatement(
-            actions=["ssm:GetParameter"],
+            actions=["ssm:GetParameter", "ssm:PutParameter"],
             resources=["*"],
         )
     )
