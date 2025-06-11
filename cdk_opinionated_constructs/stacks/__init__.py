@@ -6,7 +6,9 @@ import aws_cdk.aws_sns as sns
 import aws_cdk.aws_sns_subscriptions as sns_subscriptions
 import aws_cdk.aws_ssm as ssm
 
+from aws_cdk.aws_codepipeline import Pipeline
 from aws_cdk.aws_codestarnotifications import DetailType, NotificationRule
+from aws_cdk.pipelines import CodePipeline
 from cdk.schemas.configuration_vars import PipelineVars
 from cdk_nag import NagPackSuppression
 from cdk_opinionated_constructs.utils import apply_tags
@@ -97,26 +99,26 @@ def notifications_topic(self, pipeline_vars: PipelineVars) -> sns.Topic:
     return notifications_sns_topic
 
 
-def pipeline_notifications(self, sns_topic: sns.ITopic) -> None:
+def pipeline_notifications(self, sns_topic: sns.ITopic, source: Pipeline | CodePipeline) -> None:
     """Configures notifications for pipeline events.
 
     Parameters:
-
-    sns_topic (sns.ITopic): The SNS topic to send notifications to.
+        sns_topic (sns.ITopic): The SNS topic to send notifications to
+        source (Pipeline | CodePipeline): The pipeline source to monitor for events
 
     Functionality:
+        1. Adds a resource policy to the SNS topic allowing CodeStar Notifications service to publish messages
+        2. Creates a comprehensive NotificationRule that monitors all major pipeline events including:
+           - Pipeline execution events (started, succeeded, failed, canceled, resumed, superseded)
+           - Action execution events (started, succeeded, failed, canceled)
+           - Stage execution events (started, succeeded, failed, canceled, resumed)
+           - Manual approval events (needed, succeeded, failed)
+        3. Configures the notification rule to send detailed event information to the specified SNS topic
 
-    1. add resource policy to an SNS topic to allow CodeStar Notifications to publish.
-
-    2. create a NotificationRule to send notifications on pipeline events:
-       - Pipeline execution failed
-       - Action execution failed
-       - Stage execution failed
-       - Manual approval failed
-       - Manual approval needed
-
-    the notification rule will send messages to the provided SNS topic.
+    Returns:
+        None
     """
+
     sns_topic.add_to_resource_policy(
         iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
@@ -152,7 +154,7 @@ def pipeline_notifications(self, sns_topic: sns.ITopic) -> None:
             "codepipeline-pipeline-stage-execution-started",
             "codepipeline-pipeline-stage-execution-succeeded",
         ],
-        source=self.codepipeline.pipeline,
+        source=source,
         targets=[sns_topic],
     )
 
@@ -214,12 +216,24 @@ def pipeline_trigger(self, pipeline_vars: PipelineVars, props: dict, schedule: e
 def _configure_pipeline_email_notifications(sns_topic: sns.Topic) -> None:
     """Configures email notifications for the pipeline SNS topic.
 
-    This is an internal helper function to avoid redundant code.
-
     Parameters:
+        sns_topic (sns.Topic): The SNS topic to configure email notifications for
 
-    sns_topic (sns.Topic): The SNS topic to configure notifications for.
+    Functionality:
+        Adds a resource policy to the SNS topic that allows AWS CodeStar Notifications service
+        to publish messages to the topic. This enables the pipeline to send notifications via
+        email when pipeline events occur. The policy grants the codestar-notifications service
+        principal permission to perform SNS:Publish actions on the specified topic.
+        This is an internal helper function designed to avoid code duplication across
+        notification configuration workflows.
+
+    Arguments:
+        sns_topic: The SNS topic resource that will receive pipeline notifications
+
+    Returns:
+        None
     """
+
     sns_topic.add_to_resource_policy(
         iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
@@ -235,13 +249,27 @@ def _configure_pipeline_slack_notifications(
 ) -> None:
     """Configures Slack notifications for the pipeline.
 
-    This is an internal helper function to encapsulate Slack-specific logic.
-
     Parameters:
-    scope: The scope for the chatbot construct.
-    notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic to send notifications to.
-    pipeline_vars (PipelineVars): Pipeline variables containing Slack configuration.
+        scope: The scope for the chatbot construct
+        notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic to send notifications to
+        pipeline_vars (PipelineVars): Pipeline variables containing Slack configuration
+
+    Functionality:
+        Creates a Slack channel configuration for pipeline notifications using AWS Chatbot.
+        Conditionally sets up the Slack integration only if both slack_workspace_id and
+        slack_ci_cd_channel_id are provided in the pipeline variables.
+        Links the SNS topic to the Slack channel for receiving notification messages.
+        Uses the project name from pipeline_vars as the configuration name.
+
+    Arguments:
+        scope: The scope for the chatbot construct
+        notifications_sns_topic: The SNS topic to send notifications to
+        pipeline_vars: Pipeline variables containing Slack configuration
+
+    Returns:
+        None
     """
+
     if pipeline_vars.slack_workspace_id and pipeline_vars.slack_ci_cd_channel_id:
         chatbot.SlackChannelConfiguration(
             scope,
@@ -253,23 +281,137 @@ def _configure_pipeline_slack_notifications(
         )
 
 
+def _create_ms_teams_chatbot_iam_role(scope) -> iam.Role:
+    """Creates an IAM role for MS Teams chatbot integration with necessary permissions.
+
+    Parameters:
+        scope: The scope for the IAM role construct
+
+    Functionality:
+        Creates an IAM role that can be assumed by AWS Chatbot service
+        to send CodePipeline notifications to Microsoft Teams channels.
+        Applies ReadOnlyAccess managed policy as a baseline for permissions.
+        Explicitly denies sensitive IAM, S3, SSM, STS, KMS and other critical service permissions for security.
+        Grants specific CloudWatch permissions for monitoring and metrics access.
+        Provides CodePipeline permissions for pipeline state and execution information retrieval.
+        Includes CloudWatch Logs permissions for log access and querying capabilities.
+        Configures the role with appropriate trust policy for chatbot.amazonaws.com service principal.
+
+    Returns:
+        iam.Role: The created IAM role configured for MS Teams chatbot integration with restricted permissions
+    """
+
+    ms_teams_chatbot_role = iam.Role(
+        scope,
+        "ms-teams-chatbot-iam-role",
+        assumed_by=iam.ServicePrincipal(service="chatbot.amazonaws.com"),
+        description="IAM role for AWS Chatbot to send CodePipeline notifications to MS Teams",
+        managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name("ReadOnlyAccess")],
+    )
+
+    # Deny sensitive permissions for security
+    ms_teams_chatbot_role.add_to_policy(
+        iam.PolicyStatement(
+            actions=[
+                "iam:*",
+                "s3:GetBucketPolicy",
+                "ssm:*",
+                "sts:*",
+                "kms:*",
+                "cognito-idp:GetSigningCertificate",
+                "ec2:GetPasswordData",
+                "ecr:GetAuthorizationToken",
+                "gamelift:RequestUploadCredentials",
+                "gamelift:GetInstanceAccess",
+                "lightsail:DownloadDefaultKeyPair",
+                "lightsail:GetInstanceAccessDetails",
+                "lightsail:GetKeyPair",
+                "lightsail:GetKeyPairs",
+                "redshift:GetClusterCredentials",
+                "storagegateway:DescribeChapCredentials",
+            ],
+            effect=iam.Effect.DENY,
+            resources=["*"],
+        ),
+    )
+
+    # CloudWatch permissions for monitoring and metrics
+    ms_teams_chatbot_role.add_to_policy(
+        iam.PolicyStatement(
+            actions=["cloudwatch:Describe*", "cloudwatch:Get*", "cloudwatch:List*"],
+            resources=["*"],
+        ),
+    )
+
+    # CodePipeline permissions for pipeline operations
+    ms_teams_chatbot_role.add_to_policy(
+        iam.PolicyStatement(
+            actions=[
+                "codepipeline:GetPipeline",
+                "codepipeline:GetPipelineExecution",
+                "codepipeline:GetPipelineState",
+                "codepipeline:ListActionExecutions",
+                "codepipeline:ListPipelineExecutions",
+                "codepipeline:RetryStageExecution",
+            ],
+            resources=["*"],
+        ),
+    )
+
+    # Logs permissions for CloudWatch Logs access
+    ms_teams_chatbot_role.add_to_policy(
+        iam.PolicyStatement(
+            actions=[
+                "logs:Describe*",
+                "logs:Get*",
+                "logs:List*",
+                "logs:StartQuery",
+                "logs:StopQuery",
+                "logs:TestMetricFilter",
+                "logs:FilterLogEvents",
+            ],
+            resources=["*"],
+        ),
+    )
+
+    return ms_teams_chatbot_role
+
+
 def _configure_pipeline_ms_teams_notifications(
     scope, notifications_sns_topic: sns.Topic | sns.ITopic, pipeline_vars: PipelineVars
 ) -> None:
     """Configures MS Teams notifications for the pipeline.
 
-    This is an internal helper function to encapsulate MS Teams-specific logic.
-
     Parameters:
-    scope: The scope for the chatbot construct.
-    notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic to send notifications to.
-    pipeline_vars (PipelineVars): Pipeline variables containing MS Teams configuration.
+        scope: The scope for the chatbot construct
+        notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic to send notifications to
+        pipeline_vars (PipelineVars): Pipeline variables containing MS Teams configuration
+
+    Functionality:
+        Creates and configures MS Teams chatbot integration for pipeline notifications.
+        Validates that required MS Teams configuration parameters are present before proceeding.
+        Creates an IAM role with appropriate permissions for the MS Teams chatbot.
+        Sets up a CfnMicrosoftTeamsChannelConfiguration to connect the SNS topic to the specified MS Teams channel.
+        This is an internal helper function to encapsulate MS Teams-specific notification logic.
+
+    Arguments:
+        scope: The scope for the chatbot construct
+        notifications_sns_topic: The SNS topic to send notifications to
+        pipeline_vars: Pipeline variables containing MS Teams team ID, channel ID, and tenant ID
+
+    Returns:
+        None
     """
+
     if pipeline_vars.ms_teams_team_id and pipeline_vars.ms_teams_ci_cd_channel_id:
+        # Create IAM role for MS Teams chatbot
+        ms_teams_role = _create_ms_teams_chatbot_iam_role(scope)
+
         chatbot.CfnMicrosoftTeamsChannelConfiguration(
             scope,
             "ci-cd-ms-teams-chatbot",
             configuration_name=f"{pipeline_vars.project}-ci-cd",
+            iam_role_arn=ms_teams_role.role_arn,
             sns_topic_arns=[notifications_sns_topic.topic_arn],
             team_id=pipeline_vars.ms_teams_team_id,
             teams_channel_id=pipeline_vars.ms_teams_ci_cd_channel_id,
@@ -281,23 +423,38 @@ def create_pipeline_notifications(
     scope,
     notifications_sns_topic: sns.Topic | sns.ITopic,
     pipeline_vars: PipelineVars,
+    source: Pipeline | CodePipeline,
     use_chatbot: bool = True,  # noqa: FBT001, FBT002
 ):
     """Configures notifications for the pipeline.
 
-    This function orchestrates the configuration of different notification channels.
-
     Parameters:
-    scope: The scope for child constructs.
-    notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic to send notifications to.
-    pipeline_vars (PipelineVars): Pipeline variables containing notification configurations.
-    use_chatbot (bool): Flag to enable/disable chatbot integrations.
+        notifications_sns_topic (sns.Topic | sns.ITopic): The SNS topic to send notifications to
+        pipeline_vars (PipelineVars): Pipeline variables containing notification configurations
+        use_chatbot (bool): Flag to enable/disable chatbot integrations, defaults to True
+        source (Pipeline | CodePipeline): The pipeline source to monitor for events
+
+    Functionality:
+        Orchestrates the configuration of different notification channels for the pipeline.
+        Conditionally sets up email notifications if ci_cd_notification_email is configured.
+        Configures pipeline notifications for Slack or MS Teams channels if channel IDs are provided.
+        Sets up chatbot integrations for Slack and MS Teams when use_chatbot flag is enabled.
+        Each notification type is configured through dedicated helper functions.
+
+    Arguments:
+        scope: The scope for child constructs
+        notifications_sns_topic: The SNS topic to send notifications to
+        pipeline_vars: Pipeline variables containing notification configurations
+        use_chatbot: Flag to enable/disable chatbot integrations
+
+    Returns:
+        None
     """
 
     if pipeline_vars.ci_cd_notification_email:
         _configure_pipeline_email_notifications(sns_topic=notifications_sns_topic)
-    if pipeline_vars.slack_ci_cd_channel_id:
-        pipeline_notifications(scope, sns_topic=notifications_sns_topic)
+    if pipeline_vars.slack_ci_cd_channel_id or pipeline_vars.ms_teams_ci_cd_channel_id:
+        pipeline_notifications(scope, sns_topic=notifications_sns_topic, source=source)
 
     if use_chatbot:
         _configure_pipeline_slack_notifications(scope, notifications_sns_topic, pipeline_vars)
