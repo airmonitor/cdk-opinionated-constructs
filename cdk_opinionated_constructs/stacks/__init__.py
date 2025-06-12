@@ -99,12 +99,12 @@ def notifications_topic(self, pipeline_vars: PipelineVars) -> sns.Topic:
     return notifications_sns_topic
 
 
-def pipeline_notifications(self, sns_topic: sns.ITopic, source: Pipeline | CodePipeline) -> None:
+def pipeline_notifications(self, sns_topic: sns.ITopic, source: Pipeline | CodePipeline.pipeline) -> None:
     """Configures notifications for pipeline events.
 
     Parameters:
         sns_topic (sns.ITopic): The SNS topic to send notifications to
-        source (Pipeline | CodePipeline): The pipeline source to monitor for events
+        source (Pipeline | CodePipeline.pipeline): The pipeline source to monitor for events
 
     Functionality:
         1. Adds a resource policy to the SNS topic allowing CodeStar Notifications service to publish messages
