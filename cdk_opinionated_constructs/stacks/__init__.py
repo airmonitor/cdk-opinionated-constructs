@@ -1,3 +1,5 @@
+from typing import Union
+
 import aws_cdk.aws_chatbot as chatbot
 import aws_cdk.aws_events as events
 import aws_cdk.aws_events_targets as events_targets
@@ -99,7 +101,7 @@ def notifications_topic(self, pipeline_vars: PipelineVars) -> sns.Topic:
     return notifications_sns_topic
 
 
-def pipeline_notifications(self, sns_topic: sns.ITopic, source: Pipeline | CodePipeline.pipeline) -> None:
+def pipeline_notifications(self, sns_topic: sns.ITopic, source: Union[Pipeline, CodePipeline.pipeline]) -> None:
     """Configures notifications for pipeline events.
 
     Parameters:
