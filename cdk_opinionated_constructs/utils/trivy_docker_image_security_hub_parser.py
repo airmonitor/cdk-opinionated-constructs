@@ -357,7 +357,7 @@ def main(  # noqa: PLR0912
     """
 
     results_path = Path(results_file)
-    with results_path.open() as json_file:
+    with results_path.open(encoding="utf-8") as json_file:
         data = json.load(json_file)
 
         # Extract container info from Trivy format

@@ -24,13 +24,8 @@ install: # Install all project dependencies and development tools
 	@echo "Installing dependencies from requirements files"
 	uv pip install --upgrade pip
 	uv pip install pre-commit pytest pytest-snapshot
-
-local_install: # Install minimal set of local development dependencies
-	@echo "Installing dependencies from requirements files"
-	uv pip install pur
-	uv pip install -r requirements.txt
-	uv pip install pre-commit pytest pytest-snapshot
-
+	uv pip install -r test/requirements.txt
+	uv pip install -r test/requirements-dev.txt
 
 pre-commit: # Run code quality checks on all Python files
 	@echo "Running pre-commit"
@@ -49,6 +44,7 @@ tests: # Run infrastructure tests for specified stage
 update: # Update all dependencies and tools to latest versions
 	@echo "Updating used tools and scripts"
 	pre-commit autoupdate
+
 
 clean: # Remove virtual environment and cleanup project files
 	@echo "Cleaning up..."
