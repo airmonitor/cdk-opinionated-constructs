@@ -61,20 +61,21 @@ def _create_docker_build_commands(
         'echo "Building Docker Image..."',
         f"docker build --no-cache -t '{pipeline_vars.project}-{stage_name}' services/{docker_project_name}",
         'echo "Current Commit Hash: $CODEBUILD_RESOLVED_SOURCE_VERSION"',
-        'DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")',
-        'echo "Current time: $(DATE)"',
-        f'docker tag "{pipeline_vars.project}-{stage_name}:latest" '
-        f'"$ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION_$DATE"',
-        'docker push "$ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION_$DATE"',
+        'DATE=$(date -u +"%Y-%m-%dT%H-%M-%SZ")',
+        'echo "Current time: $DATE"',
+        'IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION}_${DATE}"',
+        'echo "Image tag: $IMAGE_TAG"',
+        f'docker tag "{pipeline_vars.project}-{stage_name}:latest" "$ECR_REPOSITORY_URI:$IMAGE_TAG"',
+        'docker push "$ECR_REPOSITORY_URI:$IMAGE_TAG"',
         f'aws ssm put-parameter --name "{image_tag_param}" '
-        f'--region {env.region} --value "$CODEBUILD_RESOLVED_SOURCE_VERSION_$DATE" '
+        f'--region {env.region} --value "$IMAGE_TAG" '
         f"--type String --overwrite",
         f'aws ssm put-parameter --name "{image_uri_param}" '
-        f'--region {env.region} --value "$ECR_REPOSITORY_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION_$DATE" '
+        f'--region {env.region} --value "$ECR_REPOSITORY_URI:$IMAGE_TAG" '
         f"--type String --overwrite",
         revert_to_original_role_command,
         f'aws ssm put-parameter --name "{image_tag_param}" '
-        f'--region {env.region} --value "$CODEBUILD_RESOLVED_SOURCE_VERSION_$DATE" '
+        f'--region {env.region} --value "$IMAGE_TAG" '
         f"--type String --overwrite",
     ]
 
