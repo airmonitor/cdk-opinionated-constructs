@@ -626,7 +626,7 @@ def scan_image_with_trivy(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
-    trivy_version: str = "0.64.1",
+    trivy_version: str = "0.65.0",
     cdk_opinionated_constructs_version: str = "4.5.3",
 ) -> pipelines.CodeBuildStep:
     """
@@ -636,7 +636,7 @@ def scan_image_with_trivy(
         stage_name (str): Name of the deployment stage
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
-        trivy_version (str): Version of Trivy scanner to install (defaults to "0.64.1")
+        trivy_version (str): Version of Trivy scanner to install (defaults to "0.65.0")
         cdk_opinionated_constructs_version (str): Version of CDK constructs package (defaults to "4.5.3")
 
     Functionality:
