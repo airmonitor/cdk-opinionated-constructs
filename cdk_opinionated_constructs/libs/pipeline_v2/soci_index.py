@@ -20,7 +20,7 @@ def _create_soci_index_install_commands(
     pipeline_vars: PipelineVars,
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
-    soci_snapshotter_version: str = "0.9.0",
+    soci_snapshotter_version: str = "0.11.1",
 ) -> list[str]:
     """
     Parameters:
@@ -29,7 +29,7 @@ def _create_soci_index_install_commands(
         stage_name (str): Name of the stage being deployed
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for which to install
             SOCI binaries (arm64 or amd64)
-        soci_snapshotter_version (str): Version of SOCI snapshotter to install, defaults to "0.9.0"
+        soci_snapshotter_version (str): Version of SOCI snapshotter to install, defaults to "0.11.1"
 
     Functionality:
         Generates a list of shell commands that:
