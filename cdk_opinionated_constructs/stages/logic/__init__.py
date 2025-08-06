@@ -209,7 +209,7 @@ def soci_image_builder(
     pipeline_vars: PipelineVars,
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
-    soci_snapshotter_version: str = "0.9.0",
+    soci_snapshotter_version: str = "0.11.1",
 ) -> pipelines.CodeBuildStep:
     """
     Parameters:
