@@ -64,6 +64,7 @@ ignore = [
     "PLR1702",
     "RUF052",
     "UP007", # Ignore AAA | BBB type annotations, they are not suported yet by AWS JSII compiler for CDK.
+    "F811",
 ]
 
 exclude = [
