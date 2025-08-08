@@ -13,6 +13,8 @@ from cdk_opinionated_constructs.stages.logic import (
     runtime_versions,
 )
 
+runtime_versions = {"nodejs": "22", "python": "3.13"}
+
 
 def _create_trivy_install_commands(
     *,
@@ -21,7 +23,6 @@ def _create_trivy_install_commands(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    cdk_opinionated_constructs_version: str = "4.5.7",
     trivy_version: str = "0.65.0",
 ) -> dict[str, list[str] | list[str | Any]]:
     """
@@ -31,8 +32,6 @@ def _create_trivy_install_commands(
         stage_name (str): Name of the stage being deployed
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for installing the
             appropriate Trivy version
-        cdk_opinionated_constructs_version (str): Version of cdk-opinionated-constructs
-            to use for the Trivy parser script, defaults to "4.5.7"
         trivy_version (str): Version of Trivy to install, defaults to "0.65.0"
 
     Functionality:
@@ -56,9 +55,6 @@ def _create_trivy_install_commands(
 
     _install_commands = [
         "pip3 install boto3 click",
-        f"wget https://raw.githubusercontent.com/airmonitor/cdk-opinionated-constructs/refs/heads/"
-        f"{cdk_opinionated_constructs_version}/cdk_opinionated_constructs/utils/"
-        f"trivy_docker_image_security_hub_parser.py",
         "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
     ]
 
@@ -102,7 +98,8 @@ def _create_trivy_install_commands(
         " --severity HIGH,CRITICAL $IMAGE_URI",
         "echo #################################################",
         "echo sending trivy Docker image results to Security Hub...",
-        f"python3 trivy_docker_image_security_hub_parser.py "
+        f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
+        f"utils/trivy_docker_image_security_hub_parser.py "
         f"--aws-account {env.account} "
         f"--aws-region {env.region} "
         f"--project-name {pipeline_vars.project} "
@@ -124,7 +121,8 @@ def _create_trivy_install_commands(
         " /tmp/sbom.spdx.json",
         "echo #################################################",
         "echo sending trivy SBOM results to Security Hub...",
-        f"python3 trivy_docker_image_security_hub_parser.py "
+        f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
+        f"utils/trivy_docker_image_security_hub_parser.py "
         f"--aws-account {env.account} "
         f"--aws-region {env.region} "
         f"--project-name {pipeline_vars.project} "

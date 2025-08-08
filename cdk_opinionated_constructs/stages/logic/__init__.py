@@ -627,7 +627,6 @@ def scan_image_with_trivy(
     cpu_architecture: Literal["arm64", "amd64"],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
     trivy_version: str = "0.65.0",
-    cdk_opinionated_constructs_version: str = "4.5.7",
 ) -> pipelines.CodeBuildStep:
     """
     Parameters:
@@ -637,7 +636,6 @@ def scan_image_with_trivy(
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
         trivy_version (str): Version of Trivy scanner to install (defaults to "0.65.0")
-        cdk_opinionated_constructs_version (str): Version of CDK constructs package (defaults to "4.5.7")
 
     Functionality:
         Creates a CodeBuild step that performs security scanning of container images using Trivy:
@@ -663,9 +661,6 @@ def scan_image_with_trivy(
 
     _install_commands = [
         "pip3 install boto3 click",
-        f"wget https://raw.githubusercontent.com/airmonitor/cdk-opinionated-constructs/refs/heads/"
-        f"{cdk_opinionated_constructs_version}/cdk_opinionated_constructs/utils/"
-        f"trivy_docker_image_security_hub_parser.py",
     ]
 
     if cpu_architecture == "amd64":
@@ -724,7 +719,8 @@ def scan_image_with_trivy(
             " --severity HIGH,CRITICAL $IMAGE_URI",
             "echo #################################################",
             "echo sending trivy Docker image results to Security Hub...",
-            f"python3 trivy_docker_image_security_hub_parser.py "
+            f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
+            f"utils/trivy_docker_image_security_hub_parser.py "
             f"--aws-account {env.account} "
             f"--aws-region {env.region} "
             f"--project-name {pipeline_vars.project} "
@@ -744,7 +740,8 @@ def scan_image_with_trivy(
             " /tmp/sbom.spdx.json",
             "echo #################################################",
             "echo sending trivy SBOM results to Security Hub...",
-            f"python3 trivy_docker_image_security_hub_parser.py "
+            f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
+            f"utils/trivy_docker_image_security_hub_parser.py "
             f"--aws-account {env.account} "
             f"--aws-region {env.region} "
             f"--project-name {pipeline_vars.project} "
