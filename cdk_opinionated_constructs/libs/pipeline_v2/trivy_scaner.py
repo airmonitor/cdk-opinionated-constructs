@@ -54,7 +54,11 @@ def _create_trivy_install_commands(
     """
 
     _install_commands = [
-        "pip3 install boto3 click",
+        "n 22",
+        "pip install uv",
+        "make venv",
+        "source .venv/bin/activate",
+        "pip install boto3 click cdk-opinionated-constructs",
         "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
     ]
 

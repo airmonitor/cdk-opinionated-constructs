@@ -660,7 +660,11 @@ def scan_image_with_trivy(
     )
 
     _install_commands = [
-        "pip3 install boto3 click",
+        "n 22",
+        "pip install uv",
+        "make venv",
+        "source .venv/bin/activate",
+        "pip install boto3 click cdk-opinionated-constructs",
     ]
 
     if cpu_architecture == "amd64":
