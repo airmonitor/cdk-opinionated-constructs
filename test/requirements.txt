@@ -1,4 +1,4 @@
-aws-cdk-lib==2.209.1
+aws-cdk-lib==2.210.0
 cdk-monitoring-constructs==9.13.0
 cdk-nag==2.36.55
 cdk-opinionated-constructs==4.5.8
