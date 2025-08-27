@@ -4,7 +4,7 @@ default_language_version:
   python: python3.13
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-ast
@@ -32,7 +32,7 @@ repos:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.12.8'
+    rev: 'v0.12.10'
     hooks:
       - id: ruff
         args: [ --fix]
@@ -76,7 +76,7 @@ repos:
       -   id: detect-secrets
           exclude: (cdk.context.json|cdk/tests/infrastructure/snapshots/test_s3_stack/test_snapshot/ppe.yaml)
   - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.12.2
+    rev: 0.13.0
     hooks:
       - id: uv-secure
   - repo: https://github.com/hukkin/mdformat
