@@ -44,7 +44,8 @@ tests: # Run infrastructure tests for specified stage
 update: # Update all dependencies and tools to latest versions
 	@echo "Updating used tools and scripts"
 	pre-commit autoupdate
-
+	pur -r test/requirements.txt
+	pur -r test/requirements-dev.txt
 
 clean: # Remove virtual environment and cleanup project files
 	@echo "Cleaning up..."
