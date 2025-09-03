@@ -23,7 +23,7 @@ def _create_trivy_install_commands(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    trivy_version: str = "0.65.0",
+    trivy_version: str = "0.66.0",
 ) -> dict[str, list[str] | list[str | Any]]:
     """
     Parameters:
@@ -32,7 +32,7 @@ def _create_trivy_install_commands(
         stage_name (str): Name of the stage being deployed
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for installing the
             appropriate Trivy version
-        trivy_version (str): Version of Trivy to install, defaults to "0.65.0"
+        trivy_version (str): Version of Trivy to install, defaults to "0.66.0"
 
     Functionality:
         Generates installation and execution commands for Trivy security scanner
