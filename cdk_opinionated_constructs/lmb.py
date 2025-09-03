@@ -101,7 +101,7 @@ class AWSPythonLambdaFunction(Construct):
         handler: str = "handler.handler",
         signing_config: lmb.ICodeSigningConfig | None = None,
         tracing: bool = True,  # noqa: FBT001, FBT002
-        insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_333_0,
+        insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_404_0,
         env_variables: None | dict = None,
         **kwargs,
     ) -> lmb.Function | lmb.IFunction:
