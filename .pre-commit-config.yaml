@@ -32,13 +32,13 @@ repos:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.12.11'
+    rev: 'v0.13.2'
     hooks:
       - id: ruff
         args: [ --fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.17.1"
+    rev: "v1.18.2"
     hooks:
       - id: mypy
         args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports, --no-warn-unused-ignores]
@@ -67,7 +67,7 @@ repos:
     hooks:
       - id: bandit
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.13.1
+    rev: v2.14.0
     hooks:
       - id: hadolint
   -   repo: https://github.com/Yelp/detect-secrets
