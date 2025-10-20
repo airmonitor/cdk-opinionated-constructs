@@ -1,5 +1,5 @@
 aws-cdk-lib==2.220.0
 cdk-monitoring-constructs==9.15.2
-cdk-nag==2.37.51
+cdk-nag==2.37.55
 cdk-opinionated-constructs==4.5.13
 constructs==10.4.2
