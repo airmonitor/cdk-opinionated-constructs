@@ -17,6 +17,14 @@ from constructs import Construct
 
 class ApplicationLoadBalancer(Construct):
     def __init__(self, scope: Construct, construct_id: str):
+        """
+        Parameters:
+            scope: The CDK construct scope in which this resource is defined
+            construct_id (str): The unique identifier for this construct
+
+        Functionality:
+            Initializes an ApplicationLoadBalancer construct
+        """
         super().__init__(scope, construct_id)
 
     def create_access_logs_bucket(self, bucket_name: str, expiration_days: int) -> s3.Bucket | s3.IBucket:
@@ -84,46 +92,43 @@ class ApplicationLoadBalancer(Construct):
     def add_connections(
         alb: albv2.ApplicationLoadBalancer, certificates: list[certificate_manager.ICertificate], ports: list
     ):
-        """Adds listeners and target groups to an ALB based on a list of port
-        definitions.
-
+        """
         Parameters:
+            alb (albv2.ApplicationLoadBalancer): The Application Load Balancer instance to configure
+            certificates (list[certificate_manager.ICertificate]): List of ACM certificates to attach to HTTPS listeners
+            ports (list): List of port configuration dictionaries
 
-        - alb: The ApplicationLoadBalancer to add listeners and targets to.
-        - certificates: List of ACM certificates to attach to the listeners.
-        - ports: List of port definitions, each containing:
-          - front_end_port: Frontend port number for listener
-          - back_end_port: Backend port number for target group
-          - back_end_protocol: Backend protocol (HTTP/HTTPS)
-          - targets: List of targets for target group
-          - deregistration_delay: Optional deregistration delay
-          - healthy_http_codes: Optional healthy HTTP codes for health checks
-          - health_check_path: Optional path for health checks
-          - stickiness_cookie_duration (optional): Optional stickiness cookie duration (cdk.Duration)
+        Functionality:
+            Configures listeners and target groups for an Application Load Balancer based on provided port definitions.
+            For each port definition, creates:
+            - HTTPS listener with specified certificates
+            - Target group with specified backend protocol and targets
+            - Health check configuration with optional custom settings
+            - Optional stickiness configuration with cookie duration
+            - Optional deregistration delay settings
 
-        For each port definition, it will:
+            Automatically applies security best practices:
+            - Uses TLS 1.2 with forward secrecy
+            - Configures health checks with customizable parameters
+            - Implements load balancing algorithms based on stickiness requirements
+            - Sets appropriate anomaly mitigation based on configuration
 
-        - Create an HTTPS listener on the frontend port, attaching the certificates
-        - Add a target group on the backend port, using provided targets
-        - Configure deregistration delay and health check codes if provided
+        Arguments:
+            alb: The Application Load Balancer to configure
+            certificates: ACM certificates for HTTPS listeners
+            ports: List of port configuration dictionaries containing:
+                - front_end_port: Frontend listener port number
+                - back_end_port: Backend target group port number
+                - back_end_protocol: Backend protocol (HTTP/HTTPS)
+                - targets: List of targets for the target group
+                - deregistration_delay: Optional deregistration delay duration
+                - healthy_http_codes: Optional HTTP codes for health checks
+                - health_check_path: Optional health check path
+                - stickiness_cookie_duration: Optional stickiness cookie duration
+                - healthy_threshold_count: Optional healthy threshold count
 
-        Example usage:
-        add_connections(
-            alb=alb,
-            certificates=[imported_acm_certificate],
-            ports=[
-                {
-                    "back_end_port": 8088,
-                    "front_end_port": 443,
-                    "back_end_protocol": albv2.ApplicationProtocol.HTTPS,
-                    "targets": [service],
-                    "healthy_http_codes": "200,302",
-                    "deregistration_delay": cdk.Duration.minutes(1),
-                    "health_check_path": "/health",
-                    "stickiness_cookie_duration": cdk.Duration.days(1),
-                }
-            ]
-        )
+        Returns:
+            None
         """
 
         for port_definition in ports:
@@ -150,6 +155,7 @@ class ApplicationLoadBalancer(Construct):
                     enabled=True,
                     healthy_http_codes=port_definition.get("healthy_http_codes"),
                     path=port_definition.get("health_check_path"),
+                    healthy_threshold_count=port_definition.get("healthy_threshold_count"),
                 ),
                 port=back_end_port,
                 protocol=port_definition["back_end_protocol"],
