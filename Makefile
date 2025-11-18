@@ -2,7 +2,6 @@
 
 # Set the desired Python interpreter (change if needed)
 PYTHON := python3.13
-VERSION := 4.1.1
 # Virtual environment directory
 VENV := .venv
 
@@ -22,7 +21,8 @@ activate: # Activate Python virtual environment
 
 install: # Install all project dependencies and development tools
 	@echo "Installing dependencies from requirements files"
-	uv pip install --upgrade pip
+	pip install --upgrade pip
+	pip install --upgrade uv
 	uv pip install pre-commit pytest pytest-snapshot
 	uv pip install -r test/requirements.txt
 	uv pip install -r test/requirements-dev.txt
