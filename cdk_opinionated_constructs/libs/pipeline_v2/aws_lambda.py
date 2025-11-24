@@ -50,6 +50,7 @@ def create_lambda_build_project(
             privileged=True,
             compute_type=compute_type,
         ),
+        auto_retry_limit=3,
         build_spec=codebuild.BuildSpec.from_object({
             "version": "0.2",
             "phases": {

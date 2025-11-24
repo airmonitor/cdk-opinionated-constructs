@@ -221,6 +221,7 @@ def create_trivy_project(
             privileged=True,
             compute_type=compute_type,
         ),
+        auto_retry_limit=3,
         environment_variables={
             "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
                 value="/var/run/docker/containerd/containerd.sock",
