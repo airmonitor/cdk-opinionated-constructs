@@ -108,28 +108,41 @@ def create_soci_index_project(
 ) -> codebuild.PipelineProject:
     """
     Parameters:
-        scope: The CDK construct scope in which this resource will be created
         env (Environment): AWS environment containing region and account information
         stage_name (str): Name of the stage being deployed
-        pipeline_vars (PipelineVars): Pipeline variables containing project configuration
-        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture to target for the build (arm64 or amd64)
+        pipeline_vars (PipelineVars): Pipeline variables containing project information
+        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for which to create the build project
         compute_type (codebuild.ComputeType): AWS CodeBuild compute type to use for the build project
 
     Functionality:
-        Creates an AWS CodeBuild pipeline project that performs SOCI (Seekable OCI) indexing for container images.
+        Creates an AWS CodeBuild pipeline project for generating SOCI indexes for container images.
         The project:
         1. Sets up a build environment with the appropriate architecture-specific build image
-        2. Configures containerd socket access for Docker operations
-        3. Installs required dependencies and SOCI tooling
-        4. Retrieves container images from ECR
-        5. Generates SOCI indexes for lazy loading of container images
-        6. Uploads the SOCI indexes back to ECR
-        7. Applies necessary IAM permissions for ECR and SSM parameter access
+        2. Configures a build specification with installation commands
+        3. Includes commands to:
+           - Retrieve ECR credentials and Docker image URI
+           - Download and install SOCI snapshotter binaries
+           - Authenticate with Amazon ECR
+           - Pull the container image using containerd
+           - Generate a SOCI index for the container image
+           - Push the SOCI index back to ECR
+        4. Applies default IAM permissions for CDK operations
+        5. Attaches necessary IAM policies for Docker operations
+        6. Supports optional CodeBuild fleet configuration
+
+    Arguments:
+        scope: The CDK construct scope
+        env: AWS environment object
+        stage_name: Deployment stage name
+        pipeline_vars: Pipeline configuration variables
+        cpu_architecture: Target CPU architecture for the build
+        compute_type: AWS CodeBuild compute type
 
     Returns:
-        codebuild.PipelineProject: The configured AWS CodeBuild pipeline project for SOCI indexing
+        codebuild.PipelineProject: The configured AWS CodeBuild pipeline project for SOCI index generation
     """
     build_image = get_build_image_for_architecture(cpu_architecture)
+    project_name = "soci_index_project"
 
     commands = _create_soci_index_install_commands(
         env=env,
@@ -138,13 +151,20 @@ def create_soci_index_project(
         cpu_architecture=cpu_architecture,
     )
 
+    fleet = None
+    if pipeline_vars.codebuild_fleet_arn:
+        fleet = codebuild.Fleet.from_fleet_arn(
+            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
+        )
+
     project = codebuild.PipelineProject(
         scope,
-        f"{stage_name}_soci_index_project",
+        f"{stage_name}_{project_name}",
         environment=codebuild.BuildEnvironment(
             build_image=build_image,  # type: ignore
             privileged=True,
             compute_type=compute_type,
+            fleet=fleet,
         ),
         auto_retry_limit=3,
         environment_variables={
