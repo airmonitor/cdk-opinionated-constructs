@@ -55,11 +55,15 @@ def _create_docker_build_commands(
         f'ECR_REPOSITORY_URI=$(aws ssm get-parameter --name "{ecr_uri_param}" '
         f'--region {env.region} --query "Parameter.Value" --output text)',
         "echo $ECR_REPOSITORY_URI",
+        f'IMAGE_URI=$(aws ssm get-parameter --name "{image_uri_param}" '
+        f'--region {env.region} --query "Parameter.Value" --output text)',
+        "echo $IMAGE_URI",
         'echo "Logging into Amazon ECR..."',
         f"aws ecr get-login-password --region {env.region} | "
         f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
         'echo "Building Docker Image..."',
-        f"docker build --no-cache -t '{pipeline_vars.project}-{stage_name}' services/{docker_project_name}",
+        f"docker build --cache-from $IMAGE_URI "
+        f"-t '{pipeline_vars.project}-{stage_name}' services/{docker_project_name}",
         'echo "Current Commit Hash: $CODEBUILD_RESOLVED_SOURCE_VERSION"',
         'DATE=$(date -u +"%Y-%m-%dT%H-%M-%SZ")',
         'echo "Current time: $DATE"',
