@@ -111,39 +111,47 @@ def create_docker_build_project(
 ):
     """
     Parameters:
-        scope: The construct scope in which this resource is defined
-        env (Environment): AWS environment containing region and account information
-        stage_name (str): Name of the stage being deployed
-        pipeline_vars (PipelineVars): Pipeline variables containing project information
+        env (Environment): AWS environment configuration containing account and region information
+        stage_name (str): Name of the deployment stage
+        pipeline_vars (PipelineVars): Pipeline variables containing project configuration
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         docker_project_name (str): Name of the Docker project/service to build
-        compute_type (codebuild.ComputeType): AWS CodeBuild compute type for the build environment
+        compute_type (codebuild.ComputeType): Compute type for the CodeBuild environment
 
     Functionality:
-        Creates an AWS CodeBuild pipeline project configured for Docker image building that:
-        1. Sets up a build environment based on the specified CPU architecture
-        2. Configures the build environment with proper Docker privileges
-        3. Creates Docker build commands for the specified project
-        4. Sets up a build specification with necessary runtime versions and commands
-        5. Applies default permissions and Docker-specific IAM policies
-        6. The Docker build process will build, tag, and push images to ECR
-        7. Stores image references in SSM Parameter Store for later use
+        Creates and configures a CodeBuild pipeline project for Docker image building with the following capabilities:
+        - Selects appropriate build image based on specified CPU architecture (ARM64 or AMD64)
+        - Configures privileged Docker build environment with containerd socket access
+        - Optionally uses a CodeBuild fleet if fleet ARN is provided in pipeline variables
+        - Generates Docker build commands that authenticate with ECR, build the image, and push to repository
+        - Sets up environment variables for containerd socket location
+        - Applies default IAM permissions for CDK asset management, parameter store access,
+        and CloudFormation operations
+        - Attaches Docker-specific IAM policies for ECR operations and role assumption
 
     Returns:
-        codebuild.PipelineProject: A fully configured CodeBuild project for Docker image building
+        codebuild.PipelineProject: Configured CodeBuild project ready for Docker image building in the pipeline
     """
 
     build_image = get_build_image_for_architecture(cpu_architecture)
+    project_name = "docker_project"
 
     docker_commands = _create_docker_build_commands(env, pipeline_vars, stage_name, docker_project_name)
 
+    fleet = None
+    if pipeline_vars.codebuild_fleet_arn:
+        fleet = codebuild.Fleet.from_fleet_arn(
+            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
+        )
+
     docker_project = codebuild.PipelineProject(
         scope,
-        f"{stage_name}_{docker_project_name}_docker_project",
+        f"{stage_name}_{docker_project_name}_{project_name}",
         environment=codebuild.BuildEnvironment(
             build_image=build_image,  # type: ignore
             privileged=True,
             compute_type=compute_type,
+            fleet=fleet,
         ),
         environment_variables={
             "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
