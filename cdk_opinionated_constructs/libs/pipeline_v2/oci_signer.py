@@ -179,27 +179,28 @@ def create_oci_signer_project(
 ) -> codebuild.PipelineProject:
     """
     Parameters:
-        scope: The CDK construct scope (parent) for creating this resource
         env (Environment): AWS environment containing region and account information
         stage_name (str): Name of the stage being deployed
         pipeline_vars (PipelineVars): Pipeline variables containing project information
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
-        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket to store artifacts like SBOM and CVE reports
-        compute_type (codebuild.ComputeType): The CodeBuild compute resource type to use
+        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
+        compute_type (codebuild.ComputeType): Compute type for the CodeBuild project
 
     Functionality:
-        Creates a CodeBuild pipeline project configured for OCI image signing workflow.
-        The project:
-        1. Sets up a build environment with the specified architecture
-        2. Installs necessary tools (AWS Signer Notation CLI, ORAS, Grype, Syft)
-        3. Configures Docker container access through containerd
-        4. Attaches required IAM policies for ECR, SSM, S3, and AWS Signer operations
-        5. Creates a build specification with install and build commands for the OCI signing process
+        Creates a CodeBuild pipeline project for OCI image signing workflow:
+        1. Selects appropriate build image based on CPU architecture
+        2. Generates OCI signer role assumption commands
+        3. Constructs installation and build commands for signing process
+        4. Configures optional CodeBuild fleet if provided
+        5. Creates PipelineProject with privileged Docker access and auto-retry enabled
+        6. Applies default IAM permissions and OCI signer-specific policies
+        7. Attaches the OCI signer role to the project
 
     Returns:
-        codebuild.PipelineProject: The configured CodeBuild project for OCI signing
+        codebuild.PipelineProject: Configured CodeBuild project for OCI image signing operations
     """
     build_image = get_build_image_for_architecture(cpu_architecture)
+    project_name = "oci_signer_project"
 
     _assume_oci_signer_role_commands = assume_role_commands(
         env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="oci-signer"
@@ -214,13 +215,20 @@ def create_oci_signer_project(
         assume_commands=_assume_oci_signer_role_commands,
     )
 
+    fleet = None
+    if pipeline_vars.codebuild_fleet_arn:
+        fleet = codebuild.Fleet.from_fleet_arn(
+            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
+        )
+
     project = codebuild.PipelineProject(
         scope,
-        f"{stage_name}_oci_signer_project",
+        f"{stage_name}_{project_name}",
         environment=codebuild.BuildEnvironment(
             build_image=build_image,  # type: ignore
             privileged=True,
             compute_type=compute_type,
+            fleet=fleet,
         ),
         auto_retry_limit=3,
         environment_variables={

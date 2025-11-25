@@ -175,31 +175,29 @@ def create_trivy_project(
 ) -> codebuild.PipelineProject:
     """
     Parameters:
-        scope: The CDK construct scope in which this construct is created
         env (Environment): AWS environment containing region and account information
         stage_name (str): Name of the stage being deployed
         pipeline_vars (PipelineVars): Pipeline variables containing project information
-        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture to determine the appropriate build image
-        compute_type (codebuild.ComputeType): The compute resources for the CodeBuild project
-        docker_project_name (str): Base name for the Docker project that will be scanned
+        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
+        compute_type (codebuild.ComputeType): Compute type for the CodeBuild project
+        docker_project_name (str): Name of the Docker project
 
     Functionality:
-        Creates a CodeBuild pipeline project that performs security scanning with Trivy.
-        The project:
-        1. Determines the appropriate build image based on CPU architecture
-        2. Configures Trivy installation commands for the specified architecture
-        3. Creates a CodeBuild environment with Docker support (privileged mode)
-        4. Sets up environment variables needed for container operations
-        5. Configures build phases to install dependencies and run security scans
-        6. Scans both Docker images and SBOM files for security vulnerabilities
-        7. Reports findings to AWS Security Hub
-        8. Fails the build if HIGH or CRITICAL vulnerabilities are found
-        9. Applies necessary IAM permissions for ECR, SSM, S3, and Security Hub access
+        Creates a CodeBuild pipeline project configured to run Trivy security scanning on Docker images.
+        The function:
+        1. Selects the appropriate build image based on the specified CPU architecture
+        2. Generates Trivy installation and execution commands with architecture-specific binary selection
+        3. Optionally imports a CodeBuild fleet if specified in pipeline variables
+        4. Configures the build environment with Docker privileges and custom environment variables
+        5. Constructs a build specification with install and build phases
+        6. Applies default permissions to the project
+        7. Attaches the Trivy IAM role to enable necessary AWS service permissions
 
     Returns:
-        codebuild.PipelineProject: A configured CodeBuild project for Trivy security scanning
+        codebuild.PipelineProject: Configured CodeBuild pipeline project for executing Trivy security scans
     """
     build_image = get_build_image_for_architecture(cpu_architecture)
+    project_name = "trivy_project"
 
     _assume_trivy_role_commands = assume_role_commands(
         env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="trivy"
@@ -213,13 +211,20 @@ def create_trivy_project(
         assume_commands=_assume_trivy_role_commands,
     )
 
+    fleet = None
+    if pipeline_vars.codebuild_fleet_arn:
+        fleet = codebuild.Fleet.from_fleet_arn(
+            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
+        )
+
     project = codebuild.PipelineProject(
         scope,
-        f"{stage_name}_{docker_project_name}_trivy_project",
+        f"{stage_name}_{docker_project_name}_{project_name}",
         environment=codebuild.BuildEnvironment(
             build_image=build_image,  # type: ignore
             privileged=True,
             compute_type=compute_type,
+            fleet=fleet,
         ),
         auto_retry_limit=3,
         environment_variables={

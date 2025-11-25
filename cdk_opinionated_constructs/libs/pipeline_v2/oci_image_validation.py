@@ -195,30 +195,28 @@ def create_oci_image_validation_project(
 ) -> codebuild.PipelineProject:
     """
     Parameters:
-        scope (Construct): The scope in which to define this construct
         env (Environment): AWS environment containing region and account information
         stage_name (str): Name of the stage being deployed
         pipeline_vars (PipelineVars): Pipeline variables containing project information
-        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture to use for the build
-        compute_type (codebuild.ComputeType): The compute resources for the build environment
-        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket to store artifacts including image definitions
+        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture to use for the build environment
+        compute_type (codebuild.ComputeType): CodeBuild compute type for the project
+        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket to store pipeline artifacts
 
     Functionality:
-        Creates a CodeBuild pipeline project that validates OCI image signatures.
-        The project:
-        1. Uses the appropriate build image based on CPU architecture
-        2. Installs AWS Signer Notation CLI and other required tools
-        3. Retrieves Docker image information from SSM parameters
-        4. Creates a trust policy for signature verification
-        5. Verifies the container image signature using Notation
-        6. Creates an image definitions file with container information
-        7. Uploads the image definitions file to S3 for use in deployment
-        8. Applies necessary IAM permissions for ECR, SSM, AWS Signer, and S3 operations
+        Creates a CodeBuild PipelineProject for OCI image validation with the following configuration:
+        1. Sets up build environment with specified architecture and compute type
+        2. Configures privileged mode for Docker operations
+        3. Optionally assigns a CodeBuild fleet if specified in pipeline variables
+        4. Generates and includes OCI image validation commands for install and build phases
+        5. Sets environment variables for containerd socket access
+        6. Applies default permissions and OCI image validation-specific IAM policies
+        7. Configures auto-retry with limit of 3 attempts
 
     Returns:
-        codebuild.PipelineProject: The created CodeBuild project for OCI image validation
+        codebuild.PipelineProject: Configured CodeBuild project for OCI image validation
     """
     build_image = get_build_image_for_architecture(cpu_architecture)
+    project_name = "oci_image_validation_project"
 
     _assume_role_commands = assume_role_commands(
         env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="oci-image-validation"
@@ -233,13 +231,20 @@ def create_oci_image_validation_project(
         pipeline_artifacts_bucket=pipeline_artifacts_bucket,
     )
 
+    fleet = None
+    if pipeline_vars.codebuild_fleet_arn:
+        fleet = codebuild.Fleet.from_fleet_arn(
+            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
+        )
+
     project = codebuild.PipelineProject(
         scope,
-        f"{stage_name}_oci_image_validation_project",
+        f"{stage_name}_{project_name}",
         environment=codebuild.BuildEnvironment(
             build_image=build_image,  # type: ignore
             privileged=True,
             compute_type=compute_type,
+            fleet=fleet,
         ),
         auto_retry_limit=3,
         environment_variables={
