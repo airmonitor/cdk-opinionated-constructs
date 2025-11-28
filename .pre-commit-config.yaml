@@ -59,7 +59,7 @@ repos:
       - id: xenon
         args: ["--max-average=C", "--max-modules=C", "--max-absolute=C", "-e 'cdk/tests/infrastructure/*,.venv/*,cdk.out/*'"]
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.29.1
+    rev: v8.30.0
     hooks:
       - id: gitleaks
   - repo: https://github.com/PyCQA/bandit

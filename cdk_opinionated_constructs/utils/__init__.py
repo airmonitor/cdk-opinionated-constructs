@@ -4,6 +4,7 @@ from os import walk
 from pathlib import Path
 
 import aws_cdk as cdk
+import aws_cdk.custom_resources as cr
 import yaml
 
 from aws_cdk import Stack, Stage
@@ -100,3 +101,36 @@ def load_properties(stage: str) -> dict:
             updated_props[key] = value
 
     return updated_props
+
+
+def get_ssm_value_cross_region_cr(self, *, ssm_param_name: str, ssm_param_region_code_name: str) -> str:
+    """
+    Parameters:
+        ssm_param_name (str): The full path of the SSM parameter to retrieve (e.g., "/project/stage/parameter/name")
+        ssm_param_region_code_name (str): The AWS region code where the SSM parameter is stored (e.g., "us-east-1")
+
+    Functionality:
+        Retrieves an SSM Parameter Store value from a different AWS region using a custom AWS CDK resource.
+        Creates an AwsCustomResource that calls the SSM GetParameter API in the specified region.
+        Extracts and returns the parameter value from the API response.
+        Useful for accessing parameters stored in regions other than the stack's deployment region.
+
+    Returns:
+        str: The value of the SSM parameter retrieved from the specified region
+    """
+    resource_name = ssm_param_name.replace("/", "_")
+    custom_resource = cr.AwsCustomResource(
+        self,
+        id=resource_name,
+        on_update=cr.AwsSdkCall(
+            service="SSM",
+            action="getParameter",
+            parameters={"Name": ssm_param_name},
+            region=ssm_param_region_code_name,
+            physical_resource_id=cr.PhysicalResourceId.of(f"{resource_name}"),
+        ),
+        policy=cr.AwsCustomResourcePolicy.from_sdk_calls(
+            resources=cr.AwsCustomResourcePolicy.ANY_RESOURCE  # type: ignore
+        ),
+    )
+    return custom_resource.get_response_field("Parameter.Value")
