@@ -282,7 +282,7 @@ class WAFv2(Construct):
 
         return wafv2.CfnWebACL.RuleProperty(
             name="AWS-AWSManagedRulesBotControlRuleSet",
-            priority=7,
+            priority=9,
             override_action=override_action,
             statement=wafv2.CfnWebACL.StatementProperty(
                 managed_rule_group_statement=wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
