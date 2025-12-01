@@ -32,13 +32,13 @@ repos:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.14.6'
+    rev: 'v0.14.7'
     hooks:
       - id: ruff
         args: [ --fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.18.2"
+    rev: "v1.19.0"
     hooks:
       - id: mypy
         args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports, --no-warn-unused-ignores]
@@ -76,7 +76,7 @@ repos:
       -   id: detect-secrets
           exclude: (cdk.context.json|cdk/tests/infrastructure/snapshots/test_s3_stack/test_snapshot/ppe.yaml)
   - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.15.1
+    rev: 0.15.2
     hooks:
       - id: uv-secure
   - repo: https://github.com/hukkin/mdformat
