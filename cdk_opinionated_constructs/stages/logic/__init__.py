@@ -300,6 +300,7 @@ def oci_image_signer(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
+    compute_type: codebuild.ComputeType = codebuild.ComputeType.SMALL,
     oras_version: str = "1.2.3",
 ) -> pipelines.CodeBuildStep:
     """
@@ -309,7 +310,8 @@ def oci_image_signer(
         stage_name (str): Name of the deployment stage
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
-        oras_version (str): Version of ORAS tool to install (defaults to "1.0.0")
+        compute_type (codebuild.ComputeType): Compute type for the build environment (defaults to SMALL)
+        oras_version (str): Version of ORAS tool to install (defaults to "1.2.3")
 
     Functionality:
         Creates a CodeBuild step that performs container image signing and security scanning:
@@ -333,7 +335,7 @@ def oci_image_signer(
     return pipelines.CodeBuildStep(
         "oci_image_signer",
         build_environment=codebuild.BuildEnvironment(
-            compute_type=codebuild.ComputeType.SMALL,
+            compute_type=compute_type,
             build_image=build_image,  # type: ignore
             privileged=True,
             environment_variables={
@@ -626,6 +628,7 @@ def scan_image_with_trivy(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
+    compute_type: codebuild.ComputeType = codebuild.ComputeType.MEDIUM,
     trivy_version: str = "0.67.2",
 ) -> pipelines.CodeBuildStep:
     """
@@ -635,19 +638,29 @@ def scan_image_with_trivy(
         stage_name (str): Name of the deployment stage
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
+        compute_type (codebuild.ComputeType): CodeBuild compute type for the build environment (defaults to MEDIUM)
         trivy_version (str): Version of Trivy scanner to install (defaults to "0.67.2")
 
     Functionality:
         Creates a CodeBuild step that performs security scanning of container images using Trivy:
-        - Installs required tools: wget, boto3, click, and Trivy scanner
-        - Downloads security findings parser script
-        - Pulls container image from ECR
-        - Performs vulnerability scanning on:
-            - Container image (looking for HIGH and CRITICAL vulnerabilities)
-            - Software Bill of Materials (SBOM)
-        - Sends scan results to AWS Security Hub
+        - Configures build environment based on CPU architecture (AMD64 or ARM64)
+        - Installs required tools: Node.js, uv, boto3, click, cdk-opinionated-constructs, and Trivy scanner
+        - Retrieves container image URI and tag from SSM Parameter Store
+        - Pulls container image from ECR after authenticating
+        - Performs vulnerability scanning on container image for HIGH and CRITICAL vulnerabilities
+        - Downloads and scans Software Bill of Materials (SBOM) from S3
+        - Sends scan results to AWS Security Hub for centralized security findings
         - Enforces security standards by failing the build if HIGH or CRITICAL vulnerabilities are found
-        - Configures necessary IAM permissions for ECR, SSM, S3, and Security Hub operations
+        - Configures IAM permissions for ECR, SSM, S3, and Security Hub operations
+
+    Arguments:
+        env: AWS environment configuration containing region and account details
+        pipeline_vars: Pipeline variables containing project configuration
+        stage_name: Name of the deployment stage
+        cpu_architecture: CPU architecture for the build environment
+        pipeline_artifacts_bucket: S3 bucket for storing build artifacts
+        compute_type: CodeBuild compute type for the build environment
+        trivy_version: Version of Trivy scanner to install
 
     Returns:
         pipelines.CodeBuildStep: Configured CodeBuild step for Trivy security scanning
@@ -680,7 +693,7 @@ def scan_image_with_trivy(
     return pipelines.CodeBuildStep(
         "scan_image_with_trivy",
         build_environment=codebuild.BuildEnvironment(
-            compute_type=codebuild.ComputeType.MEDIUM,
+            compute_type=compute_type,
             build_image=build_image,  # type: ignore
             privileged=True,
             environment_variables={
