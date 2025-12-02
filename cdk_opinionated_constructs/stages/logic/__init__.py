@@ -3,6 +3,7 @@ from typing import Any, Literal
 import aws_cdk.aws_codebuild as codebuild
 import aws_cdk.aws_codepipeline as codepipeline
 import aws_cdk.aws_codepipeline_actions as codepipeline_actions
+import aws_cdk.aws_ecr as ecr
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
 
@@ -201,6 +202,50 @@ def get_build_image_for_architecture(cpu_architecture: Literal["arm64", "amd64"]
         codebuild.LinuxBuildImage.AMAZON_LINUX_2023_5
         if cpu_architecture == "amd64"
         else codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0
+    )
+
+
+def _codebuild_build_environment(
+    self,
+    *,
+    pipeline_vars: PipelineVars,
+    stage_name: str,
+    stage_type: str,
+    fleet: codebuild.Fleet | codebuild.IFleet,
+) -> codebuild.BuildEnvironment:
+    """
+    Parameters:
+        pipeline_vars (PipelineVars): PipelineVars object containing configuration for CodeBuild
+        stage_name (str): Name of the pipeline stage
+        stage_type (str): Type of the pipeline stage
+        fleet (codebuild.Fleet | codebuild.IFleet): CodeBuild fleet configuration
+
+    Functionality:
+        Constructs and returns a BuildEnvironment for CodeBuild based on pipeline configuration
+        If a custom Docker ECR repository is specified, imports it and uses the custom image
+        Otherwise, uses the default Amazon Linux 2 Standard 3.0 build image
+        Configures the environment with privileged mode enabled and the specified fleet
+
+    Returns:
+        codebuild.BuildEnvironment: Configured build environment for CodeBuild
+    """
+    if pipeline_vars.codebuild_docker_ecr_repo_arn:
+        return codebuild.BuildEnvironment(
+            build_image=codebuild.LinuxArmBuildImage.from_ecr_repository(
+                ecr.Repository.from_repository_arn(
+                    self,
+                    id=f"imported_repo_{stage_name}_{stage_type}",
+                    repository_arn=pipeline_vars.codebuild_docker_ecr_repo_arn,
+                ),
+                tag_or_digest=pipeline_vars.codebuild_docker_image_tag,
+            ),  # type: ignore
+            privileged=True,
+            fleet=fleet or None,
+        )
+    return codebuild.BuildEnvironment(
+        build_image=codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,  # type: ignore
+        privileged=True,
+        fleet=fleet or None,
     )
 
 
