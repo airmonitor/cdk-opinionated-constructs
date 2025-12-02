@@ -15,7 +15,7 @@ from cdk_opinionated_constructs.stages.logic import (
 
 
 def _create_docker_build_commands(
-    env: Environment, pipeline_vars: PipelineVars, stage_name: str, docker_project_name: str
+    *, env: Environment, pipeline_vars: PipelineVars, stage_name: str, docker_project_name: str
 ) -> list[str]:
     """
     Parameters:
@@ -106,6 +106,7 @@ def _attach_docker_iam_policies(
 
 def create_docker_build_project(
     scope,
+    *,
     env: Environment,
     stage_name: str,
     pipeline_vars: PipelineVars,
@@ -137,9 +138,17 @@ def create_docker_build_project(
         codebuild.PipelineProject: Configured CodeBuild project ready for Docker image building in the pipeline
     """
     project_name = "docker_project"
-    build_image = get_build_image_for_architecture(scope, cpu_architecture, pipeline_vars, stage_name, project_name)
+    build_image = get_build_image_for_architecture(
+        scope,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        stage_type=project_name,
+        cpu_architecture=cpu_architecture,
+    )
 
-    docker_commands = _create_docker_build_commands(env, pipeline_vars, stage_name, docker_project_name)
+    docker_commands = _create_docker_build_commands(
+        env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, docker_project_name=docker_project_name
+    )
 
     fleet = None
     if pipeline_vars.codebuild_fleet_arn:

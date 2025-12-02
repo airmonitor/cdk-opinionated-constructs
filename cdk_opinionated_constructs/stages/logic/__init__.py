@@ -231,10 +231,11 @@ def codebuild_build_arm_image(
 
 def get_build_image_for_architecture(
     self,
-    cpu_architecture: Literal["arm64", "amd64"],
+    *,
     pipeline_vars: PipelineVars,
     stage_name: str,
     stage_type: str,
+    cpu_architecture: Literal["arm64", "amd64"] = "arm64",
 ):
     """
     Parameters:
@@ -288,6 +289,12 @@ def soci_image_builder(
     Returns:
         pipelines.CodeBuildStep: Configured CodeBuild step for SOCI index generation
     """
+    _install_commands = [
+        "echo Download the SOCI Binaries",
+        f"wget --quiet https://github.com/awslabs/soci-snapshotter/releases/download/v{soci_snapshotter_version}/soci-snapshotter-{soci_snapshotter_version}-linux-{cpu_architecture}.tar.gz",
+        f"tar xvzf soci-snapshotter-{soci_snapshotter_version}-linux-{cpu_architecture}.tar.gz soci",
+        "mv soci /usr/local/bin/soci",
+    ]
 
     return pipelines.CodeBuildStep(
         "soci_index_builder",
@@ -301,6 +308,7 @@ def soci_image_builder(
                 ),
             },
         ),
+        install_commands=_install_commands,
         commands=[
             f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
             f"IMAGE_URI=$(aws ssm get-parameter "
@@ -309,10 +317,6 @@ def soci_image_builder(
             f'--query "Parameter.Value" '
             f"--output text)",
             "echo $IMAGE_URI",
-            "echo Download the SOCI Binaries",
-            f"wget --quiet https://github.com/awslabs/soci-snapshotter/releases/download/v{soci_snapshotter_version}/soci-snapshotter-{soci_snapshotter_version}-linux-{cpu_architecture}.tar.gz",
-            f"tar xvzf soci-snapshotter-{soci_snapshotter_version}-linux-{cpu_architecture}.tar.gz soci",
-            "mv soci /usr/local/bin/soci",
             "echo Logging in to Amazon ECR...",
             f"aws ecr get-login-password --region {env.region} | "
             f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
@@ -350,6 +354,7 @@ def soci_image_builder(
 
 
 def oci_image_signer(
+    scope,
     env: Environment,
     pipeline_vars: PipelineVars,
     stage_name: str,
@@ -382,13 +387,23 @@ def oci_image_signer(
     Returns:
         pipelines.CodeBuildStep: Configured CodeBuild step for image signing and security scanning
     """
-    build_image = (
-        codebuild.LinuxBuildImage.AMAZON_LINUX_2023_5
-        if cpu_architecture == "amd64"
-        else codebuild.LinuxArmBuildImage.AMAZON_LINUX_2023_STANDARD_3_0
+    project_name = "oci_image_signer"
+    build_image = get_build_image_for_architecture(
+        self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name
     )
+    _install_commands = [
+        f"wget https://d2hvyiie56hcat.cloudfront.net/linux/{cpu_architecture}/installer/rpm/latest/aws-signer-notation-cli_{cpu_architecture}.rpm",
+        f"sudo rpm -U aws-signer-notation-cli_{cpu_architecture}.rpm",
+        "notation plugin ls",
+        f"curl -LO 'https://github.com/oras-project/oras/releases/download/v{oras_version}/oras_{oras_version}_linux_{cpu_architecture}.tar.gz'",
+        "mkdir -p oras-install/",
+        f"tar -xzf oras_{oras_version}_linux_{cpu_architecture}.tar.gz -C oras-install/",
+        "sudo mv oras-install/oras /usr/local/bin/",
+        "curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin",
+        "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
+    ]
     return pipelines.CodeBuildStep(
-        "oci_image_signer",
+        id=project_name,
         build_environment=codebuild.BuildEnvironment(
             compute_type=compute_type,
             build_image=build_image,  # type: ignore
@@ -400,17 +415,7 @@ def oci_image_signer(
                 ),
             },
         ),
-        install_commands=[
-            f"wget https://d2hvyiie56hcat.cloudfront.net/linux/{cpu_architecture}/installer/rpm/latest/aws-signer-notation-cli_{cpu_architecture}.rpm",
-            f"sudo rpm -U aws-signer-notation-cli_{cpu_architecture}.rpm",
-            "notation plugin ls",
-            f"curl -LO 'https://github.com/oras-project/oras/releases/download/v{oras_version}/oras_{oras_version}_linux_{cpu_architecture}.tar.gz'",
-            "mkdir -p oras-install/",
-            f"tar -xzf oras_{oras_version}_linux_{cpu_architecture}.tar.gz -C oras-install/",
-            "sudo mv oras-install/oras /usr/local/bin/",
-            "curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin",
-            "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
-        ],
+        install_commands=_install_commands if not pipeline_vars.codebuild_docker_ecr_repo_arn else None,
         commands=[
             f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
             f"IMAGE_URI=$(aws ssm get-parameter "
