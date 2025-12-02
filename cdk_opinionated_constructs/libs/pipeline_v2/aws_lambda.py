@@ -54,8 +54,13 @@ def create_lambda_build_project(
         codebuild.PipelineProject: The configured AWS CodeBuild pipeline project for Lambda builds
     """
     project_name = "lambda_project"
-    build_image = get_build_image_for_architecture(scope, cpu_architecture, pipeline_vars, stage_name, project_name)
-
+    build_image = get_build_image_for_architecture(
+        scope,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        stage_type=project_name,
+        cpu_architecture=cpu_architecture,
+    )
     fleet = None
     if pipeline_vars.codebuild_fleet_arn:
         fleet = codebuild.Fleet.from_fleet_arn(
