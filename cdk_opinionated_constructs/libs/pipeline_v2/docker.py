@@ -136,9 +136,8 @@ def create_docker_build_project(
     Returns:
         codebuild.PipelineProject: Configured CodeBuild project ready for Docker image building in the pipeline
     """
-
-    build_image = get_build_image_for_architecture(cpu_architecture)
     project_name = "docker_project"
+    build_image = get_build_image_for_architecture(scope, cpu_architecture, pipeline_vars, stage_name, project_name)
 
     docker_commands = _create_docker_build_commands(env, pipeline_vars, stage_name, docker_project_name)
 

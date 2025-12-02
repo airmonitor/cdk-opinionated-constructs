@@ -196,16 +196,7 @@ def apply_default_permissions(project: codebuild.PipelineProject, env: Environme
         )
 
 
-def get_build_image_for_architecture(cpu_architecture: Literal["arm64", "amd64"]):
-    """Get the appropriate build image based on CPU architecture."""
-    return (
-        codebuild.LinuxBuildImage.AMAZON_LINUX_2023_5
-        if cpu_architecture == "amd64"
-        else codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0
-    )
-
-
-def codebuild_build_image(
+def codebuild_build_arm_image(
     self,
     *,
     pipeline_vars: PipelineVars,
@@ -236,6 +227,36 @@ def codebuild_build_image(
             tag_or_digest=pipeline_vars.codebuild_docker_image_tag,
         )
     return codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0  # type: ignore
+
+
+def get_build_image_for_architecture(
+    self,
+    cpu_architecture: Literal["arm64", "amd64"],
+    pipeline_vars: PipelineVars,
+    stage_name: str,
+    stage_type: str,
+):
+    """
+    Parameters:
+        self (object): The current object
+        cpu_architecture (Literal["arm64", "amd64"]): The CPU architecture type
+        pipeline_vars (PipelineVars): PipelineVars object containing pipeline configuration
+        stage_name (str): Name of the pipeline stage
+        stage_type (str): Type of the pipeline stage
+
+    Functionality:
+        Selects and returns the appropriate build image based on the specified CPU architecture
+        Returns a standard Amazon Linux 2023 image for amd64 architecture or
+        builds a custom ARM image for arm64 architecture
+
+    Returns:
+        LinuxBuildImage: A CodeBuild Linux build image object appropriate for the specified architecture
+    """
+    return (
+        codebuild.LinuxBuildImage.AMAZON_LINUX_2023_5
+        if cpu_architecture == "amd64"
+        else codebuild_build_arm_image(self, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=stage_type)
+    )
 
 
 def soci_image_builder(
