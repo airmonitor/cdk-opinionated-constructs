@@ -199,8 +199,8 @@ def create_oci_signer_project(
     Returns:
         codebuild.PipelineProject: Configured CodeBuild project for OCI image signing operations
     """
-    build_image = get_build_image_for_architecture(cpu_architecture)
     project_name = "oci_signer_project"
+    build_image = get_build_image_for_architecture(scope, cpu_architecture, pipeline_vars, stage_name, project_name)
 
     _assume_oci_signer_role_commands = assume_role_commands(
         env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="oci-signer"
