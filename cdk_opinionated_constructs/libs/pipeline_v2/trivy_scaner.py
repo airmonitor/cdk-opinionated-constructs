@@ -197,7 +197,9 @@ def create_trivy_project(
         codebuild.PipelineProject: Configured CodeBuild pipeline project for executing Trivy security scans
     """
     project_name = "trivy_project"
-    build_image = get_build_image_for_architecture(scope, cpu_architecture, pipeline_vars, stage_name, project_name)
+    build_image = get_build_image_for_architecture(
+        self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name
+    )
 
     _assume_trivy_role_commands = assume_role_commands(
         env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="trivy"

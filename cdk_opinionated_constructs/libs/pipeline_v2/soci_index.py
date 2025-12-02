@@ -142,7 +142,9 @@ def create_soci_index_project(
         codebuild.PipelineProject: The configured AWS CodeBuild pipeline project for SOCI index generation
     """
     project_name = "soci_index_project"
-    build_image = get_build_image_for_architecture(scope, cpu_architecture, pipeline_vars, stage_name, project_name)
+    build_image = get_build_image_for_architecture(
+        self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name
+    )
 
     commands = _create_soci_index_install_commands(
         env=env,
