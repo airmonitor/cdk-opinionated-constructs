@@ -205,48 +205,37 @@ def get_build_image_for_architecture(cpu_architecture: Literal["arm64", "amd64"]
     )
 
 
-def _codebuild_build_environment(
+def codebuild_build_image(
     self,
     *,
     pipeline_vars: PipelineVars,
     stage_name: str,
     stage_type: str,
-    fleet: codebuild.Fleet | codebuild.IFleet,
-) -> codebuild.BuildEnvironment:
+) -> codebuild.LinuxArmBuildImage | codebuild.IBuildImage:
     """
     Parameters:
-        pipeline_vars (PipelineVars): PipelineVars object containing configuration for CodeBuild
+        pipeline_vars (PipelineVars): Pipeline variables containing CodeBuild configuration
         stage_name (str): Name of the pipeline stage
         stage_type (str): Type of the pipeline stage
-        fleet (codebuild.Fleet | codebuild.IFleet): CodeBuild fleet configuration
 
     Functionality:
-        Constructs and returns a BuildEnvironment for CodeBuild based on pipeline configuration
-        If a custom Docker ECR repository is specified, imports it and uses the custom image
-        Otherwise, uses the default Amazon Linux 2 Standard 3.0 build image
-        Configures the environment with privileged mode enabled and the specified fleet
+        Determines and returns the appropriate CodeBuild Linux ARM build image based on pipeline configuration
+        If a custom ECR repository ARN is provided, imports and uses that repository with the specified image tag
+        Otherwise, returns the default Amazon Linux 2 standard build image
 
     Returns:
-        codebuild.BuildEnvironment: Configured build environment for CodeBuild
+        codebuild.LinuxArmBuildImage | codebuild.IBuildImage: The CodeBuild Linux ARM build image to use
     """
     if pipeline_vars.codebuild_docker_ecr_repo_arn:
-        return codebuild.BuildEnvironment(
-            build_image=codebuild.LinuxArmBuildImage.from_ecr_repository(
-                ecr.Repository.from_repository_arn(
-                    self,
-                    id=f"imported_repo_{stage_name}_{stage_type}",
-                    repository_arn=pipeline_vars.codebuild_docker_ecr_repo_arn,
-                ),
-                tag_or_digest=pipeline_vars.codebuild_docker_image_tag,
-            ),  # type: ignore
-            privileged=True,
-            fleet=fleet or None,
+        return codebuild.LinuxArmBuildImage.from_ecr_repository(
+            ecr.Repository.from_repository_arn(
+                self,
+                id=f"imported_repo_{stage_name}_{stage_type}",
+                repository_arn=pipeline_vars.codebuild_docker_ecr_repo_arn,
+            ),
+            tag_or_digest=pipeline_vars.codebuild_docker_image_tag,
         )
-    return codebuild.BuildEnvironment(
-        build_image=codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,  # type: ignore
-        privileged=True,
-        fleet=fleet or None,
-    )
+    return codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0  # type: ignore
 
 
 def soci_image_builder(
