@@ -4,13 +4,16 @@ import aws_cdk.aws_codebuild as codebuild
 
 from aws_cdk import Environment
 from cdk.schemas.configuration_vars import PipelineVars
+from cdk_opinionated_constructs.libs.pipeline_v2 import (
+    install_default,
+    install_pre_backed,
+    use_fleet,
+)
 from cdk_opinionated_constructs.stages.logic import (
     apply_default_permissions,
     assume_role_commands,
     attach_role,
-    default_install_commands,
     get_build_image_for_architecture,
-    runtime_versions,
 )
 
 
@@ -153,25 +156,6 @@ def create_soci_index_project(
         cpu_architecture=cpu_architecture,
     )
 
-    fleet = None
-    if pipeline_vars.codebuild_fleet_arn:
-        fleet = codebuild.Fleet.from_fleet_arn(
-            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
-        )
-
-    install_default = {
-        "runtime-versions": runtime_versions,
-        "commands": ["pip install uv", "make venv", ". .venv/bin/activate", *default_install_commands],
-    }
-    install_pre_backed = {
-        "commands": [
-            "nohup /usr/local/bin/dockerd "
-            "--host=unix:///var/run/docker.sock "
-            "--host=tcp://127.0.0.1:2375 "
-            "--storage-driver=overlay2 &"
-        ]
-    }
-
     project = codebuild.PipelineProject(
         scope,
         f"{stage_name}_{project_name}",
@@ -179,7 +163,7 @@ def create_soci_index_project(
             build_image=build_image,  # type: ignore
             privileged=True,
             compute_type=compute_type,
-            fleet=fleet,
+            fleet=use_fleet(self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name),
         ),
         auto_retry_limit=3,
         environment_variables={
@@ -191,7 +175,7 @@ def create_soci_index_project(
         build_spec=codebuild.BuildSpec.from_object({
             "version": "0.2",
             "phases": {
-                "install": install_pre_backed if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default,
+                "install": install_pre_backed() if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default({}),
                 "build": {
                     "commands": [
                         *assume_role_commands(
