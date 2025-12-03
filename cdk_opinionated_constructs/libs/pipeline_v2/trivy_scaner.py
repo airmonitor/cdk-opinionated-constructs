@@ -102,8 +102,8 @@ def _create_trivy_install_commands(
         " --severity HIGH,CRITICAL $IMAGE_URI",
         "echo #################################################",
         "echo sending trivy Docker image results to Security Hub...",
-        f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
-        f"utils/trivy_docker_image_security_hub_parser.py "
+        "wget https://raw.githubusercontent.com/airmonitor/cdk-opinionated-constructs/refs/heads/main/cdk_opinionated_constructs/utils/trivy_docker_image_security_hub_parser.py",
+        f"python3 trivy_docker_image_security_hub_parser.py "
         f"--aws-account {env.account} "
         f"--aws-region {env.region} "
         f"--project-name {pipeline_vars.project} "
@@ -125,8 +125,7 @@ def _create_trivy_install_commands(
         " /tmp/sbom.spdx.json",
         "echo #################################################",
         "echo sending trivy SBOM results to Security Hub...",
-        f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
-        f"utils/trivy_docker_image_security_hub_parser.py "
+        f"python3 trivy_docker_image_security_hub_parser.py "
         f"--aws-account {env.account} "
         f"--aws-region {env.region} "
         f"--project-name {pipeline_vars.project} "
@@ -218,7 +217,24 @@ def create_trivy_project(
         fleet = codebuild.Fleet.from_fleet_arn(
             scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
         )
-
+    install_default = {
+        "runtime-versions": runtime_versions,
+        "commands": [
+            "pip install uv",
+            "make venv",
+            ". .venv/bin/activate",
+            *default_install_commands,
+            *commands["install_commands"],
+        ],
+    }
+    install_pre_backed = {
+        "commands": [
+            "nohup /usr/local/bin/dockerd "
+            "--host=unix:///var/run/docker.sock "
+            "--host=tcp://127.0.0.1:2375 "
+            "--storage-driver=overlay2 &"
+        ]
+    }
     project = codebuild.PipelineProject(
         scope,
         f"{stage_name}_{docker_project_name}_{project_name}",
@@ -238,18 +254,12 @@ def create_trivy_project(
         build_spec=codebuild.BuildSpec.from_object({
             "version": "0.2",
             "phases": {
-                "install": {
-                    "runtime-versions": runtime_versions,
-                    "commands": [
-                        "pip install uv",
-                        "make venv",
-                        ". .venv/bin/activate",
-                        *default_install_commands,
-                        *commands["install_commands"],
-                    ],
-                },
+                "install": install_pre_backed if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default,
                 "build": {
-                    "commands": [*commands["commands"]],
+                    "commands": [
+                        ". /.venv/bin/activate",
+                        *commands["commands"],
+                    ],
                 },
             },
         }),
