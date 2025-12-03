@@ -13,7 +13,56 @@ from cdk_opinionated_constructs.stages.logic import (
     runtime_versions,
 )
 
-runtime_versions = {"nodejs": "22", "python": "3.13"}
+
+def use_fleet(*, self, pipeline_vars: PipelineVars, stage_name: str, stage_type: str) -> codebuild.IFleet | None:
+    """
+    Parameters:
+        self
+        pipeline_vars (PipelineVars): PipelineVars object containing pipeline configuration
+        stage_name (str): Name of the stage
+        stage_type (str): Type of the stage
+
+    Functionality:
+        Retrieves or creates a CodeBuild fleet based on the provided pipeline variables
+        Returns an imported fleet if a fleet ARN is available in pipeline_vars, otherwise returns None
+
+    Arguments:
+        pipeline_vars: PipelineVars object containing pipeline configuration
+        stage_name: Name of the stage
+        stage_type: Type of the stage
+
+    Returns:
+        codebuild.IFleet | None: An IFleet object if fleet_arn exists in pipeline_vars, otherwise None
+    """
+    if pipeline_vars.codebuild_fleet_arn:
+        return codebuild.Fleet.from_fleet_arn(
+            self, id=f"{stage_name}_{stage_type}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
+        )
+    return None
+
+
+def install_pre_backed() -> dict:
+    return {
+        "commands": [
+            "nohup /usr/local/bin/dockerd "
+            "--host=unix:///var/run/docker.sock "
+            "--host=tcp://127.0.0.1:2375 "
+            "--storage-driver=overlay2 &"
+        ]
+    }
+
+
+def install_default(commands: dict) -> dict:
+    return {
+        "runtime-versions": runtime_versions,
+        "commands": [
+            "pip install uv",
+            "make venv",
+            ". .venv/bin/activate",
+            *default_install_commands,
+            *commands["install_commands"],
+        ],
+    }
 
 
 def _create_trivy_install_commands(
@@ -212,29 +261,6 @@ def create_trivy_project(
         assume_commands=_assume_trivy_role_commands,
     )
 
-    fleet = None
-    if pipeline_vars.codebuild_fleet_arn:
-        fleet = codebuild.Fleet.from_fleet_arn(
-            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
-        )
-    install_default = {
-        "runtime-versions": runtime_versions,
-        "commands": [
-            "pip install uv",
-            "make venv",
-            ". .venv/bin/activate",
-            *default_install_commands,
-            *commands["install_commands"],
-        ],
-    }
-    install_pre_backed = {
-        "commands": [
-            "nohup /usr/local/bin/dockerd "
-            "--host=unix:///var/run/docker.sock "
-            "--host=tcp://127.0.0.1:2375 "
-            "--storage-driver=overlay2 &"
-        ]
-    }
     project = codebuild.PipelineProject(
         scope,
         f"{stage_name}_{docker_project_name}_{project_name}",
@@ -242,7 +268,7 @@ def create_trivy_project(
             build_image=build_image,  # type: ignore
             privileged=True,
             compute_type=compute_type,
-            fleet=fleet,
+            fleet=use_fleet(self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name),
         ),
         auto_retry_limit=3,
         environment_variables={
@@ -254,7 +280,9 @@ def create_trivy_project(
         build_spec=codebuild.BuildSpec.from_object({
             "version": "0.2",
             "phases": {
-                "install": install_pre_backed if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default,
+                "install": install_pre_backed()
+                if pipeline_vars.codebuild_docker_ecr_repo_arn
+                else install_default(commands),
                 "build": {
                     "commands": [
                         ". /.venv/bin/activate",
