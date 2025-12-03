@@ -14,6 +14,56 @@ from cdk_opinionated_constructs.stages.logic import (
 )
 
 
+def use_fleet(*, self, pipeline_vars: PipelineVars, stage_name: str, stage_type: str) -> codebuild.IFleet | None:
+    """
+    Parameters:
+        self
+        pipeline_vars (PipelineVars): PipelineVars object containing pipeline configuration
+        stage_name (str): Name of the stage
+        stage_type (str): Type of the stage
+
+    Functionality:
+        Retrieves or creates a CodeBuild fleet based on the provided pipeline variables
+        Returns an imported fleet if a fleet ARN is available in pipeline_vars, otherwise returns None
+
+    Arguments:
+        pipeline_vars: PipelineVars object containing pipeline configuration
+        stage_name: Name of the stage
+        stage_type: Type of the stage
+
+    Returns:
+        codebuild.IFleet | None: An IFleet object if fleet_arn exists in pipeline_vars, otherwise None
+    """
+    if pipeline_vars.codebuild_fleet_arn:
+        return codebuild.Fleet.from_fleet_arn(
+            self, id=f"{stage_name}_{stage_type}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
+        )
+    return None
+
+
+def install_pre_backed() -> dict:
+    return {
+        "commands": [
+            "nohup /usr/local/bin/dockerd "
+            "--host=unix:///var/run/docker.sock "
+            "--host=tcp://127.0.0.1:2375 "
+            "--storage-driver=overlay2 &"
+        ]
+    }
+
+
+def install_default() -> dict:
+    return {
+        "runtime-versions": runtime_versions,
+        "commands": [
+            "pip install uv",
+            "make venv",
+            ". .venv/bin/activate",
+            *default_install_commands,
+        ],
+    }
+
+
 def _create_docker_build_commands(
     *, env: Environment, pipeline_vars: PipelineVars, stage_name: str, docker_project_name: str
 ) -> list[str]:
@@ -106,7 +156,6 @@ def _attach_docker_iam_policies(
 
 def create_docker_build_project(
     scope,
-    *,
     env: Environment,
     stage_name: str,
     pipeline_vars: PipelineVars,
@@ -116,54 +165,47 @@ def create_docker_build_project(
 ):
     """
     Parameters:
-        env (Environment): AWS environment configuration containing account and region information
-        stage_name (str): Name of the deployment stage
-        pipeline_vars (PipelineVars): Pipeline variables containing project configuration
+        scope: The construct scope in which this resource is defined
+        env (Environment): AWS environment containing region and account information
+        stage_name (str): Name of the stage being deployed
+        pipeline_vars (PipelineVars): Pipeline variables containing project information
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         docker_project_name (str): Name of the Docker project/service to build
-        compute_type (codebuild.ComputeType): Compute type for the CodeBuild environment
+        compute_type (codebuild.ComputeType): AWS CodeBuild compute type for the build environment
 
     Functionality:
-        Creates and configures a CodeBuild pipeline project for Docker image building with the following capabilities:
-        - Selects appropriate build image based on specified CPU architecture (ARM64 or AMD64)
-        - Configures privileged Docker build environment with containerd socket access
-        - Optionally uses a CodeBuild fleet if fleet ARN is provided in pipeline variables
-        - Generates Docker build commands that authenticate with ECR, build the image, and push to repository
-        - Sets up environment variables for containerd socket location
-        - Applies default IAM permissions for CDK asset management, parameter store access,
-        and CloudFormation operations
-        - Attaches Docker-specific IAM policies for ECR operations and role assumption
+        Creates an AWS CodeBuild pipeline project configured for Docker image building that:
+        1. Sets up a build environment based on the specified CPU architecture
+        2. Configures the build environment with proper Docker privileges
+        3. Creates Docker build commands for the specified project
+        4. Sets up a build specification with necessary runtime versions and commands
+        5. Applies default permissions and Docker-specific IAM policies
+        6. The Docker build process will build, tag, and push images to ECR
+        7. Stores image references in SSM Parameter Store for later use
 
     Returns:
-        codebuild.PipelineProject: Configured CodeBuild project ready for Docker image building in the pipeline
+        codebuild.PipelineProject: A fully configured CodeBuild project for Docker image building
     """
     project_name = "docker_project"
-    build_image = get_build_image_for_architecture(
-        scope,
-        pipeline_vars=pipeline_vars,
-        stage_name=stage_name,
-        stage_type=project_name,
-        cpu_architecture=cpu_architecture,
-    )
 
     docker_commands = _create_docker_build_commands(
         env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, docker_project_name=docker_project_name
     )
 
-    fleet = None
-    if pipeline_vars.codebuild_fleet_arn:
-        fleet = codebuild.Fleet.from_fleet_arn(
-            scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
-        )
-
     docker_project = codebuild.PipelineProject(
         scope,
         f"{stage_name}_{docker_project_name}_{project_name}",
         environment=codebuild.BuildEnvironment(
-            build_image=build_image,  # type: ignore
+            build_image=get_build_image_for_architecture(
+                self=scope,
+                pipeline_vars=pipeline_vars,
+                stage_name=stage_name,
+                stage_type=project_name,
+                cpu_architecture=cpu_architecture,
+            ),
             privileged=True,
             compute_type=compute_type,
-            fleet=fleet,
+            fleet=use_fleet(self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name),
         ),
         environment_variables={
             "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
@@ -174,13 +216,10 @@ def create_docker_build_project(
         build_spec=codebuild.BuildSpec.from_object({
             "version": "0.2",
             "phases": {
-                "install": {
-                    "runtime-versions": runtime_versions,
+                "install": install_pre_backed() if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default(),
+                "build": {
                     "commands": [
-                        "pip install uv",
-                        "make venv",
-                        ". .venv/bin/activate",
-                        *default_install_commands,
+                        ". /.venv/bin/activate",
                         *docker_commands,
                     ],
                 },
