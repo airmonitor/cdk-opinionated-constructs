@@ -238,6 +238,24 @@ def create_oci_image_validation_project(
         fleet = codebuild.Fleet.from_fleet_arn(
             scope, id=f"{stage_name}_{project_name}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
         )
+    install_default = {
+        "runtime-versions": runtime_versions,
+        "commands": [
+            "pip install uv",
+            "make venv",
+            ". .venv/bin/activate",
+            *default_install_commands,
+            *commands["install_commands"],
+        ],
+    }
+    install_pre_backed = {
+        "commands": [
+            "nohup /usr/local/bin/dockerd "
+            "--host=unix:///var/run/docker.sock "
+            "--host=tcp://127.0.0.1:2375 "
+            "--storage-driver=overlay2 &"
+        ]
+    }
 
     project = codebuild.PipelineProject(
         scope,
@@ -258,16 +276,7 @@ def create_oci_image_validation_project(
         build_spec=codebuild.BuildSpec.from_object({
             "version": "0.2",
             "phases": {
-                "install": {
-                    "runtime-versions": runtime_versions,
-                    "commands": [
-                        "pip install uv",
-                        "make venv",
-                        ". .venv/bin/activate",
-                        *default_install_commands,
-                        *commands["install_commands"],
-                    ],
-                },
+                "install": install_pre_backed if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default,
                 "build": {
                     "commands": [*commands["commands"]],
                 },
