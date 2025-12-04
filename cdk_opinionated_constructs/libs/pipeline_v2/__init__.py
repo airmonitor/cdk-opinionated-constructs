@@ -56,3 +56,15 @@ def install_default(commands: dict) -> dict:
             *commands["install_commands"],
         ],
     }
+
+
+def install_docker_default() -> dict:
+    return {
+        "runtime-versions": runtime_versions,
+        "commands": [
+            "pip install uv",
+            "make venv",
+            ". .venv/bin/activate",
+            *default_install_commands,
+        ],
+    }
