@@ -1,4 +1,12 @@
-from typing import Any, Literal
+"""OCI image validation CodeBuild project configuration.
+
+This module provides functions to create and configure CodeBuild projects
+for validating OCI image signatures using AWS Signer and Notation.
+"""
+
+from functools import partial
+from itertools import chain
+from typing import Any, Literal, TypedDict
 
 import aws_cdk.aws_codebuild as codebuild
 import aws_cdk.aws_iam as iam
@@ -19,92 +27,155 @@ from cdk_opinionated_constructs.stages.logic import (
     revert_to_original_role_command,
 )
 
+# =============================================================================
+# Type Definitions - Better Type Safety and Documentation
+# =============================================================================
 
-def _create_oci_image_validation_commands(
-    *,
-    env: Environment,
-    pipeline_vars: PipelineVars,
-    stage_name: str,
-    cpu_architecture: Literal["arm64", "amd64"],
-    assume_commands: list[str],
-    pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
-    oras_version: str = "1.2.2",
-) -> dict[str, list[str] | list[str | Any]]:
-    """
-    Parameters:
-        env (Environment): AWS environment containing region and account information
-        pipeline_vars (PipelineVars): Pipeline variables containing project information
-        stage_name (str): Name of the stage being deployed
-        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture to use for installation
-        assume_commands (list[str]): Commands to assume the necessary IAM role
-        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket to store artifacts
-        oras_version (str): Version of ORAS tool to install, defaults to "1.2.2"
 
-    Functionality:
-        Generates shell commands for OCI image validation in two categories:
-        1. Install commands:
-           - Downloads and installs AWS Signer Notation CLI for the specified architecture
-           - Installs ORAS (OCI Registry As Storage) tool
-           - Installs Anchore's Grype and Syft security scanning tools
+class OciValidationCommands(TypedDict):
+    """Type definition for OCI validation command structure."""
 
-        2. Validation commands:
-           - Assumes the specified role using provided commands
-           - Retrieves container image information from SSM parameters
-           - Logs into Amazon ECR
-           - Creates a trust policy for signature verification
-           - Verifies the container image signature using Notation
-           - Creates an image definitions file for deployment
-           - Uploads the image definitions file to the artifacts S3 bucket
+    install_commands: list[str]
+    commands: list[str]
+
+
+class ValidationContext(TypedDict):
+    """Context for OCI validation command generation."""
+
+    region: str
+    account: str
+    project: str
+    stage_name: str
+    bucket_name: str
+
+
+# =============================================================================
+# Pure Helper Functions - High Cohesion, Single Responsibility
+# =============================================================================
+
+
+def _create_signer_install_command(cpu_architecture: Literal["arm64", "amd64"]) -> tuple[str, ...]:
+    """Generate AWS Signer Notation CLI installation commands.
+
+    Args:
+        cpu_architecture: Target CPU architecture
 
     Returns:
-        dict[str, list[str] | list[str | Any]]: Dictionary containing two keys:
-            - "install_commands": List of commands to install required tools
-            - "commands": List of commands to validate OCI image signatures
+        Tuple of commands to install AWS Signer Notation CLI
     """
-    install_commands = [
+    return (
         f"wget https://d2hvyiie56hcat.cloudfront.net/linux/{cpu_architecture}/installer/rpm/latest/aws-signer-notation-cli_{cpu_architecture}.rpm",
         f"sudo rpm -U aws-signer-notation-cli_{cpu_architecture}.rpm",
         "notation plugin ls",
+    )
+
+
+def _create_oras_install_commands(
+    cpu_architecture: Literal["arm64", "amd64"],
+    oras_version: str,
+) -> tuple[str, ...]:
+    """Generate ORAS (OCI Registry As Storage) installation commands.
+
+    Args:
+        cpu_architecture: Target CPU architecture
+        oras_version: Version of ORAS to install
+
+    Returns:
+        Tuple of commands to install ORAS
+    """
+    return (
         f"curl -LO 'https://github.com/oras-project/oras/releases/download/v{oras_version}/oras_{oras_version}_linux_{cpu_architecture}.tar.gz'",
         "mkdir -p oras-install/",
         f"tar -xzf oras_{oras_version}_linux_{cpu_architecture}.tar.gz -C oras-install/",
         "sudo mv oras-install/oras /usr/local/bin/",
+    )
+
+
+def _create_security_tools_install_commands() -> tuple[str, ...]:
+    """Generate Anchore security tools installation commands.
+
+    Returns:
+        Tuple of commands to install Grype and Syft
+    """
+    return (
         "curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin",
         "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
-    ]
+    )
 
-    commands = [
-        *assume_commands,
+
+def _create_service_readiness_commands() -> tuple[str, ...]:
+    """Generate commands to wait for service readiness.
+
+    Returns:
+        Tuple of commands for service readiness wait
+    """
+    return (
         "echo waiting 1 minute for service readiness...",
         "sleep 60",
-        f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
+    )
+
+
+def _create_ecr_login_commands(ctx: ValidationContext) -> tuple[str, ...]:
+    """Generate ECR login commands.
+
+    Args:
+        ctx: Validation context containing AWS environment details
+
+    Returns:
+        Tuple of ECR login commands
+    """
+    return (
+        f"export PASSWORD=$(aws ecr get-login-password --region {ctx['region']})",
+        "echo Logging in to Amazon ECR...",
+        f"aws ecr get-login-password --region {ctx['region']} | "
+        f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com",
+    )
+
+
+def _create_ssm_parameter_commands(ctx: ValidationContext) -> tuple[str, ...]:
+    """Generate commands to retrieve SSM parameters for image validation.
+
+    Args:
+        ctx: Validation context containing AWS environment details
+
+    Returns:
+        Tuple of SSM parameter retrieval commands
+    """
+    return (
         f"IMAGE_URI=$(aws ssm get-parameter "
-        f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/uri" '
-        f"--region {env.region} "
+        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/uri" '
+        f"--region {ctx['region']} "
         f'--query "Parameter.Value" '
         f"--output text)",
         "echo $IMAGE_URI",
         f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
-        f'--name "/{pipeline_vars.project}/{stage_name}/signer/profile/arn" '
-        f"--region {env.region} "
+        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/signer/profile/arn" '
+        f"--region {ctx['region']} "
         f'--query "Parameter.Value" '
         f"--output text)",
         "echo $SIGNER_PROFILE_ARN",
         f"REPOSITORY_URI=$(aws ssm get-parameter "
-        f'--name "/{pipeline_vars.project}/{stage_name}/ecr/repository/uri" '
-        f"--region {env.region} "
+        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/repository/uri" '
+        f"--region {ctx['region']} "
         f'--query "Parameter.Value" '
         f"--output text)",
         "echo $REPOSITORY_URI",
         f"IMAGE_TAG=$(aws ssm get-parameter "
-        f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/tag" '
-        f"--region {env.region} "
+        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/tag" '
+        f"--region {ctx['region']} "
         f'--query "Parameter.Value" '
         f"--output text)",
         "echo $IMAGE_TAG",
-        "echo Logging in to Amazon ECR...",
-        f"aws ecr get-login-password --region {env.region} | "
-        f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
+    )
+
+
+def _create_trust_policy_commands() -> tuple[str, ...]:
+    """Generate commands to create and configure the trust policy for signature verification.
+
+    Returns:
+        Tuple of trust policy creation commands
+    """
+    return (
         """cat > policy.json << EOF
         {
           "version": "1.0",
@@ -127,7 +198,28 @@ def _create_oci_image_validation_commands(
         "echo Generated policy.json",
         "cat policy.json",
         "notation policy import policy.json --force",
-        "notation verify $IMAGE_URI",
+    )
+
+
+def _create_signature_verification_commands() -> tuple[str, ...]:
+    """Generate commands to verify the container image signature.
+
+    Returns:
+        Tuple of signature verification commands
+    """
+    return ("notation verify $IMAGE_URI",)
+
+
+def _create_image_definitions_commands(ctx: ValidationContext) -> tuple[str, ...]:
+    """Generate commands to create and upload image definitions file.
+
+    Args:
+        ctx: Validation context containing bucket name
+
+    Returns:
+        Tuple of image definitions creation and upload commands
+    """
+    return (
         """cat > image_definitions.json << EOF
         [
           {
@@ -142,53 +234,274 @@ def _create_oci_image_validation_commands(
         "mv image_definitions.json.tmp image_definitions.json",
         revert_to_original_role_command,
         "echo image definitions in artifacts bucket",
-        f"aws s3 cp image_definitions.json s3://{pipeline_artifacts_bucket.bucket_name}/image_definitions/image_definitions.json",
-    ]
-
-    return {"install_commands": install_commands, "commands": commands}
+        f"aws s3 cp image_definitions.json s3://{ctx['bucket_name']}/image_definitions/image_definitions.json",
+    )
 
 
-def _attach_oci_image_validation_iam_policies(
+# =============================================================================
+# Function Composition - Building Complex Commands from Simple Ones
+# =============================================================================
+
+
+def _compose_install_commands(
+    cpu_architecture: Literal["arm64", "amd64"],
+    oras_version: str,
+) -> list[str]:
+    """Compose all installation commands using function composition.
+
+    Args:
+        cpu_architecture: Target CPU architecture
+        oras_version: Version of ORAS to install
+
+    Returns:
+        List of all installation commands
+    """
+    return list(
+        chain(
+            _create_signer_install_command(cpu_architecture),
+            _create_oras_install_commands(cpu_architecture, oras_version),
+            _create_security_tools_install_commands(),
+        )
+    )
+
+
+def _compose_validation_commands(
+    ctx: ValidationContext,
+    assume_commands: list[str],
+) -> list[str]:
+    """Compose all validation commands using function composition.
+
+    This function chains together multiple command generators to create
+    the complete validation command sequence.
+
+    Args:
+        ctx: Validation context containing AWS environment details
+        assume_commands: Commands to assume the required IAM role
+
+    Returns:
+        List of all validation commands in execution order
+    """
+    # Create partial applications for context-dependent functions
+    ecr_login = partial(_create_ecr_login_commands, ctx)
+    ssm_params = partial(_create_ssm_parameter_commands, ctx)
+    image_definitions = partial(_create_image_definitions_commands, ctx)
+
+    # Compose all command sequences
+    return list(
+        chain(
+            assume_commands,
+            _create_service_readiness_commands(),
+            ecr_login(),
+            ssm_params(),
+            _create_trust_policy_commands(),
+            _create_signature_verification_commands(),
+            image_definitions(),
+        )
+    )
+
+
+def _create_validation_context(
+    env: Environment,
+    pipeline_vars: PipelineVars,
+    stage_name: str,
+    pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
+) -> ValidationContext:
+    """Create an immutable validation context from environment parameters.
+
+    Args:
+        env: AWS environment containing region and account information
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+        pipeline_artifacts_bucket: S3 bucket for pipeline artifacts
+
+    Returns:
+        Immutable context dictionary for validation operations
+    """
+    return ValidationContext(
+        region=str(env.region),
+        account=str(env.account),
+        project=pipeline_vars.project,
+        stage_name=stage_name,
+        bucket_name=pipeline_artifacts_bucket.bucket_name,
+    )
+
+
+# =============================================================================
+# Public API Functions
+# =============================================================================
+
+
+def create_oci_validation_commands(
+    *,
+    env: Environment,
+    pipeline_vars: PipelineVars,
+    stage_name: str,
+    cpu_architecture: Literal["arm64", "amd64"],
+    assume_commands: list[str],
+    pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
+    oras_version: str = "1.2.2",
+) -> OciValidationCommands:
+    """Create OCI image validation installation and execution commands.
+
+    This function generates all necessary commands for installing validation tools
+    and verifying OCI image signatures using AWS Signer and Notation.
+
+    Args:
+        env: AWS environment containing region and account information
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+        cpu_architecture: CPU architecture for installing the appropriate tools
+        assume_commands: Commands to assume the required IAM role
+        pipeline_artifacts_bucket: S3 bucket to store pipeline artifacts
+        oras_version: Version of ORAS to install, defaults to "1.2.2"
+
+    Returns:
+        Dictionary containing:
+            - "install_commands": List of commands to install required tools
+            - "commands": List of commands to execute the validation process
+    """
+    ctx = _create_validation_context(env, pipeline_vars, stage_name, pipeline_artifacts_bucket)
+
+    return OciValidationCommands(
+        install_commands=_compose_install_commands(cpu_architecture, oras_version),
+        commands=_compose_validation_commands(ctx, assume_commands),
+    )
+
+
+def attach_oci_validation_iam_role(
     *,
     project: codebuild.PipelineProject,
     env: Environment,
     pipeline_vars: PipelineVars,
     stage_name: str,
+) -> None:
+    """Attach the OCI image validation IAM role to a CodeBuild project.
+
+    This role provides the necessary permissions for validating OCI image signatures,
+    accessing ECR repositories, and reading SSM parameters.
+
+    Args:
+        project: The CodeBuild pipeline project to attach the IAM role to
+        env: AWS environment containing region and account information
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+    """
+    attach_role(
+        project=project,
+        env=env,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        role_name="oci-image-validation",
+    )
+
+
+def attach_s3_upload_policy(
+    *,
+    project: codebuild.PipelineProject,
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
 ) -> None:
-    """
-    Parameters:
-        project (codebuild.PipelineProject): The CodeBuild project to attach policies to
-        env (Environment): AWS environment containing region and account information
-        pipeline_vars (PipelineVars): Pipeline variables containing project information
-        stage_name (str): Name of the stage being deployed
-        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket to store artifacts
+    """Attach S3 upload policy to a CodeBuild project.
 
-    Functionality:
-        Attaches IAM policies to the CodeBuild project that are required for OCI image validation:
-        - Grants S3 PutObject permissions to allow writing to the pipeline artifacts bucket
-        - Attaches a predefined role with additional permissions needed for OCI image validation
-          using the attach_role helper function
-    """
+    Grants permission to upload image definitions to the pipeline artifacts bucket.
 
+    Args:
+        project: The CodeBuild pipeline project to attach the policy to
+        pipeline_artifacts_bucket: S3 bucket for pipeline artifacts
+    """
     project.add_to_role_policy(
         statement=iam.PolicyStatement(
-            actions=[
-                "s3:PutObject",
-            ],
-            resources=[
-                f"{pipeline_artifacts_bucket.bucket_arn}/*",
-            ],
+            actions=["s3:PutObject"],
+            resources=[f"{pipeline_artifacts_bucket.bucket_arn}/*"],
         ),
     )
-    attach_role(
-        project=project, env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="oci-image-validation"
+
+
+def create_build_environment(
+    scope: Any,
+    pipeline_vars: PipelineVars,
+    stage_name: str,
+    project_name: str,
+    compute_type: codebuild.ComputeType,
+) -> codebuild.BuildEnvironment:
+    """Create the build environment configuration for the OCI validation project.
+
+    Args:
+        scope: CDK construct scope
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+        project_name: Name of the project
+        compute_type: Compute type for the CodeBuild project
+
+    Returns:
+        Configured BuildEnvironment for the CodeBuild project
+    """
+    build_image = get_build_image_for_architecture(
+        self=scope,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        stage_type=project_name,
     )
+
+    fleet = use_fleet(
+        self=scope,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        stage_type=project_name,
+    )
+
+    return codebuild.BuildEnvironment(
+        build_image=build_image,  # type: ignore
+        privileged=True,
+        compute_type=compute_type,
+        fleet=fleet,
+    )
+
+
+def create_build_spec(
+    commands: OciValidationCommands,
+    pipeline_vars: PipelineVars,
+) -> codebuild.BuildSpec:
+    """Create the build specification for the OCI validation CodeBuild project.
+
+    Args:
+        commands: OCI validation installation and execution commands
+        pipeline_vars: Pipeline variables containing project information
+
+    Returns:
+        BuildSpec object for the CodeBuild project
+    """
+    install_phase = (
+        install_pre_backed() if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default(dict(commands))
+    )
+
+    return codebuild.BuildSpec.from_object({
+        "version": "0.2",
+        "phases": {
+            "install": install_phase,
+            "build": {
+                "commands": commands["commands"],
+            },
+        },
+    })
+
+
+def create_environment_variables() -> dict[str, codebuild.BuildEnvironmentVariable]:
+    """Create environment variables for the OCI validation CodeBuild project.
+
+    Returns:
+        Dictionary of environment variables
+    """
+    return {
+        "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
+            value="/var/run/docker/containerd/containerd.sock",
+            type=codebuild.BuildEnvironmentVariableType.PLAINTEXT,
+        ),
+    }
 
 
 def create_oci_image_validation_project(
     *,
-    scope,
+    scope: Any,
     env: Environment,
     stage_name: str,
     pipeline_vars: PipelineVars,
@@ -196,82 +509,74 @@ def create_oci_image_validation_project(
     compute_type: codebuild.ComputeType,
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
 ) -> codebuild.PipelineProject:
-    """
-    Parameters:
-        env (Environment): AWS environment containing region and account information
-        stage_name (str): Name of the stage being deployed
-        pipeline_vars (PipelineVars): Pipeline variables containing project information
-        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture to use for the build environment
-        compute_type (codebuild.ComputeType): CodeBuild compute type for the project
-        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket to store pipeline artifacts
+    """Create a CodeBuild pipeline project for OCI image validation.
 
-    Functionality:
-        Creates a CodeBuild PipelineProject for OCI image validation with the following configuration:
-        1. Sets up build environment with specified architecture and compute type
-        2. Configures privileged mode for Docker operations
-        3. Optionally assigns a CodeBuild fleet if specified in pipeline variables
-        4. Generates and includes OCI image validation commands for install and build phases
-        5. Sets environment variables for containerd socket access
-        6. Applies default permissions and OCI image validation-specific IAM policies
-        7. Configures auto-retry with limit of 3 attempts
+    This function creates a fully configured CodeBuild project for validating
+    OCI image signatures using AWS Signer and Notation. The project:
+    1. Selects the appropriate build image based on CPU architecture
+    2. Generates installation and validation commands
+    3. Configures the build environment with Docker privileges
+    4. Applies default permissions and attaches required IAM policies
+
+    Args:
+        scope: CDK construct scope
+        env: AWS environment containing region and account information
+        stage_name: Name of the stage being deployed
+        pipeline_vars: Pipeline variables containing project information
+        cpu_architecture: CPU architecture for the build environment
+        compute_type: Compute type for the CodeBuild project
+        pipeline_artifacts_bucket: S3 bucket to store pipeline artifacts
 
     Returns:
-        codebuild.PipelineProject: Configured CodeBuild project for OCI image validation
+        Configured CodeBuild pipeline project for OCI image validation
     """
     project_name = "oci_image_validation_project"
-    build_image = get_build_image_for_architecture(
-        self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name
+
+    # Generate assume role commands
+    assume_commands = assume_role_commands(
+        env=env,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        role_name="oci-image-validation",
     )
 
-    _assume_role_commands = assume_role_commands(
-        env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="oci-image-validation"
-    )
-
-    commands = _create_oci_image_validation_commands(
+    # Create OCI validation commands using functional composition
+    commands = create_oci_validation_commands(
         env=env,
         pipeline_vars=pipeline_vars,
         stage_name=stage_name,
         cpu_architecture=cpu_architecture,
-        assume_commands=_assume_role_commands,
+        assume_commands=assume_commands,
         pipeline_artifacts_bucket=pipeline_artifacts_bucket,
     )
 
+    # Create the CodeBuild project
     project = codebuild.PipelineProject(
         scope,
         f"{stage_name}_{project_name}",
-        environment=codebuild.BuildEnvironment(
-            build_image=build_image,  # type: ignore
-            privileged=True,
+        environment=create_build_environment(
+            scope=scope,
+            pipeline_vars=pipeline_vars,
+            stage_name=stage_name,
+            project_name=project_name,
             compute_type=compute_type,
-            fleet=use_fleet(self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name),
         ),
         auto_retry_limit=3,
-        environment_variables={
-            "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
-                value="/var/run/docker/containerd/containerd.sock",
-                type=codebuild.BuildEnvironmentVariableType.PLAINTEXT,
-            ),
-        },
-        build_spec=codebuild.BuildSpec.from_object({
-            "version": "0.2",
-            "phases": {
-                "install": install_pre_backed()
-                if pipeline_vars.codebuild_docker_ecr_repo_arn
-                else install_default(commands),
-                "build": {
-                    "commands": [*commands["commands"]],
-                },
-            },
-        }),
+        environment_variables=create_environment_variables(),
+        build_spec=create_build_spec(commands, pipeline_vars),
     )
 
+    # Apply permissions and attach IAM policies
     apply_default_permissions(project, env)
-    _attach_oci_image_validation_iam_policies(
+    attach_s3_upload_policy(
+        project=project,
+        pipeline_artifacts_bucket=pipeline_artifacts_bucket,
+    )
+    attach_oci_validation_iam_role(
         project=project,
         env=env,
         pipeline_vars=pipeline_vars,
         stage_name=stage_name,
-        pipeline_artifacts_bucket=pipeline_artifacts_bucket,
     )
 
     return project
