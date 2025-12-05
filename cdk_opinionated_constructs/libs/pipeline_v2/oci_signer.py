@@ -1,4 +1,12 @@
-from typing import Any, Literal
+"""OCI image signing CodeBuild project configuration.
+
+This module provides functions to create and configure CodeBuild projects
+for signing OCI container images using AWS Signer and attaching SBOM/CVE artifacts.
+"""
+
+from functools import partial
+from itertools import chain
+from typing import Any, Literal, TypedDict
 
 import aws_cdk.aws_codebuild as codebuild
 import aws_cdk.aws_iam as iam
@@ -19,8 +27,337 @@ from cdk_opinionated_constructs.stages.logic import (
     revert_to_original_role_command,
 )
 
+# =============================================================================
+# Type Definitions for Better Type Safety and Documentation
+# =============================================================================
 
-def _create_oci_signer_install_commands(
+
+class OciSignerCommands(TypedDict):
+    """Type definition for OCI signer command structure."""
+
+    install_commands: list[str]
+    commands: list[str]
+
+
+class SignerContext(TypedDict):
+    """Immutable context for OCI signer command generation."""
+
+    region: str
+    account: str
+    project: str
+    stage_name: str
+    bucket_name: str
+
+
+# =============================================================================
+# Pure Helper Functions - High Cohesion, Single Responsibility
+# =============================================================================
+
+
+def _create_aws_signer_install_command(cpu_architecture: Literal["arm64", "amd64"]) -> str:
+    """Generate AWS Signer Notation CLI installation command.
+
+    Args:
+        cpu_architecture: Target CPU architecture
+
+    Returns:
+        Installation command for AWS Signer Notation CLI
+    """
+    return (
+        f"wget https://d2hvyiie56hcat.cloudfront.net/linux/{cpu_architecture}/"
+        f"installer/rpm/latest/aws-signer-notation-cli_{cpu_architecture}.rpm"
+    )
+
+
+def _create_aws_signer_rpm_command(cpu_architecture: Literal["arm64", "amd64"]) -> str:
+    """Generate AWS Signer RPM installation command.
+
+    Args:
+        cpu_architecture: Target CPU architecture
+
+    Returns:
+        RPM installation command
+    """
+    return f"sudo rpm -U aws-signer-notation-cli_{cpu_architecture}.rpm"
+
+
+def _create_oras_install_commands(
+    cpu_architecture: Literal["arm64", "amd64"],
+    oras_version: str,
+) -> tuple[str, ...]:
+    """Generate ORAS tool installation commands.
+
+    Args:
+        cpu_architecture: Target CPU architecture
+        oras_version: Version of ORAS to install
+
+    Returns:
+        Tuple of ORAS installation commands
+    """
+    return (
+        f"curl -LO 'https://github.com/oras-project/oras/releases/download/"
+        f"v{oras_version}/oras_{oras_version}_linux_{cpu_architecture}.tar.gz'",
+        "mkdir -p oras-install/",
+        f"tar -xzf oras_{oras_version}_linux_{cpu_architecture}.tar.gz -C oras-install/",
+        "sudo mv oras-install/oras /usr/local/bin/",
+    )
+
+
+def _create_security_tools_install_commands() -> tuple[str, ...]:
+    """Generate security tools (Grype, Syft) installation commands.
+
+    Returns:
+        Tuple of security tools installation commands
+    """
+    return (
+        "curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin",
+        "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
+    )
+
+
+def _get_ssm_parameter_command(
+    ssm_path: str,
+    region: str,
+    variable_name: str,
+) -> str:
+    """Generate SSM parameter retrieval command.
+
+    Args:
+        ssm_path: Full SSM parameter path
+        region: AWS region
+        variable_name: Environment variable name to store the value
+
+    Returns:
+        Command to retrieve SSM parameter and store in environment variable
+    """
+    return (
+        f"{variable_name}=$(aws ssm get-parameter "
+        f'--name "{ssm_path}" '
+        f"--region {region} "
+        f'--query "Parameter.Value" '
+        f"--output text)"
+    )
+
+
+def _create_ecr_login_commands(ctx: SignerContext) -> tuple[str, ...]:
+    """Generate ECR login and image retrieval commands.
+
+    Args:
+        ctx: Signer context containing AWS environment details
+
+    Returns:
+        Tuple of ECR login commands
+    """
+    ssm_base = f"/{ctx['project']}/{ctx['stage_name']}/ecr"
+
+    return (
+        f"export PASSWORD=$(aws ecr get-login-password --region {ctx['region']})",
+        _get_ssm_parameter_command(f"{ssm_base}/image/uri", ctx["region"], "IMAGE_URI"),
+        "echo $IMAGE_URI",
+        _get_ssm_parameter_command(
+            f"/{ctx['project']}/{ctx['stage_name']}/signer/profile/arn",
+            ctx["region"],
+            "SIGNER_PROFILE_ARN",
+        ),
+        "echo $SIGNER_PROFILE_ARN",
+        _get_ssm_parameter_command(f"{ssm_base}/repository/uri", ctx["region"], "REPOSITORY_URI"),
+        "echo $REPOSITORY_URI",
+        _get_ssm_parameter_command(f"{ssm_base}/image/tag", ctx["region"], "IMAGE_TAG"),
+        "echo $IMAGE_TAG",
+        "echo Logging in to Amazon ECR...",
+        f"aws ecr get-login-password --region {ctx['region']} | "
+        f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com",
+        "docker pull $IMAGE_URI",
+    )
+
+
+def _create_cve_report_commands(bucket_name: str) -> tuple[str, ...]:
+    """Generate CVE report generation and storage commands.
+
+    Args:
+        bucket_name: S3 bucket name for storing artifacts
+
+    Returns:
+        Tuple of CVE report commands
+    """
+    return (
+        "echo Generating CVE report",
+        "grype $IMAGE_URI -o json > cve.json",
+        "echo Storing CVE report in artifacts bucket",
+        f"aws s3 cp cve.json s3://{bucket_name}/CVE/cve.json",
+    )
+
+
+def _create_sbom_report_commands(bucket_name: str) -> tuple[str, ...]:
+    """Generate SBOM generation and storage commands.
+
+    Args:
+        bucket_name: S3 bucket name for storing artifacts
+
+    Returns:
+        Tuple of SBOM report commands
+    """
+    return (
+        "echo Generating SBOM ",
+        "syft $IMAGE_URI -o cyclonedx-json > sbom.spdx.json",
+        "echo Storing SBOM content in artifacts bucket",
+        f"aws s3 cp sbom.spdx.json s3://{bucket_name}/SBOM/sbom.spdx.json",
+    )
+
+
+def _create_oras_attach_commands() -> tuple[str, ...]:
+    """Generate ORAS artifact attachment commands.
+
+    Returns:
+        Tuple of ORAS attachment commands
+    """
+    return (
+        "echo Attaching reports to the image",
+        "oras attach --artifact-type cve/example $IMAGE_URI cve.json:application/json",
+        "oras attach --artifact-type sbom/example $IMAGE_URI sbom.spdx.json:application/json",
+        "CVEDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[0].digest'`",
+        "SBOMDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[1].digest'`",
+        "echo $AWS_REGION",
+    )
+
+
+def _create_notation_sign_command(
+    target: str,
+    region: str,
+) -> str:
+    """Generate a notation sign command.
+
+    Args:
+        target: Target to sign (image URI or digest reference)
+        region: AWS region for the signer plugin
+
+    Returns:
+        Notation sign command string
+    """
+    return (
+        f"notation sign {target} "
+        f"--plugin-config aws-region={region} "
+        '--plugin "com.amazonaws.signer.notation.plugin" '
+        '--id "$SIGNER_PROFILE_ARN"'
+    )
+
+
+def _create_signing_commands(region: str) -> tuple[str, ...]:
+    """Generate container image and artifact signing commands.
+
+    Args:
+        region: AWS region for the signer plugin
+
+    Returns:
+        Tuple of signing commands
+    """
+    return (
+        _create_notation_sign_command("--verbose $IMAGE_URI", region),
+        _create_notation_sign_command("$REPOSITORY_URI@$CVEDIGEST", region),
+        _create_notation_sign_command("$REPOSITORY_URI@$SBOMDIGEST", region),
+    )
+
+
+# =============================================================================
+# Function Composition - Building Complex Commands from Simple Ones
+# =============================================================================
+
+
+def _compose_install_commands(
+    cpu_architecture: Literal["arm64", "amd64"],
+    oras_version: str,
+) -> list[str]:
+    """Compose all installation commands using function composition.
+
+    Args:
+        cpu_architecture: Target CPU architecture
+        oras_version: Version of ORAS to install
+
+    Returns:
+        List of all installation commands
+    """
+    return list(
+        chain(
+            (
+                _create_aws_signer_install_command(cpu_architecture),
+                _create_aws_signer_rpm_command(cpu_architecture),
+                "notation plugin ls",
+            ),
+            _create_oras_install_commands(cpu_architecture, oras_version),
+            _create_security_tools_install_commands(),
+        )
+    )
+
+
+def _compose_scan_commands(
+    ctx: SignerContext,
+    assume_commands: list[str],
+) -> list[str]:
+    """Compose all scanning and signing commands using function composition.
+
+    This function chains together multiple command generators to create
+    the complete OCI signing command sequence.
+
+    Args:
+        ctx: Signer context containing AWS environment details
+        assume_commands: Commands to assume the required IAM role
+
+    Returns:
+        List of all commands in execution order
+    """
+    # Create partial applications for context-dependent functions
+    ecr_login = partial(_create_ecr_login_commands, ctx)
+    cve_report = partial(_create_cve_report_commands, ctx["bucket_name"])
+    sbom_report = partial(_create_sbom_report_commands, ctx["bucket_name"])
+    signing = partial(_create_signing_commands, ctx["region"])
+
+    # Compose all command sequences
+    return list(
+        chain(
+            assume_commands,
+            ecr_login(),
+            (revert_to_original_role_command,),
+            cve_report(),
+            sbom_report(),
+            _create_oras_attach_commands(),
+            assume_commands,
+            signing(),
+        )
+    )
+
+
+def _create_signer_context(
+    env: Environment,
+    pipeline_vars: PipelineVars,
+    stage_name: str,
+    bucket_name: str,
+) -> SignerContext:
+    """Create an immutable signer context from environment parameters.
+
+    Args:
+        env: AWS environment containing region and account information
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+        bucket_name: S3 bucket name for storing artifacts
+
+    Returns:
+        Immutable context dictionary for signer operations
+    """
+    return SignerContext(
+        region=str(env.region),
+        account=str(env.account),
+        project=pipeline_vars.project,
+        stage_name=stage_name,
+        bucket_name=bucket_name,
+    )
+
+
+# =============================================================================
+# Public API Functions
+# =============================================================================
+
+
+def create_oci_signer_commands(
     *,
     env: Environment,
     pipeline_vars: PipelineVars,
@@ -29,113 +366,40 @@ def _create_oci_signer_install_commands(
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
     oras_version: str = "1.2.2",
-) -> dict[str, list[str] | list[str | Any]]:
-    """
-    Parameters:
-        env (Environment): AWS environment containing region and account information
-        pipeline_vars (PipelineVars): Pipeline variables containing project information
-        stage_name (str): Name of the stage being deployed
-        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket to store artifacts like SBOM and CVE reports
-        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for which to install tools
-        oras_version (str): Version of ORAS tool to install, defaults to "1.2.2"
+) -> OciSignerCommands:
+    """Create OCI signer installation and execution commands.
 
-    Functionality:
-        Generates commands for OCI artifact signing workflow, including:
-        1. Installing necessary tools (AWS Signer Notation CLI, ORAS, Grype, Syft)
-        2. Retrieving image information from SSM parameters
-        3. Pulling the Docker image from ECR
-        4. Generating vulnerability (CVE) reports with Grype
-        5. Generating Software Bill of Materials (SBOM) with Syft
-        6. Storing reports in the S3 artifacts bucket
-        7. Attaching reports to the container image using ORAS
-        8. Signing the container image and attached artifacts using AWS Signer
+    This function generates all necessary commands for installing signing tools
+    and executing the OCI image signing workflow including SBOM/CVE generation.
+
+    Args:
+        env: AWS environment containing region and account information
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+        pipeline_artifacts_bucket: S3 bucket to store artifacts like SBOM and CVE reports
+        cpu_architecture: CPU architecture for which to install tools
+        assume_commands: Commands to assume the required IAM role
+        oras_version: Version of ORAS tool to install, defaults to "1.2.2"
 
     Returns:
-        dict[str, list[str] | list[str | Any]]: Dictionary containing two keys:
+        Dictionary containing:
             - "install_commands": Commands to install required tools
             - "commands": Commands to execute the signing workflow
     """
+    ctx = _create_signer_context(
+        env,
+        pipeline_vars,
+        stage_name,
+        pipeline_artifacts_bucket.bucket_name,
+    )
 
-    _install_commands = [
-        f"wget https://d2hvyiie56hcat.cloudfront.net/linux/{cpu_architecture}/installer/rpm/latest/aws-signer-notation-cli_{cpu_architecture}.rpm",
-        f"sudo rpm -U aws-signer-notation-cli_{cpu_architecture}.rpm",
-        "notation plugin ls",
-        f"curl -LO 'https://github.com/oras-project/oras/releases/download/v{oras_version}/oras_{oras_version}_linux_{cpu_architecture}.tar.gz'",
-        "mkdir -p oras-install/",
-        f"tar -xzf oras_{oras_version}_linux_{cpu_architecture}.tar.gz -C oras-install/",
-        "sudo mv oras-install/oras /usr/local/bin/",
-        "curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin",
-        "curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin",
-    ]
-
-    ssm_path_base = f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}"
-    ecr_ssm_path_base = f"{ssm_path_base}/ecr"
-
-    commands = [
-        *assume_commands,
-        f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
-        f"IMAGE_URI=$(aws ssm get-parameter "
-        f'--name "{ecr_ssm_path_base}/image/uri" '
-        f"--region {env.region} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
-        "echo $IMAGE_URI",
-        f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
-        f'--name "{ssm_path_base}/signer/profile/arn" '
-        f"--region {env.region} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
-        "echo $SIGNER_PROFILE_ARN",
-        f"REPOSITORY_URI=$(aws ssm get-parameter "
-        f'--name "{ecr_ssm_path_base}/repository/uri" '
-        f"--region {env.region} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
-        "echo $REPOSITORY_URI",
-        f"IMAGE_TAG=$(aws ssm get-parameter "
-        f'--name "{ecr_ssm_path_base}/image/tag" '
-        f"--region {env.region} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
-        "echo $IMAGE_TAG",
-        "echo Logging in to Amazon ECR...",
-        f"aws ecr get-login-password --region {env.region} | "
-        f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
-        "docker pull $IMAGE_URI",
-        revert_to_original_role_command,
-        "echo Generating CVE report",
-        "grype $IMAGE_URI -o json > cve.json",
-        "echo Storing CVE report in artifacts bucket",
-        f"aws s3 cp cve.json s3://{pipeline_artifacts_bucket.bucket_name}/CVE/cve.json",
-        "echo Generating SBOM ",
-        "syft $IMAGE_URI -o cyclonedx-json > sbom.spdx.json",
-        "echo Storing SBOM content in artifacts bucket",
-        f"aws s3 cp sbom.spdx.json s3://{pipeline_artifacts_bucket.bucket_name}/SBOM/sbom.spdx.json",
-        "echo Attaching reports to the image",
-        "oras attach --artifact-type cve/example $IMAGE_URI cve.json:application/json",
-        "oras attach --artifact-type sbom/example $IMAGE_URI sbom.spdx.json:application/json",
-        "CVEDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[0].digest'`",
-        "SBOMDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[1].digest'`",
-        "echo $AWS_REGION",
-        *assume_commands,
-        f"notation sign --verbose $IMAGE_URI "
-        f"--plugin-config aws-region={env.region} "
-        '--plugin "com.amazonaws.signer.notation.plugin" '
-        '--id "$SIGNER_PROFILE_ARN"',
-        f"notation sign $REPOSITORY_URI@$CVEDIGEST "
-        f"--plugin-config aws-region={env.region} "
-        '--plugin "com.amazonaws.signer.notation.plugin" '
-        '--id "$SIGNER_PROFILE_ARN"',
-        f"notation sign $REPOSITORY_URI@$SBOMDIGEST "
-        f"--plugin-config aws-region={env.region} "
-        '--plugin "com.amazonaws.signer.notation.plugin" '
-        '--id "$SIGNER_PROFILE_ARN"',
-    ]
-
-    return {"install_commands": _install_commands, "commands": commands}
+    return OciSignerCommands(
+        install_commands=_compose_install_commands(cpu_architecture, oras_version),
+        commands=_compose_scan_commands(ctx, assume_commands),
+    )
 
 
-def _attach_oci_signer_iam_policies(
+def attach_oci_signer_iam_policies(
     *,
     project: codebuild.PipelineProject,
     env: Environment,
@@ -143,36 +407,124 @@ def _attach_oci_signer_iam_policies(
     stage_name: str,
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
 ) -> None:
-    """
-    Parameters:
-        project (codebuild.PipelineProject): The CodeBuild project to attach IAM policies to
-        env (Environment): AWS environment containing region and account information
-        pipeline_vars (PipelineVars): Pipeline variables containing project information
-        stage_name (str): Name of the stage being deployed
+    """Attach necessary IAM policies to the OCI signer project.
 
-    Functionality:
-        Attaches necessary IAM policies to the OCI image validation project:
-        1. S3 object write access to store generated artifacts (SBOM, CVE reports) in the pipeline artifacts bucket
-        2. Attach oci-signer role
-    """
+    This function attaches:
+    1. S3 object write access for storing artifacts (SBOM, CVE reports)
+    2. The oci-signer role for signing operations
 
+    Args:
+        project: The CodeBuild project to attach IAM policies to
+        env: AWS environment containing region and account information
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+        pipeline_artifacts_bucket: S3 bucket for storing artifacts
+    """
     project.add_to_role_policy(
         statement=iam.PolicyStatement(
-            actions=[
-                "s3:PutObject",
-            ],
-            resources=[
-                f"{pipeline_artifacts_bucket.bucket_arn}/*",
-            ],
+            actions=["s3:PutObject"],
+            resources=[f"{pipeline_artifacts_bucket.bucket_arn}/*"],
         )
     )
 
-    attach_role(project=project, env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="oci-signer")
+    attach_role(
+        project=project,
+        env=env,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        role_name="oci-signer",
+    )
+
+
+def create_build_environment(
+    scope: Any,
+    pipeline_vars: PipelineVars,
+    stage_name: str,
+    project_name: str,
+    compute_type: codebuild.ComputeType,
+) -> codebuild.BuildEnvironment:
+    """Create the build environment configuration for the OCI signer project.
+
+    Args:
+        scope: CDK construct scope
+        pipeline_vars: Pipeline variables containing project information
+        stage_name: Name of the stage being deployed
+        project_name: Name of the project
+        compute_type: Compute type for the CodeBuild project
+
+    Returns:
+        Configured BuildEnvironment for the CodeBuild project
+    """
+    build_image = get_build_image_for_architecture(
+        self=scope,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        stage_type=project_name,
+    )
+
+    fleet = use_fleet(
+        self=scope,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        stage_type=project_name,
+    )
+
+    return codebuild.BuildEnvironment(
+        build_image=build_image,  # type: ignore
+        privileged=True,
+        compute_type=compute_type,
+        fleet=fleet,
+    )
+
+
+def create_build_spec(
+    commands: OciSignerCommands,
+    pipeline_vars: PipelineVars,
+) -> codebuild.BuildSpec:
+    """Create the build specification for the OCI signer CodeBuild project.
+
+    Args:
+        commands: OCI signer installation and execution commands
+        pipeline_vars: Pipeline variables containing project information
+
+    Returns:
+        BuildSpec object for the CodeBuild project
+    """
+    install_phase = (
+        install_pre_backed() if pipeline_vars.codebuild_docker_ecr_repo_arn else install_default(dict(commands))
+    )
+
+    return codebuild.BuildSpec.from_object({
+        "version": "0.2",
+        "phases": {
+            "install": install_phase,
+            "build": {
+                "commands": [
+                    ". /.venv/bin/activate",
+                    *commands["commands"],
+                ],
+            },
+        },
+    })
+
+
+def create_environment_variables() -> dict[str, codebuild.BuildEnvironmentVariable]:
+    """Create environment variables for the OCI signer CodeBuild project.
+
+    Returns:
+        Dictionary of environment variables
+    """
+    return {
+        "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
+            value="/var/run/docker/containerd/containerd.sock",
+            type=codebuild.BuildEnvironmentVariableType.PLAINTEXT,
+        ),
+    }
 
 
 def create_oci_signer_project(
     *,
-    scope,
+    scope: Any,
     env: Environment,
     stage_name: str,
     pipeline_vars: PipelineVars,
@@ -180,80 +532,68 @@ def create_oci_signer_project(
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
     compute_type: codebuild.ComputeType,
 ) -> codebuild.PipelineProject:
-    """
-    Parameters:
-        env (Environment): AWS environment containing region and account information
-        stage_name (str): Name of the stage being deployed
-        pipeline_vars (PipelineVars): Pipeline variables containing project information
-        cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
-        pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
-        compute_type (codebuild.ComputeType): Compute type for the CodeBuild project
+    """Create a CodeBuild pipeline project for OCI image signing workflow.
 
-    Functionality:
-        Creates a CodeBuild pipeline project for OCI image signing workflow:
-        1. Selects appropriate build image based on CPU architecture
-        2. Generates OCI signer role assumption commands
-        3. Constructs installation and build commands for signing process
-        4. Configures optional CodeBuild fleet if provided
-        5. Creates PipelineProject with privileged Docker access and auto-retry enabled
-        6. Applies default IAM permissions and OCI signer-specific policies
-        7. Attaches the OCI signer role to the project
+    This function creates a fully configured CodeBuild project for signing
+    OCI container images. The project:
+    1. Selects appropriate build image based on CPU architecture
+    2. Generates OCI signer role assumption commands
+    3. Constructs installation and build commands for signing process
+    4. Configures optional CodeBuild fleet if provided
+    5. Creates PipelineProject with privileged Docker access and auto-retry enabled
+    6. Applies default IAM permissions and OCI signer-specific policies
+
+    Args:
+        scope: CDK construct scope
+        env: AWS environment containing region and account information
+        stage_name: Name of the stage being deployed
+        pipeline_vars: Pipeline variables containing project information
+        cpu_architecture: CPU architecture for the build environment
+        pipeline_artifacts_bucket: S3 bucket for storing build artifacts
+        compute_type: Compute type for the CodeBuild project
 
     Returns:
-        codebuild.PipelineProject: Configured CodeBuild project for OCI image signing operations
+        Configured CodeBuild project for OCI image signing operations
     """
     project_name = "oci_signer_project"
-    build_image = get_build_image_for_architecture(
-        self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name
+
+    # Generate assume role commands
+    assume_commands = assume_role_commands(
+        env=env,
+        pipeline_vars=pipeline_vars,
+        stage_name=stage_name,
+        role_name="oci-signer",
     )
 
-    _assume_oci_signer_role_commands = assume_role_commands(
-        env=env, pipeline_vars=pipeline_vars, stage_name=stage_name, role_name="oci-signer"
-    )
-
-    commands = _create_oci_signer_install_commands(
+    # Create OCI signer commands using functional composition
+    commands = create_oci_signer_commands(
         env=env,
         pipeline_vars=pipeline_vars,
         stage_name=stage_name,
         pipeline_artifacts_bucket=pipeline_artifacts_bucket,
         cpu_architecture=cpu_architecture,
-        assume_commands=_assume_oci_signer_role_commands,
+        assume_commands=assume_commands,
     )
 
+    # Create the CodeBuild project
     project = codebuild.PipelineProject(
         scope,
         f"{stage_name}_{project_name}",
-        environment=codebuild.BuildEnvironment(
-            build_image=build_image,  # type: ignore
-            privileged=True,
+        environment=create_build_environment(
+            scope=scope,
+            pipeline_vars=pipeline_vars,
+            stage_name=stage_name,
+            project_name=project_name,
             compute_type=compute_type,
-            fleet=use_fleet(self=scope, pipeline_vars=pipeline_vars, stage_name=stage_name, stage_type=project_name),
         ),
         auto_retry_limit=3,
-        environment_variables={
-            "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
-                value="/var/run/docker/containerd/containerd.sock",
-                type=codebuild.BuildEnvironmentVariableType.PLAINTEXT,
-            ),
-        },
-        build_spec=codebuild.BuildSpec.from_object({
-            "version": "0.2",
-            "phases": {
-                "install": install_pre_backed()
-                if pipeline_vars.codebuild_docker_ecr_repo_arn
-                else install_default(commands),
-                "build": {
-                    "commands": [
-                        ". /.venv/bin/activate",
-                        *commands["commands"],
-                    ],
-                },
-            },
-        }),
+        environment_variables=create_environment_variables(),
+        build_spec=create_build_spec(commands, pipeline_vars),
     )
 
+    # Apply permissions and attach IAM policies
     apply_default_permissions(project, env)
-    _attach_oci_signer_iam_policies(
+    attach_oci_signer_iam_policies(
         project=project,
         env=env,
         pipeline_vars=pipeline_vars,
