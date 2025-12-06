@@ -6,6 +6,7 @@ import aws_cdk.aws_codepipeline_actions as codepipeline_actions
 import aws_cdk.aws_ecr as ecr
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
+import aws_cdk.aws_ssm as ssm
 
 from aws_cdk import Duration, Environment, pipelines
 from cdk.schemas.configuration_vars import PipelineVars
@@ -205,18 +206,32 @@ def codebuild_build_arm_image(
 ) -> codebuild.LinuxArmBuildImage | codebuild.IBuildImage:
     """
     Parameters:
-        pipeline_vars (PipelineVars): Pipeline variables containing CodeBuild configuration
-        stage_name (str): Name of the pipeline stage
-        stage_type (str): Type of the pipeline stage
+        pipeline_vars (PipelineVars): PipelineVars object containing pipeline configuration
+        stage_name (str): Name of the stage
+        stage_type (str): Type of the stage
 
     Functionality:
-        Determines and returns the appropriate CodeBuild Linux ARM build image based on pipeline configuration
-        If a custom ECR repository ARN is provided, imports and uses that repository with the specified image tag
-        Otherwise, returns the default Amazon Linux 2 standard build image
+        Determines and returns an appropriate ARM build image for CodeBuild based on pipeline configuration
+        Supports custom Docker images from ECR repository or SSM parameter references
+        Falls back to Amazon Linux 2 standard image if no custom configuration is provided
+        Handles image tag resolution from direct values or SSM parameters
+
+    Arguments:
+        pipeline_vars: PipelineVars object containing pipeline configuration
+        stage_name: Name of the stage
+        stage_type: Type of the stage
 
     Returns:
-        codebuild.LinuxArmBuildImage | codebuild.IBuildImage: The CodeBuild Linux ARM build image to use
+        codebuild.LinuxArmBuildImage | codebuild.IBuildImage: A CodeBuild ARM build image object,
+        either from ECR repository or the default Amazon Linux 2 standard image
     """
+    image_tag = None
+    if pipeline_vars.codebuild_docker_image_tag:
+        image_tag = pipeline_vars.codebuild_docker_image_tag
+    if pipeline_vars.codebuild_docker_image_tag_ssm_param:
+        image_tag = ssm.StringParameter.value_from_lookup(
+            self, parameter_name=pipeline_vars.codebuild_docker_image_tag_ssm_param
+        )
     if pipeline_vars.codebuild_docker_ecr_repo_arn:
         return codebuild.LinuxArmBuildImage.from_ecr_repository(
             ecr.Repository.from_repository_arn(
@@ -224,7 +239,7 @@ def codebuild_build_arm_image(
                 id=f"imported_repo_{stage_name}_{stage_type}",
                 repository_arn=pipeline_vars.codebuild_docker_ecr_repo_arn,
             ),
-            tag_or_digest=pipeline_vars.codebuild_docker_image_tag,
+            tag_or_digest=image_tag,
         )
     return codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0  # type: ignore
 
