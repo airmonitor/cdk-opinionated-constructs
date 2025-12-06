@@ -1,4 +1,5 @@
 import aws_cdk.aws_codebuild as codebuild
+import aws_cdk.aws_ssm as ssm
 
 from cdk.schemas.configuration_vars import PipelineVars
 from cdk_opinionated_constructs.stages.logic import (
@@ -10,14 +11,14 @@ from cdk_opinionated_constructs.stages.logic import (
 def use_fleet(*, self, pipeline_vars: PipelineVars, stage_name: str, stage_type: str) -> codebuild.IFleet | None:
     """
     Parameters:
-        self
         pipeline_vars (PipelineVars): PipelineVars object containing pipeline configuration
         stage_name (str): Name of the stage
         stage_type (str): Type of the stage
 
     Functionality:
-        Retrieves or creates a CodeBuild fleet based on the provided pipeline variables
-        Returns an imported fleet if a fleet ARN is available in pipeline_vars, otherwise returns None
+        Retrieves a CodeBuild Fleet based on pipeline configuration variables
+        Supports fleet retrieval from ARN or SSM parameter
+        Returns None if no fleet configuration is provided
 
     Arguments:
         pipeline_vars: PipelineVars object containing pipeline configuration
@@ -25,12 +26,17 @@ def use_fleet(*, self, pipeline_vars: PipelineVars, stage_name: str, stage_type:
         stage_type: Type of the stage
 
     Returns:
-        codebuild.IFleet | None: An IFleet object if fleet_arn exists in pipeline_vars, otherwise None
+        codebuild.IFleet | None: A CodeBuild Fleet object if configuration is provided, otherwise None
     """
     if pipeline_vars.codebuild_fleet_arn:
         return codebuild.Fleet.from_fleet_arn(
             self, id=f"{stage_name}_{stage_type}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
         )
+    if pipeline_vars.codebuild_fleet_arn_ssm_parameter:
+        fleet_arn = ssm.StringParameter.value_for_string_parameter(
+            self, parameter_name=pipeline_vars.codebuild_fleet_arn_ssm_parameter
+        )
+        return codebuild.Fleet.from_fleet_arn(self, id=f"{stage_name}_{stage_type}_imported_fleet", fleet_arn=fleet_arn)
     return None
 
 
