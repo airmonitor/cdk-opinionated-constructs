@@ -1,5 +1,4 @@
 import aws_cdk.aws_codebuild as codebuild
-import aws_cdk.aws_ssm as ssm
 
 from cdk.schemas.configuration_vars import PipelineVars
 from cdk_opinionated_constructs.stages.logic import (
@@ -32,11 +31,6 @@ def use_fleet(*, self, pipeline_vars: PipelineVars, stage_name: str, stage_type:
         return codebuild.Fleet.from_fleet_arn(
             self, id=f"{stage_name}_{stage_type}_imported_fleet", fleet_arn=pipeline_vars.codebuild_fleet_arn
         )
-    if pipeline_vars.codebuild_fleet_arn_ssm_parameter:
-        fleet_arn = ssm.StringParameter.value_for_string_parameter(
-            self, parameter_name=pipeline_vars.codebuild_fleet_arn_ssm_parameter
-        )
-        return codebuild.Fleet.from_fleet_arn(self, id=f"{stage_name}_{stage_type}_imported_fleet", fleet_arn=fleet_arn)
     return None
 
 
