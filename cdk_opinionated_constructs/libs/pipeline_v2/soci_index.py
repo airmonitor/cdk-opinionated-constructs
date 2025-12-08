@@ -226,7 +226,7 @@ def create_soci_commands(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    soci_version: str = "0.11.1",
+    soci_version: str = "0.12.0",
 ) -> SociCommands:
     """Create SOCI installation and execution commands.
 
@@ -239,7 +239,7 @@ def create_soci_commands(
         stage_name: Name of the stage being deployed
         cpu_architecture: CPU architecture for installing the appropriate SOCI version
         assume_commands: Commands to assume the required IAM role
-        soci_version: Version of SOCI snapshotter to install, defaults to "0.11.1"
+        soci_version: Version of SOCI snapshotter to install, defaults to "0.12.0"
 
     Returns:
         Dictionary containing:

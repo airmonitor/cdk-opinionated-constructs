@@ -365,7 +365,7 @@ def create_oci_signer_commands(
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    oras_version: str = "1.2.2",
+    oras_version: str = "1.3.0",
 ) -> OciSignerCommands:
     """Create OCI signer installation and execution commands.
 
@@ -379,7 +379,7 @@ def create_oci_signer_commands(
         pipeline_artifacts_bucket: S3 bucket to store artifacts like SBOM and CVE reports
         cpu_architecture: CPU architecture for which to install tools
         assume_commands: Commands to assume the required IAM role
-        oras_version: Version of ORAS tool to install, defaults to "1.2.2"
+        oras_version: Version of ORAS tool to install, defaults to "1.3.0"
 
     Returns:
         Dictionary containing:

@@ -339,7 +339,7 @@ def create_oci_validation_commands(
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
-    oras_version: str = "1.2.2",
+    oras_version: str = "1.3.0",
 ) -> OciValidationCommands:
     """Create OCI image validation installation and execution commands.
 
@@ -353,7 +353,7 @@ def create_oci_validation_commands(
         cpu_architecture: CPU architecture for installing the appropriate tools
         assume_commands: Commands to assume the required IAM role
         pipeline_artifacts_bucket: S3 bucket to store pipeline artifacts
-        oras_version: Version of ORAS to install, defaults to "1.2.2"
+        oras_version: Version of ORAS to install, defaults to "1.3.0"
 
     Returns:
         Dictionary containing:
