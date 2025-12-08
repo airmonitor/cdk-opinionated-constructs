@@ -208,6 +208,9 @@ def _create_sbom_report_commands(bucket_name: str) -> tuple[str, ...]:
 def _create_oras_attach_commands() -> tuple[str, ...]:
     """Generate ORAS artifact attachment commands.
 
+    Note: ORAS 1.3.0+ uses --format instead of deprecated -o flag.
+    The referrers list is returned under .referrers[] in the JSON output.
+
     Returns:
         Tuple of ORAS attachment commands
     """
@@ -215,8 +218,9 @@ def _create_oras_attach_commands() -> tuple[str, ...]:
         "echo Attaching reports to the image",
         "oras attach --artifact-type cve/example $IMAGE_URI cve.json:application/json",
         "oras attach --artifact-type sbom/example $IMAGE_URI sbom.spdx.json:application/json",
-        "CVEDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[0].digest'`",
-        "SBOMDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[1].digest'`",
+        # ORAS 1.3.0+ uses --format json; referrers are under .referrers[] array
+        "CVEDIGEST=$(oras discover --format json $IMAGE_URI | jq -r '.referrers[0].digest')",
+        "SBOMDIGEST=$(oras discover --format json $IMAGE_URI | jq -r '.referrers[1].digest')",
         "echo $AWS_REGION",
     )
 
