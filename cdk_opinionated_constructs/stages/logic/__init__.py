@@ -376,7 +376,7 @@ def oci_image_signer(
     cpu_architecture: Literal["arm64", "amd64"],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
     compute_type: codebuild.ComputeType = codebuild.ComputeType.SMALL,
-    oras_version: str = "1.2.3",
+    oras_version: str = "1.3.0",
 ) -> pipelines.CodeBuildStep:
     """
     Parameters:
@@ -386,7 +386,7 @@ def oci_image_signer(
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
         compute_type (codebuild.ComputeType): Compute type for the build environment (defaults to SMALL)
-        oras_version (str): Version of ORAS tool to install (defaults to "1.2.3")
+        oras_version (str): Version of ORAS tool to install (defaults to "1.3.0")
 
     Functionality:
         Creates a CodeBuild step that performs container image signing and security scanning:
@@ -472,8 +472,8 @@ def oci_image_signer(
             "echo Attaching reports to the image",
             "oras attach --artifact-type cve/example $IMAGE_URI cve.json:application/json",
             "oras attach --artifact-type sbom/example $IMAGE_URI sbom.spdx.json:application/json",
-            "CVEDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[0].digest'`",
-            "SBOMDIGEST=`oras discover -o json $IMAGE_URI | jq -r '.manifests[1].digest'`",
+            "CVEDIGEST=$(oras discover --format json $IMAGE_URI | jq -r '.referrers[0].digest')",
+            "SBOMDIGEST=$(oras discover --format json $IMAGE_URI | jq -r '.referrers[1].digest')",
             "echo $AWS_REGION",
             f"notation sign --verbose $IMAGE_URI "
             f"--plugin-config aws-region={env.region} "
@@ -535,7 +535,7 @@ def validate_oci_image(
     cpu_architecture: Literal["arm64", "amd64"],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
     docker_image_project_name: str,
-    oras_version: str = "1.2.3",
+    oras_version: str = "1.3.0",
 ) -> pipelines.CodeBuildStep:
     """
     Parameters:
