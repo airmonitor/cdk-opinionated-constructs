@@ -475,7 +475,6 @@ def create_build_environment(
 
     return codebuild.BuildEnvironment(
         build_image=build_image,  # type: ignore
-        privileged=True,
         compute_type=compute_type,
         fleet=fleet,
     )
@@ -544,8 +543,7 @@ def create_oci_signer_project(
     2. Generates OCI signer role assumption commands
     3. Constructs installation and build commands for signing process
     4. Configures optional CodeBuild fleet if provided
-    5. Creates PipelineProject with privileged Docker access and auto-retry enabled
-    6. Applies default IAM permissions and OCI signer-specific policies
+    5. Applies default IAM permissions and OCI signer-specific policies
 
     Args:
         scope: CDK construct scope

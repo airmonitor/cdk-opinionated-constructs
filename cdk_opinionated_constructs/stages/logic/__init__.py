@@ -570,7 +570,6 @@ def validate_oci_image(
         build_environment=codebuild.BuildEnvironment(
             compute_type=codebuild.ComputeType.SMALL,
             build_image=build_image,  # type: ignore
-            privileged=True,
             environment_variables={
                 "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
                     value="/var/run/docker/containerd/containerd.sock",
@@ -770,7 +769,6 @@ def scan_image_with_trivy(
         build_environment=codebuild.BuildEnvironment(
             compute_type=compute_type,
             build_image=build_image,  # type: ignore
-            privileged=True,
             environment_variables={
                 "CONTAINERD_ADDRESS": codebuild.BuildEnvironmentVariable(
                     value="/var/run/docker/containerd/containerd.sock",
