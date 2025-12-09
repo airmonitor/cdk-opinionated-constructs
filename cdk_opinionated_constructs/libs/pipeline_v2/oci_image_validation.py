@@ -451,7 +451,6 @@ def create_build_environment(
 
     return codebuild.BuildEnvironment(
         build_image=build_image,  # type: ignore
-        privileged=True,
         compute_type=compute_type,
         fleet=fleet,
     )
