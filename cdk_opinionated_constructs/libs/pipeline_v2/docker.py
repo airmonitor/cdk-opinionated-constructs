@@ -421,8 +421,8 @@ def create_environment_variables() -> dict[str, codebuild.BuildEnvironmentVariab
 
 
 def create_docker_build_project(
-    *,
     scope: Any,
+    *,
     env: Environment,
     stage_name: str,
     pipeline_vars: PipelineVars,
