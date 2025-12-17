@@ -703,7 +703,7 @@ def scan_image_with_trivy(
     cpu_architecture: Literal["arm64", "amd64"],
     pipeline_artifacts_bucket: s3.Bucket | s3.IBucket,
     compute_type: codebuild.ComputeType = codebuild.ComputeType.MEDIUM,
-    trivy_version: str = "0.68.1",
+    trivy_version: str = "0.68.2",
 ) -> pipelines.CodeBuildStep:
     """
     Parameters:
@@ -713,7 +713,7 @@ def scan_image_with_trivy(
         cpu_architecture (Literal["arm64", "amd64"]): CPU architecture for the build environment
         pipeline_artifacts_bucket (s3.Bucket | s3.IBucket): S3 bucket for storing build artifacts
         compute_type (codebuild.ComputeType): CodeBuild compute type for the build environment (defaults to MEDIUM)
-        trivy_version (str): Version of Trivy scanner to install (defaults to "0.68.1")
+        trivy_version (str): Version of Trivy scanner to install (defaults to "0.68.2")
 
     Functionality:
         Creates a CodeBuild step that performs security scanning of container images using Trivy:
