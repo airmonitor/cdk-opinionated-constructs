@@ -23,7 +23,7 @@ install: # Install all project dependencies and development tools
 	@echo "Installing dependencies from requirements files"
 	pip install --upgrade pip
 	pip install --upgrade uv
-	uv pip install pre-commit pytest pytest-snapshot
+	uv pip install pre-commit pytest pytest-snapshot pur
 	uv pip install -r test/requirements.txt
 	uv pip install -r test/requirements-dev.txt
 
