@@ -64,11 +64,13 @@ def assume_role_commands(
     """
     return [
         'echo "Assuming role into target account..."',
-        f"ASSUME_OUTPUT=$(aws sts assume-role "
-        f"--role-arn arn:aws:iam::{env.account}:role/{pipeline_vars.project}-{stage_name}-{role_name}-role "
-        f"--role-session-name {role_name}-session "
-        f"--output text "
-        f"--query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]')",
+        (
+            f"ASSUME_OUTPUT=$(aws sts assume-role "
+            f"--role-arn arn:aws:iam::{env.account}:role/{pipeline_vars.project}-{stage_name}-{role_name}-role "
+            f"--role-session-name {role_name}-session "
+            f"--output text "
+            f"--query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]')"
+        ),
         'read AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<< "$ASSUME_OUTPUT"',
         "export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN",
     ]
@@ -326,15 +328,19 @@ def soci_image_builder(
         install_commands=_install_commands,
         commands=[
             f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
-            f"IMAGE_URI=$(aws ssm get-parameter "
-            f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/uri" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"IMAGE_URI=$(aws ssm get-parameter "
+                f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/uri" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $IMAGE_URI",
             "echo Logging in to Amazon ECR...",
-            f"aws ecr get-login-password --region {env.region} | "
-            f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
+            (
+                f"aws ecr get-login-password --region {env.region} | "
+                f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com"
+            ),
             "ctr image pull -user AWS:$PASSWORD $IMAGE_URI",
             "echo Generating SOCI index ",
             "soci create $IMAGE_URI ",
@@ -360,8 +366,10 @@ def soci_image_builder(
                     "ssm:GetParameter",
                 ],
                 resources=[
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
-                    f"ecr/image/uri"
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
+                        f"ecr/image/uri"
+                    )
                 ],
             ),
         ],
@@ -433,33 +441,43 @@ def oci_image_signer(
         install_commands=_install_commands if not pipeline_vars.codebuild_docker_ecr_repo_arn else None,
         commands=[
             f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
-            f"IMAGE_URI=$(aws ssm get-parameter "
-            f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/uri" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"IMAGE_URI=$(aws ssm get-parameter "
+                f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/uri" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $IMAGE_URI",
-            f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
-            f'--name "/{pipeline_vars.project}/{stage_name}/signer/profile/arn" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
+                f'--name "/{pipeline_vars.project}/{stage_name}/signer/profile/arn" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $SIGNER_PROFILE_ARN",
-            f"REPOSITORY_URI=$(aws ssm get-parameter "
-            f'--name "/{pipeline_vars.project}/{stage_name}/ecr/repository/uri" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"REPOSITORY_URI=$(aws ssm get-parameter "
+                f'--name "/{pipeline_vars.project}/{stage_name}/ecr/repository/uri" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $REPOSITORY_URI",
-            f"IMAGE_TAG=$(aws ssm get-parameter "
-            f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/tag" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"IMAGE_TAG=$(aws ssm get-parameter "
+                f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/tag" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $IMAGE_TAG",
             "echo Logging in to Amazon ECR...",
-            f"aws ecr get-login-password --region {env.region} | "
-            f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
+            (
+                f"aws ecr get-login-password --region {env.region} | "
+                f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com"
+            ),
             "docker pull $IMAGE_URI",
             "echo Generating CVE report",
             "grype $IMAGE_URI -o json > cve.json",
@@ -475,18 +493,24 @@ def oci_image_signer(
             "CVEDIGEST=$(oras discover --format json $IMAGE_URI | jq -r '.referrers[0].digest')",
             "SBOMDIGEST=$(oras discover --format json $IMAGE_URI | jq -r '.referrers[1].digest')",
             "echo $AWS_REGION",
-            f"notation sign --verbose $IMAGE_URI "
-            f"--plugin-config aws-region={env.region} "
-            '--plugin "com.amazonaws.signer.notation.plugin" '
-            '--id "$SIGNER_PROFILE_ARN"',
-            f"notation sign $REPOSITORY_URI@$CVEDIGEST "
-            f"--plugin-config aws-region={env.region} "
-            '--plugin "com.amazonaws.signer.notation.plugin" '
-            '--id "$SIGNER_PROFILE_ARN"',
-            f"notation sign $REPOSITORY_URI@$SBOMDIGEST "
-            f"--plugin-config aws-region={env.region} "
-            '--plugin "com.amazonaws.signer.notation.plugin" '
-            '--id "$SIGNER_PROFILE_ARN"',
+            (
+                f"notation sign --verbose $IMAGE_URI "
+                f"--plugin-config aws-region={env.region} "
+                '--plugin "com.amazonaws.signer.notation.plugin" '
+                '--id "$SIGNER_PROFILE_ARN"'
+            ),
+            (
+                f"notation sign $REPOSITORY_URI@$CVEDIGEST "
+                f"--plugin-config aws-region={env.region} "
+                '--plugin "com.amazonaws.signer.notation.plugin" '
+                '--id "$SIGNER_PROFILE_ARN"'
+            ),
+            (
+                f"notation sign $REPOSITORY_URI@$SBOMDIGEST "
+                f"--plugin-config aws-region={env.region} "
+                '--plugin "com.amazonaws.signer.notation.plugin" '
+                '--id "$SIGNER_PROFILE_ARN"'
+            ),
         ],
         role_policy_statements=[
             iam.PolicyStatement(
@@ -503,14 +527,22 @@ def oci_image_signer(
                     "ssm:GetParameter",
                 ],
                 resources=[
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
-                    f"ecr/image/tag",
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
-                    f"ecr/image/uri",
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
-                    f"ecr/repository/uri",
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
-                    f"signer/profile/arn",
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
+                        f"ecr/image/tag"
+                    ),
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
+                        f"ecr/image/uri"
+                    ),
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
+                        f"ecr/repository/uri"
+                    ),
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
+                        f"signer/profile/arn"
+                    ),
                 ],
             ),
             iam.PolicyStatement(
@@ -590,33 +622,43 @@ def validate_oci_image(
         ],
         commands=[
             f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
-            f"IMAGE_URI=$(aws ssm get-parameter "
-            f'--name "/{docker_image_project_name}/{stage_name}/ecr/image/uri" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"IMAGE_URI=$(aws ssm get-parameter "
+                f'--name "/{docker_image_project_name}/{stage_name}/ecr/image/uri" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $IMAGE_URI",
-            f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
-            f'--name "/{docker_image_project_name}/{stage_name}/signer/profile/arn" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
+                f'--name "/{docker_image_project_name}/{stage_name}/signer/profile/arn" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $SIGNER_PROFILE_ARN",
-            f"REPOSITORY_URI=$(aws ssm get-parameter "
-            f'--name "/{docker_image_project_name}/{stage_name}/ecr/repository/uri" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"REPOSITORY_URI=$(aws ssm get-parameter "
+                f'--name "/{docker_image_project_name}/{stage_name}/ecr/repository/uri" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $REPOSITORY_URI",
-            f"IMAGE_TAG=$(aws ssm get-parameter "
-            f'--name "/{docker_image_project_name}/{stage_name}/ecr/image/tag" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"IMAGE_TAG=$(aws ssm get-parameter "
+                f'--name "/{docker_image_project_name}/{stage_name}/ecr/image/tag" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $IMAGE_TAG",
             "echo Logging in to Amazon ECR...",
-            f"aws ecr get-login-password --region {env.region} | "
-            f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
+            (
+                f"aws ecr get-login-password --region {env.region} | "
+                f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com"
+            ),
             """cat > policy.json << EOF
             {
               "version": "1.0",
@@ -650,8 +692,10 @@ def validate_oci_image(
             """,
             "TOTAL_LINES=$(wc -l < image_definitions.json)",
             "LINES_TO_KEEP=$((TOTAL_LINES - 4))",
-            "head -n $LINES_TO_KEEP image_definitions.json > image_definitions.json.tmp && "
-            "mv image_definitions.json.tmp image_definitions.json",
+            (
+                "head -n $LINES_TO_KEEP image_definitions.json > image_definitions.json.tmp && "
+                "mv image_definitions.json.tmp image_definitions.json"
+            ),
             "echo image definitions in artifacts bucket",
             f"aws s3 cp image_definitions.json s3://{pipeline_artifacts_bucket.bucket_name}/image_definitions/image_definitions.json",
         ],
@@ -670,14 +714,22 @@ def validate_oci_image(
                     "ssm:GetParameter",
                 ],
                 resources=[
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
-                    f"ecr/image/tag",
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
-                    f"ecr/image/uri",
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
-                    f"ecr/repository/uri",
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
-                    f"signer/profile/arn",
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
+                        f"ecr/image/tag"
+                    ),
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
+                        f"ecr/image/uri"
+                    ),
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
+                        f"ecr/repository/uri"
+                    ),
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{docker_image_project_name}/{stage_name}/"
+                        f"signer/profile/arn"
+                    ),
                 ],
             ),
             iam.PolicyStatement(
@@ -756,13 +808,17 @@ def scan_image_with_trivy(
 
     if cpu_architecture == "amd64":
         _install_commands.extend([
-            f"rpm -ivh https://github.com/aquasecurity/trivy/releases/download/"
-            f"v{trivy_version}/trivy_{trivy_version}_Linux-64bit.rpm",
+            (
+                f"rpm -ivh https://github.com/aquasecurity/trivy/releases/download/"
+                f"v{trivy_version}/trivy_{trivy_version}_Linux-64bit.rpm"
+            ),
         ])
     else:
         _install_commands.extend([
-            f"rpm -ivh https://github.com/aquasecurity/trivy/releases/download/"
-            f"v{trivy_version}/trivy_{trivy_version}_Linux-ARM64.rpm",
+            (
+                f"rpm -ivh https://github.com/aquasecurity/trivy/releases/download/"
+                f"v{trivy_version}/trivy_{trivy_version}_Linux-ARM64.rpm"
+            ),
         ])
     return pipelines.CodeBuildStep(
         "scan_image_with_trivy",
@@ -782,69 +838,85 @@ def scan_image_with_trivy(
             "echo waiting 3 minutes for docker image and SBOM to be ready...",
             "sleep 180",
             f"export PASSWORD=$(aws ecr get-login-password --region {env.region})",
-            f"IMAGE_URI=$(aws ssm get-parameter "
-            f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/uri" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"IMAGE_URI=$(aws ssm get-parameter "
+                f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/uri" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $IMAGE_URI",
-            f"IMAGE_TAG=$(aws ssm get-parameter "
-            f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/tag" '
-            f"--region {env.region} "
-            f'--query "Parameter.Value" '
-            f"--output text)",
+            (
+                f"IMAGE_TAG=$(aws ssm get-parameter "
+                f'--name "/{pipeline_vars.project}/{stage_name}/ecr/image/tag" '
+                f"--region {env.region} "
+                f'--query "Parameter.Value" '
+                f"--output text)"
+            ),
             "echo $IMAGE_TAG",
             "echo Logging in to Amazon ECR...",
-            f"aws ecr get-login-password --region {env.region} | "
-            f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com",
+            (
+                f"aws ecr get-login-password --region {env.region} | "
+                f"docker login --username AWS --password-stdin {env.account}.dkr.ecr.{env.region}.amazonaws.com"
+            ),
             "docker pull $IMAGE_URI",
             "echo Scanning image vulnerabilities...",
             "echo #################################################",
-            "trivy image"
-            " --timeout 60m"
-            " --no-progress"
-            " --scanners vuln,misconfig,secret"
-            " -f json "
-            " -o trivy_image_scan_result.json"
-            " --severity HIGH,CRITICAL $IMAGE_URI",
+            (
+                "trivy image"
+                " --timeout 60m"
+                " --no-progress"
+                " --scanners vuln,misconfig,secret"
+                " -f json "
+                " -o trivy_image_scan_result.json"
+                " --severity HIGH,CRITICAL $IMAGE_URI"
+            ),
             "echo #################################################",
             "echo sending trivy Docker image results to Security Hub...",
-            f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
-            f"utils/trivy_docker_image_security_hub_parser.py "
-            f"--aws-account {env.account} "
-            f"--aws-region {env.region} "
-            f"--project-name {pipeline_vars.project} "
-            f"--container-name {pipeline_vars.project}-{stage_name} "
-            f"--container-tag $IMAGE_TAG "
-            f"--results-file trivy_image_scan_result.json",
+            (
+                f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
+                f"utils/trivy_docker_image_security_hub_parser.py "
+                f"--aws-account {env.account} "
+                f"--aws-region {env.region} "
+                f"--project-name {pipeline_vars.project} "
+                f"--container-name {pipeline_vars.project}-{stage_name} "
+                f"--container-tag $IMAGE_TAG "
+                f"--results-file trivy_image_scan_result.json"
+            ),
             "echo #################################################",
             "echo Scanning SBOM vulnerabilities...",
             f"aws s3 cp s3://{pipeline_artifacts_bucket.bucket_name}/SBOM/sbom.spdx.json /tmp/sbom.spdx.json",
-            "trivy sbom "
-            " --timeout 60m"
-            " --no-progress"
-            " --scanners vuln"
-            " -f json "
-            " -o sbom_trivy_results.json "
-            "--severity HIGH,CRITICAL"
-            " /tmp/sbom.spdx.json",
+            (
+                "trivy sbom "
+                " --timeout 60m"
+                " --no-progress"
+                " --scanners vuln"
+                " -f json "
+                " -o sbom_trivy_results.json "
+                "--severity HIGH,CRITICAL"
+                " /tmp/sbom.spdx.json"
+            ),
             "echo #################################################",
             "echo sending trivy SBOM results to Security Hub...",
-            f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
-            f"utils/trivy_docker_image_security_hub_parser.py "
-            f"--aws-account {env.account} "
-            f"--aws-region {env.region} "
-            f"--project-name {pipeline_vars.project} "
-            f"--container-name {pipeline_vars.project}-{stage_name} "
-            f"--container-tag $IMAGE_TAG "
-            f"--results-file sbom_trivy_results.json",
+            (
+                f"python3 .venv/lib/python{runtime_versions['python']}/site-packages/cdk_opinionated_constructs/"
+                f"utils/trivy_docker_image_security_hub_parser.py "
+                f"--aws-account {env.account} "
+                f"--aws-region {env.region} "
+                f"--project-name {pipeline_vars.project} "
+                f"--container-name {pipeline_vars.project}-{stage_name} "
+                f"--container-tag $IMAGE_TAG "
+                f"--results-file sbom_trivy_results.json"
+            ),
             "echo #################################################",
-            "trivy image "
-            "--scanners vuln,misconfig,secret "
-            "--timeout 60m "
-            "--severity CRITICAL,HIGH "
-            "--exit-code 1 "
-            " $IMAGE_URI ",
+            (
+                "trivy image "
+                "--scanners vuln,misconfig,secret "
+                "--timeout 60m "
+                "--severity CRITICAL,HIGH "
+                "--exit-code 1 "
+                " $IMAGE_URI "
+            ),
             "echo #################################################",
             "trivy sbom --scanners vuln --timeout 60m --severity CRITICAL,HIGH --exit-code 1 /tmp/sbom.spdx.json",
         ],
@@ -865,10 +937,14 @@ def scan_image_with_trivy(
                     "ssm:GetParameter",
                 ],
                 resources=[
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
-                    f"ecr/image/tag",
-                    f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
-                    f"ecr/image/uri",
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
+                        f"ecr/image/tag"
+                    ),
+                    (
+                        f"arn:aws:ssm:{env.region}:{env.account}:parameter/{pipeline_vars.project}/{stage_name}/"
+                        f"ecr/image/uri"
+                    ),
                 ],
             ),
             iam.PolicyStatement(
