@@ -87,12 +87,16 @@ def create_lambda_build_project(
                         "make venv",
                         ". .venv/bin/activate",
                         *default_install_commands,
-                        f"cdk deploy --require-approval never {pipeline_vars.project}-pipeline/"
-                        f"{stage_name}-{pipeline_vars.project}-{cpu_architecture}-lambda-stage/"
-                        f"{function_name.replace('_', '-')}-lambda-stack",
-                        f"cdk deploy --require-approval never {pipeline_vars.project}-pipeline/"
-                        f"{stage_name}-{pipeline_vars.project}-{cpu_architecture}-lambda-stage/"
-                        f"{function_name.replace('_', '-')}-monitoring-stack",
+                        (
+                            f"cdk deploy --require-approval never {pipeline_vars.project}-pipeline/"
+                            f"{stage_name}-{pipeline_vars.project}-{cpu_architecture}-lambda-stage/"
+                            f"{function_name.replace('_', '-')}-lambda-stack"
+                        ),
+                        (
+                            f"cdk deploy --require-approval never {pipeline_vars.project}-pipeline/"
+                            f"{stage_name}-{pipeline_vars.project}-{cpu_architecture}-lambda-stage/"
+                            f"{function_name.replace('_', '-')}-monitoring-stack"
+                        ),
                     ],
                 },
             },
