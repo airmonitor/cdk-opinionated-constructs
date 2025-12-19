@@ -127,8 +127,10 @@ def _create_ecr_login_commands(ctx: ValidationContext) -> tuple[str, ...]:
     return (
         f"export PASSWORD=$(aws ecr get-login-password --region {ctx['region']})",
         "echo Logging in to Amazon ECR...",
-        f"aws ecr get-login-password --region {ctx['region']} | "
-        f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com",
+        (
+            f"aws ecr get-login-password --region {ctx['region']} | "
+            f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com"
+        ),
     )
 
 
@@ -142,29 +144,37 @@ def _create_ssm_parameter_commands(ctx: ValidationContext) -> tuple[str, ...]:
         Tuple of SSM parameter retrieval commands
     """
     return (
-        f"IMAGE_URI=$(aws ssm get-parameter "
-        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/uri" '
-        f"--region {ctx['region']} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
+        (
+            f"IMAGE_URI=$(aws ssm get-parameter "
+            f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/uri" '
+            f"--region {ctx['region']} "
+            f'--query "Parameter.Value" '
+            f"--output text)"
+        ),
         "echo $IMAGE_URI",
-        f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
-        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/signer/profile/arn" '
-        f"--region {ctx['region']} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
+        (
+            f"SIGNER_PROFILE_ARN=$(aws ssm get-parameter "
+            f'--name "/{ctx["project"]}/{ctx["stage_name"]}/signer/profile/arn" '
+            f"--region {ctx['region']} "
+            f'--query "Parameter.Value" '
+            f"--output text)"
+        ),
         "echo $SIGNER_PROFILE_ARN",
-        f"REPOSITORY_URI=$(aws ssm get-parameter "
-        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/repository/uri" '
-        f"--region {ctx['region']} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
+        (
+            f"REPOSITORY_URI=$(aws ssm get-parameter "
+            f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/repository/uri" '
+            f"--region {ctx['region']} "
+            f'--query "Parameter.Value" '
+            f"--output text)"
+        ),
         "echo $REPOSITORY_URI",
-        f"IMAGE_TAG=$(aws ssm get-parameter "
-        f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/tag" '
-        f"--region {ctx['region']} "
-        f'--query "Parameter.Value" '
-        f"--output text)",
+        (
+            f"IMAGE_TAG=$(aws ssm get-parameter "
+            f'--name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/tag" '
+            f"--region {ctx['region']} "
+            f'--query "Parameter.Value" '
+            f"--output text)"
+        ),
         "echo $IMAGE_TAG",
     )
 
@@ -230,8 +240,10 @@ def _create_image_definitions_commands(ctx: ValidationContext) -> tuple[str, ...
         """,
         "TOTAL_LINES=$(wc -l < image_definitions.json)",
         "LINES_TO_KEEP=$((TOTAL_LINES - 4))",
-        "head -n $LINES_TO_KEEP image_definitions.json > image_definitions.json.tmp && "
-        "mv image_definitions.json.tmp image_definitions.json",
+        (
+            "head -n $LINES_TO_KEEP image_definitions.json > image_definitions.json.tmp && "
+            "mv image_definitions.json.tmp image_definitions.json"
+        ),
         revert_to_original_role_command,
         "echo image definitions in artifacts bucket",
         f"aws s3 cp image_definitions.json s3://{ctx['bucket_name']}/image_definitions/image_definitions.json",

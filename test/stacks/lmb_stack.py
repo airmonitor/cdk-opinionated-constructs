@@ -4,9 +4,8 @@ import aws_cdk.aws_lambda as lmb
 
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
+from constructs import Construct
 
 
 class TestAWSPythonLambdaFunctionStack(Stack):
@@ -18,7 +17,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         lmb_construct = AWSPythonLambdaFunction(self, id="lmb_construct")
         lmb_signing = lmb_construct.signing_config(signing_profile_name="signing_profile_name")
         lmb_function = lmb_construct.create_lambda_function(
-            code_path=f'{props["service_name"]}',
+            code_path=f"{props['service_name']}",
             env=env,
             function_name=props["service_name"],
             timeout=10,

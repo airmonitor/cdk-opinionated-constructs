@@ -74,8 +74,10 @@ def _create_ecr_credentials_commands(ctx: SociContext) -> tuple[str, ...]:
     """
     return (
         f"export PASSWORD=$(aws ecr get-login-password --region {ctx['region']})",
-        f'IMAGE_URI=$(aws ssm get-parameter --name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/uri" '
-        f'--region {ctx["region"]} --query "Parameter.Value" --output text)',
+        (
+            f'IMAGE_URI=$(aws ssm get-parameter --name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/uri" '
+            f'--region {ctx["region"]} --query "Parameter.Value" --output text)'
+        ),
         "echo $IMAGE_URI",
     )
 
@@ -115,8 +117,10 @@ def _create_ecr_login_commands(ctx: SociContext) -> tuple[str, ...]:
     """
     return (
         "echo Logging in to Amazon ECR...",
-        f"aws ecr get-login-password --region {ctx['region']} | "
-        f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com",
+        (
+            f"aws ecr get-login-password --region {ctx['region']} | "
+            f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com"
+        ),
     )
 
 

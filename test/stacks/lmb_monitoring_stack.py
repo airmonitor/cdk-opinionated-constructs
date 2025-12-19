@@ -5,7 +5,6 @@ import aws_cdk.aws_lambda as lmb
 import cdk_monitoring_constructs as cdk_monitoring
 
 from aws_cdk import Duration, Stack
-
 from cdk_opinionated_constructs.sns import SNSTopic
 
 
@@ -36,7 +35,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
             id="monitoring_facade",
             alarm_factory_defaults=cdk_monitoring.AlarmFactoryDefaults(
                 action=cdk_monitoring.SnsAlarmActionStrategy(on_alarm_topic=alarm_topic),  # type: ignore
-                alarm_name_prefix=f'{props["service_name"]}',
+                alarm_name_prefix=f"{props['service_name']}",
                 actions_enabled=True,
             ),
         )

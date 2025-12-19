@@ -89,11 +89,13 @@ def _create_assume_role_commands(ctx: DockerBuildContext) -> tuple[str, ...]:
     """
     return (
         'echo "Assuming role into target account..."',
-        f"ASSUME_OUTPUT=$(aws sts assume-role "
-        f"--role-arn arn:aws:iam::{ctx['account']}:role/{ctx['project']}-{ctx['stage_name']}-docker-role "
-        f"--role-session-name docker-session "
-        f"--output text "
-        f"--query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]')",
+        (
+            f"ASSUME_OUTPUT=$(aws sts assume-role "
+            f"--role-arn arn:aws:iam::{ctx['account']}:role/{ctx['project']}-{ctx['stage_name']}-docker-role "
+            f"--role-session-name docker-session "
+            f"--output text "
+            f"--query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]')"
+        ),
         'read AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<< "$ASSUME_OUTPUT"',
         "export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN",
     )
@@ -110,15 +112,21 @@ def _create_ecr_login_commands(ctx: DockerBuildContext, ssm_paths: SSMPaths) -> 
         Tuple of ECR login commands
     """
     return (
-        f'ECR_REPOSITORY_URI=$(aws ssm get-parameter --name "{ssm_paths["ecr_uri"]}" '
-        f'--region {ctx["region"]} --query "Parameter.Value" --output text)',
+        (
+            f'ECR_REPOSITORY_URI=$(aws ssm get-parameter --name "{ssm_paths["ecr_uri"]}" '
+            f'--region {ctx["region"]} --query "Parameter.Value" --output text)'
+        ),
         "echo $ECR_REPOSITORY_URI",
-        f'IMAGE_URI=$(aws ssm get-parameter --name "{ssm_paths["image_uri"]}" '
-        f'--region {ctx["region"]} --query "Parameter.Value" --output text)',
+        (
+            f'IMAGE_URI=$(aws ssm get-parameter --name "{ssm_paths["image_uri"]}" '
+            f'--region {ctx["region"]} --query "Parameter.Value" --output text)'
+        ),
         "echo $IMAGE_URI",
         'echo "Logging into Amazon ECR..."',
-        f"aws ecr get-login-password --region {ctx['region']} | "
-        f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com",
+        (
+            f"aws ecr get-login-password --region {ctx['region']} | "
+            f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com"
+        ),
     )
 
 
@@ -133,8 +141,10 @@ def _create_docker_build_commands(ctx: DockerBuildContext) -> tuple[str, ...]:
     """
     return (
         'echo "Building Docker Image..."',
-        f"docker build --cache-from $IMAGE_URI "
-        f"-t '{ctx['project']}-{ctx['stage_name']}' services/{ctx['docker_project_name']}",
+        (
+            f"docker build --cache-from $IMAGE_URI "
+            f"-t '{ctx['project']}-{ctx['stage_name']}' services/{ctx['docker_project_name']}"
+        ),
     )
 
 
@@ -185,12 +195,16 @@ def _create_ssm_update_commands(ctx: DockerBuildContext, ssm_paths: SSMPaths) ->
         Tuple of SSM update commands
     """
     return (
-        f'aws ssm put-parameter --name "{ssm_paths["image_tag"]}" '
-        f'--region {ctx["region"]} --value "$IMAGE_TAG" '
-        f"--type String --overwrite",
-        f'aws ssm put-parameter --name "{ssm_paths["image_uri"]}" '
-        f'--region {ctx["region"]} --value "$ECR_REPOSITORY_URI:$IMAGE_TAG" '
-        f"--type String --overwrite",
+        (
+            f'aws ssm put-parameter --name "{ssm_paths["image_tag"]}" '
+            f'--region {ctx["region"]} --value "$IMAGE_TAG" '
+            f"--type String --overwrite"
+        ),
+        (
+            f'aws ssm put-parameter --name "{ssm_paths["image_uri"]}" '
+            f'--region {ctx["region"]} --value "$ECR_REPOSITORY_URI:$IMAGE_TAG" '
+            f"--type String --overwrite"
+        ),
     )
 
 
@@ -206,9 +220,11 @@ def _create_revert_role_commands(ctx: DockerBuildContext, ssm_paths: SSMPaths) -
     """
     return (
         revert_to_original_role_command,
-        f'aws ssm put-parameter --name "{ssm_paths["image_tag"]}" '
-        f'--region {ctx["region"]} --value "$IMAGE_TAG" '
-        f"--type String --overwrite",
+        (
+            f'aws ssm put-parameter --name "{ssm_paths["image_tag"]}" '
+            f'--region {ctx["region"]} --value "$IMAGE_TAG" '
+            f"--type String --overwrite"
+        ),
     )
 
 

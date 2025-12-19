@@ -4,9 +4,8 @@ import aws_cdk.aws_kms as kms
 
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, HIPAASecurityChecks, NIST80053R5Checks, PCIDSS321Checks
-from constructs import Construct
-
 from cdk_opinionated_constructs.sns import SNSTopic
+from constructs import Construct
 
 
 class TestSNSStack(Stack):

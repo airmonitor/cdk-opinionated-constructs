@@ -105,15 +105,21 @@ def _create_ecr_login_commands(ctx: ScanContext) -> tuple[str, ...]:
     """
     return (
         f"export PASSWORD=$(aws ecr get-login-password --region {ctx['region']})",
-        f'IMAGE_URI=$(aws ssm get-parameter --name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/uri" '
-        f'--region {ctx["region"]} --query "Parameter.Value" --output text)',
+        (
+            f'IMAGE_URI=$(aws ssm get-parameter --name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/uri" '
+            f'--region {ctx["region"]} --query "Parameter.Value" --output text)'
+        ),
         "echo $IMAGE_URI",
-        f'IMAGE_TAG=$(aws ssm get-parameter --name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/tag" '
-        f'--region {ctx["region"]} --query "Parameter.Value" --output text)',
+        (
+            f'IMAGE_TAG=$(aws ssm get-parameter --name "/{ctx["project"]}/{ctx["stage_name"]}/ecr/image/tag" '
+            f'--region {ctx["region"]} --query "Parameter.Value" --output text)'
+        ),
         "echo $IMAGE_TAG",
         "echo Logging in to Amazon ECR...",
-        f"aws ecr get-login-password --region {ctx['region']} | "
-        f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com",
+        (
+            f"aws ecr get-login-password --region {ctx['region']} | "
+            f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com"
+        ),
         "docker pull $IMAGE_URI",
     )
 
@@ -127,13 +133,15 @@ def _create_image_scan_commands() -> tuple[str, ...]:
     return (
         "echo Scanning image vulnerabilities...",
         "echo #################################################",
-        "trivy image"
-        " --timeout 60m"
-        " --no-progress"
-        " --scanners vuln,misconfig,secret"
-        " -f json"
-        " -o trivy_image_scan_result.json"
-        " --severity HIGH,CRITICAL $IMAGE_URI",
+        (
+            "trivy image"
+            " --timeout 60m"
+            " --no-progress"
+            " --scanners vuln,misconfig,secret"
+            " -f json"
+            " -o trivy_image_scan_result.json"
+            " --severity HIGH,CRITICAL $IMAGE_URI"
+        ),
         "echo #################################################",
     )
 
@@ -190,14 +198,16 @@ def _create_sbom_scan_commands() -> tuple[str, ...]:
     return (
         "echo Scanning SBOM vulnerabilities...",
         "syft $IMAGE_URI -o spdx-json > /tmp/sbom.spdx.json",
-        "trivy sbom"
-        " --timeout 60m"
-        " --no-progress"
-        " --scanners vuln"
-        " -f json"
-        " -o sbom_trivy_results.json"
-        " --severity HIGH,CRITICAL"
-        " /tmp/sbom.spdx.json",
+        (
+            "trivy sbom"
+            " --timeout 60m"
+            " --no-progress"
+            " --scanners vuln"
+            " -f json"
+            " -o sbom_trivy_results.json"
+            " --severity HIGH,CRITICAL"
+            " /tmp/sbom.spdx.json"
+        ),
         "echo #################################################",
     )
 

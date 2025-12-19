@@ -2,9 +2,8 @@
 
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, HIPAASecurityChecks, NIST80053R5Checks, PCIDSS321Checks
-from constructs import Construct
-
 from cdk_opinionated_constructs.ecr import ECR
+from constructs import Construct
 
 
 class TestECRStack(Stack):

@@ -2,12 +2,12 @@
 
 import os
 
-from test.stacks.alb_stack import TestALBStack
-
 import aws_cdk as cdk
 import pytest
 
 from aws_cdk.assertions import Template
+
+from test.stacks.alb_stack import TestALBStack
 
 CDK_ENV = cdk.Environment(account=os.environ["CDK_DEFAULT_ACCOUNT"], region=os.environ["CDK_DEFAULT_REGION"])
 

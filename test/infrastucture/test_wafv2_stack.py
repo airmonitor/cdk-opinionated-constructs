@@ -2,12 +2,12 @@
 
 import os
 
-from test.stacks.wafv2_stack import TestWAFv2Stack
-
 import aws_cdk as cdk
 import pytest
 
 from aws_cdk.assertions import Template
+
+from test.stacks.wafv2_stack import TestWAFv2Stack
 
 CDK_ENV = cdk.Environment(account=os.environ["CDK_DEFAULT_ACCOUNT"], region=os.environ["CDK_DEFAULT_REGION"])
 

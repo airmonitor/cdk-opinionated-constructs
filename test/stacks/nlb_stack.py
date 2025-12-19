@@ -5,9 +5,8 @@ import aws_cdk.aws_elasticloadbalancingv2 as albv2
 
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.nlb import NetworkLoadBalancer
+from constructs import Construct
 
 
 class TestNLBStack(Stack):

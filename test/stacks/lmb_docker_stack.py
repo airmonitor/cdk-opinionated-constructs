@@ -6,10 +6,9 @@ import aws_cdk.aws_lambda as lmb
 
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.ecr import ECR
 from cdk_opinionated_constructs.lmb import AWSDockerLambdaFunction
+from constructs import Construct
 
 
 class TestAWSLambdaDockerFunctionStack(Stack):

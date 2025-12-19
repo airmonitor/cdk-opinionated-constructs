@@ -95,8 +95,10 @@ def _create_oras_install_commands(
         Tuple of ORAS installation commands
     """
     return (
-        f"curl -LO 'https://github.com/oras-project/oras/releases/download/"
-        f"v{oras_version}/oras_{oras_version}_linux_{cpu_architecture}.tar.gz'",
+        (
+            f"curl -LO 'https://github.com/oras-project/oras/releases/download/"
+            f"v{oras_version}/oras_{oras_version}_linux_{cpu_architecture}.tar.gz'"
+        ),
         "mkdir -p oras-install/",
         f"tar -xzf oras_{oras_version}_linux_{cpu_architecture}.tar.gz -C oras-install/",
         "sudo mv oras-install/oras /usr/local/bin/",
@@ -165,8 +167,10 @@ def _create_ecr_login_commands(ctx: SignerContext) -> tuple[str, ...]:
         _get_ssm_parameter_command(f"{ssm_base}/image/tag", ctx["region"], "IMAGE_TAG"),
         "echo $IMAGE_TAG",
         "echo Logging in to Amazon ECR...",
-        f"aws ecr get-login-password --region {ctx['region']} | "
-        f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com",
+        (
+            f"aws ecr get-login-password --region {ctx['region']} | "
+            f"docker login --username AWS --password-stdin {ctx['account']}.dkr.ecr.{ctx['region']}.amazonaws.com"
+        ),
         "docker pull $IMAGE_URI",
     )
 
