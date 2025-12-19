@@ -37,10 +37,12 @@ def use_fleet(*, self, pipeline_vars: PipelineVars, stage_name: str, stage_type:
 def install_pre_backed() -> dict:
     return {
         "commands": [
-            "nohup /usr/local/bin/dockerd "
-            "--host=unix:///var/run/docker.sock "
-            "--host=tcp://127.0.0.1:2375 "
-            "--storage-driver=overlay2 &"
+            (
+                "nohup /usr/local/bin/dockerd "
+                "--host=unix:///var/run/docker.sock "
+                "--host=tcp://127.0.0.1:2375 "
+                "--storage-driver=overlay2 &"
+            )
         ]
     }
 
