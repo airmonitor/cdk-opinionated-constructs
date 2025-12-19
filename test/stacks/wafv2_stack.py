@@ -5,10 +5,9 @@ import aws_cdk.aws_elasticloadbalancingv2 as albv2
 
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from cdk_opinionated_constructs.wafv2 import WAFv2
+from constructs import Construct
 
 
 class TestWAFv2Stack(Stack):

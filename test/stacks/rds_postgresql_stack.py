@@ -8,9 +8,8 @@ import aws_cdk.aws_secretsmanager as secretsmanager
 
 from aws_cdk import Aspects, Stack
 from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
-from constructs import Construct
-
 from cdk_opinionated_constructs.rds_instance import RDSInstance
+from constructs import Construct
 
 
 class TestRDSPostgreSQLStack(Stack):
@@ -60,7 +59,7 @@ class TestRDSPostgreSQLStack(Stack):
             secret=secretsmanager.Secret.from_secret_name_v2(
                 self,
                 id="imported_secret",
-                secret_name="secret-name",  # noqa: S106
+                secret_name="secret-name",  # noqa: S106  pragma: allowlist secret
             ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",
