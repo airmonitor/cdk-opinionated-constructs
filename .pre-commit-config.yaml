@@ -48,6 +48,10 @@ repos:
           - "pydantic>=2.5.2"
           - "types-retry"
           - "types-requests"
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: "v1.4.2"
+    hooks:
+      - id: python-safety-dependencies-check
   - repo: https://github.com/Zac-HD/shed
     rev: "2025.6.1"
     hooks:
