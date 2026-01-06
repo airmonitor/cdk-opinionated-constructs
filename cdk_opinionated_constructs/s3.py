@@ -26,7 +26,7 @@ class S3Bucket(Construct):
         server_access_logs_bucket: s3.IBucket | None = None,
         enforce_ssl: bool = True,  # noqa: FBT001, FBT002
         **kwargs,
-    ) -> s3.Bucket | s3.IBucket:
+    ) -> s3.Bucket:
         """Creates an S3 bucket with opinionated security settings.
 
         Parameters:
@@ -100,7 +100,7 @@ class S3Bucket(Construct):
         server_access_logs_bucket: s3.IBucket | None = None,
         enforce_ssl: bool = True,  # noqa: FBT001, FBT002
         **kwargs,
-    ) -> s3.Bucket | s3.IBucket:
+    ) -> s3.Bucket:
         """
         Parameters:
             bucket_name (str): Name of the S3 bucket to be created
@@ -123,7 +123,7 @@ class S3Bucket(Construct):
             - Supports EventBridge integration through kwargs
 
         Returns:
-            s3.Bucket | s3.IBucket: The created S3 bucket instance
+            s3.Bucket: The created S3 bucket instance
         """
 
         bucket = s3.Bucket(
