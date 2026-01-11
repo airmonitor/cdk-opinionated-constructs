@@ -17,9 +17,7 @@ from unittest.mock import MagicMock, create_autospec
 import pytest
 
 # Add the source directory to path to avoid the aws_cdk import from utils/__init__.py
-sys.path.insert(
-    0, str(Path(__file__).parent.parent.parent / "cdk_opinionated_constructs" / "utils" / "pip_audit_files")
-)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "cdk_opinionated_constructs" / "utils" / "pip_audit"))
 
 from pip_audit_checker import (
     AuditConfig,
