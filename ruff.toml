@@ -97,6 +97,9 @@ exclude = [
     ".github",
 ]
 
+[lint.per-file-ignores]
+"test/**/*.py" = ["S101", "S404"]  # Allow assert statements and subprocess import in tests
+
 [lint.mccabe]
 max-complexity = 15
 
