@@ -42,7 +42,8 @@ pre-commit: # Run code quality checks on all Python files
 
 tests: # Run infrastructure tests for specified stage
 	@echo "Running pytest for stage "
-	STAGE=$(STAGE) pytest -v cdk/tests/infrastructure/
+	pytest -v test/unit/test_pip_audit_checker.py
+	STAGE=$(STAGE) pytest -v test/infrastucture
 
 update: # Update all dependencies and tools to latest versions
 	@echo "Updating used tools and scripts"
