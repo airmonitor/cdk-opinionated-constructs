@@ -59,7 +59,7 @@ class TestRDSPostgreSQLStack(Stack):
             secret=secretsmanager.Secret.from_secret_name_v2(
                 self,
                 id="imported_secret",
-                secret_name="secret-name",  # noqa: S106  pragma: allowlist secret
+                secret_name="secret-name",  # noqa: S106  pragma: allowlist secret # nosec: B106
             ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",

@@ -59,7 +59,7 @@ class TestRDSMySQLStack(Stack):
             secret=secretsmanager.Secret.from_secret_name_v2(
                 self,
                 id="imported_secret",
-                secret_name="secret-name",  # noqa: S106
+                secret_name="secret-name",  # noqa: S106# nosec: B106
             ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",
