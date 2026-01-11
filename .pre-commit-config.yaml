@@ -33,7 +33,7 @@ repos:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.14.10'
+    rev: 'v0.14.11'
     hooks:
       - id: ruff
         args: [ --fix]
@@ -71,7 +71,9 @@ repos:
     rev: 1.9.2
     hooks:
       - id: bandit
-        exclude: ^test/
+        args:
+        - -s
+        - B101
   - repo: https://github.com/hadolint/hadolint
     rev: v2.14.0
     hooks:
@@ -82,7 +84,7 @@ repos:
       -   id: detect-secrets
           exclude: (cdk.context.json|cdk/tests/infrastructure/snapshots/test_s3_stack/test_snapshot/ppe.yaml|^test/)
   - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.15.2
+    rev: 0.15.4
     hooks:
       - id: uv-secure
   - repo: https://github.com/hukkin/mdformat
@@ -93,3 +95,8 @@ repos:
       additional_dependencies:
       - mdformat-gfm
       - mdformat-black
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.10.0
+    hooks:
+      -   id: pip-audit
+          args: ["--desc", "--fix"]
