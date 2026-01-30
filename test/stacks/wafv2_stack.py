@@ -58,7 +58,7 @@ class TestWAFv2Stack(Stack):
             aws_account_takeover_prevention={
                 "login_path": "/portal/login",
                 "payload_type": "FORM_ENCODED",
-                "password_field": "data[AuthUser][password]",
+                "password_field": "data[AuthUser][password]",  # nosec: B105
                 "username_field": "data[AuthUser][userId]",
             },
         )
