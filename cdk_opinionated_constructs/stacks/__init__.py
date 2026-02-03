@@ -1,5 +1,6 @@
 from cdk_opinionated_constructs.stacks.helpers import (
     count_characters_number,
+    create_pipeline_notifications,
     notifications_topic,
     pipeline_email_notifications,
     pipeline_notifications,
@@ -10,6 +11,7 @@ from cdk_opinionated_constructs.stacks.helpers import (
 
 __all__ = [
     "count_characters_number",
+    "create_pipeline_notifications",
     "notifications_topic",
     "pipeline_email_notifications",
     "pipeline_notifications",
