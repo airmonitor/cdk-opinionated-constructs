@@ -324,7 +324,7 @@ def create_trivy_commands(
     stage_name: str,
     cpu_architecture: Literal["arm64", "amd64"],
     assume_commands: list[str],
-    trivy_version: str = "0.69.0",
+    trivy_version: str = "0.69.1",
 ) -> TrivyCommands:
     """Create Trivy installation and execution commands.
 
@@ -337,7 +337,7 @@ def create_trivy_commands(
         stage_name: Name of the stage being deployed
         cpu_architecture: CPU architecture for installing the appropriate Trivy version
         assume_commands: Commands to assume the required IAM role
-        trivy_version: Version of Trivy to install, defaults to "0.69.0"
+        trivy_version: Version of Trivy to install, defaults to "0.69.1"
 
     Returns:
         Dictionary containing:
