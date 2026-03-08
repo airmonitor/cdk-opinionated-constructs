@@ -51,6 +51,9 @@ update: # Update all dependencies and tools to latest versions
 	pur -r test/requirements.txt
 	pur -r test/requirements-dev.txt
 
+changelog: # Create changelog entry
+	git cliff --sort newest -o
+
 clean: # Remove virtual environment and cleanup project files
 	@echo "Cleaning up..."
 	rm -rf $(VENV)
