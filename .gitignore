@@ -2,3 +2,4 @@ dist/
 samplepackage.egg-info/
 env/
 .venv/
+cdk_opinionated_constructs/README.md
