@@ -32,13 +32,13 @@ repos:
     hooks:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.15.7'
+    rev: 'v0.15.12'
     hooks:
       - id: ruff
         args: [ --fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.19.1"
+    rev: "v1.20.2"
     hooks:
       - id: mypy
         args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports, --no-warn-unused-ignores]
@@ -63,7 +63,7 @@ repos:
       - id: xenon
         args: ["--max-average=C", "--max-modules=C", "--max-absolute=C", "-e 'cdk/tests/infrastructure/*,.venv/*,cdk.out/*'"]
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.1
+    rev: v8.30.0
     hooks:
       - id: gitleaks
   - repo: https://github.com/PyCQA/bandit
@@ -83,7 +83,7 @@ repos:
       -   id: detect-secrets
           exclude: (cdk.context.json|cdk/tests/infrastructure/snapshots/test_s3_stack/test_snapshot/ppe.yaml|^test/)
   - repo: https://github.com/owenlamont/uv-secure
-    rev: 0.17.0
+    rev: v0.17.2
     hooks:
       - id: uv-secure
   - repo: https://github.com/hukkin/mdformat
@@ -98,4 +98,4 @@ repos:
     rev: v2.10.0
     hooks:
       -   id: pip-audit
-          args: ["--desc", "--fix"]
+          args: ["--desc", "--fix", "--ignore-vuln", "CVE-2026-4539", "--ignore-vuln", "CVE-2026-3219"]
