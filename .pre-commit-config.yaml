@@ -32,13 +32,13 @@ repos:
     hooks:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.15.12'
+    rev: 'v0.15.21'
     hooks:
       - id: ruff
         args: [ --fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.20.2"
+    rev: "v2.3.0"
     hooks:
       - id: mypy
         args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports, --no-warn-unused-ignores]
@@ -95,7 +95,7 @@ repos:
       - mdformat-gfm
       - mdformat-black
   - repo: https://github.com/pypa/pip-audit
-    rev: v2.10.0
+    rev: v2.10.1
     hooks:
       -   id: pip-audit
           args: ["--desc", "--fix", "--ignore-vuln", "CVE-2026-4539", "--ignore-vuln", "CVE-2026-3219"]
