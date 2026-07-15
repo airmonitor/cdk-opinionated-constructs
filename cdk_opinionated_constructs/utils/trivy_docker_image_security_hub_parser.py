@@ -286,6 +286,27 @@ def validate_security_hub_response(response: dict) -> bool:
     return True
 
 
+def import_finding_to_security_hub(config: TrivySecurityHubConfig, finding: dict, description: str) -> None:
+    """
+    Parameters:
+        config (TrivySecurityHubConfig): Config holding the Security Hub client
+        finding (dict): Security Hub finding to import
+        description (str): Human-readable label for the finding, used in log output
+
+    Functionality:
+        Imports a single finding into Security Hub, validates the response,
+        and prints the success/failure status.
+
+    Returns:
+        None
+    """
+    response = config.security_hub.batch_import_findings(Findings=[finding])
+    if validate_security_hub_response(response):
+        print(f"Successfully imported {description}")
+    else:
+        print(f"Failed to import {description}")
+
+
 def extract_container_info(artifact_name: str) -> tuple[str, str]:
     """
     Parameters:
@@ -328,7 +349,7 @@ def extract_container_info(artifact_name: str) -> tuple[str, str]:
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
     help="Path to the Trivy results JSON file",
 )
-def main(  # noqa: PLR0912
+def main(
     aws_account: str, aws_region: str, project_name: str, container_name: str, container_tag: str, results_file: str
 ):
     """
@@ -397,31 +418,18 @@ def main(  # noqa: PLR0912
             for vulnerability in vulnerabilities:
                 try:
                     finding = finding_builder.create_finding(vulnerability, image_info)
-                    response = config.security_hub.batch_import_findings(Findings=[finding])
-                    if not validate_security_hub_response(response):
-                        print(
-                            f"Failed to import finding for vulnerability "
-                            f"{vulnerability.get('VulnerabilityID', 'unknown')}"
-                        )
-                    else:
-                        print(
-                            f"Successfully imported finding for vulnerability "
-                            f"{vulnerability.get('VulnerabilityID', 'unknown')}"
-                        )
+                    vulnerability_id = vulnerability.get("VulnerabilityID", "unknown")
+                    import_finding_to_security_hub(config, finding, f"finding for vulnerability {vulnerability_id}")
                 except Exception as e:
                     print(f"Error processing vulnerability: {e}")
                     raise
 
         # If no vulnerabilities were found, send an informational finding
         if not vulnerabilities_found:
+            print("No vulnerabilities found in scan results, sending informational finding")
             try:
-                print("No vulnerabilities found in scan results, sending informational finding")
                 finding = finding_builder.create_no_vulnerabilities_finding(image_info)
-                response = config.security_hub.batch_import_findings(Findings=[finding])
-                if not validate_security_hub_response(response):
-                    print("Failed to import informational finding")
-                else:
-                    print("Successfully imported informational finding")
+                import_finding_to_security_hub(config, finding, "informational finding")
             except Exception as e:
                 print(f"Error sending informational finding: {e}")
                 raise
