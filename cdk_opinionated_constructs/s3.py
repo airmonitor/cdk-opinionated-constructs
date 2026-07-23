@@ -15,7 +15,7 @@ class S3Bucket(Construct):
     enforced encryption in transit as well as in rest, versioning and lifecycle
     rules."""
 
-    def __init__(self, scope: Construct, id: str):  # noqa: A002
+    def __init__(self, scope: Construct, id: str):  # ruff:ignore[builtin-argument-shadowing]
         super().__init__(scope, id)
 
     def create_bucket(
@@ -24,7 +24,7 @@ class S3Bucket(Construct):
         encryption: s3.BucketEncryption,
         kms_key: kms.IKey | None = None,
         server_access_logs_bucket: s3.IBucket | None = None,
-        enforce_ssl: bool = True,  # noqa: FBT001, FBT002
+        enforce_ssl: bool = True,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         **kwargs,
     ) -> s3.Bucket:
         """Creates an S3 bucket with opinionated security settings.
@@ -98,7 +98,7 @@ class S3Bucket(Construct):
         encryption: s3.BucketEncryption,
         kms_key: kms.IKey | None = None,
         server_access_logs_bucket: s3.IBucket | None = None,
-        enforce_ssl: bool = True,  # noqa: FBT001, FBT002
+        enforce_ssl: bool = True,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         **kwargs,
     ) -> s3.Bucket:
         """
