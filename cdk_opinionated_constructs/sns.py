@@ -12,14 +12,14 @@ from constructs import Construct
 class SNSTopic(Construct):
     """CDK SNS topic construct."""
 
-    def __init__(self, scope: Construct, id: str):  # noqa: A002
+    def __init__(self, scope: Construct, id: str):  # ruff:ignore[builtin-argument-shadowing]
         super().__init__(scope, id)
 
     def create_sns_topic(
         self,
         topic_name: str,
         master_key: kms.IKey | None,
-        enforce_ssl: bool = True,  # noqa: FBT001, FBT002
+        enforce_ssl: bool = True,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
     ) -> sns.Topic | sns.ITopic:
         """Creates an SNS topic with opinionated settings.
 

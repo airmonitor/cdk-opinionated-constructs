@@ -426,7 +426,7 @@ def create_pipeline_notifications(
     notifications_sns_topic: sns.Topic | sns.ITopic,
     pipeline_vars: PipelineVars,
     source: Pipeline | CodePipeline,
-    use_chatbot: bool = True,  # noqa: FBT001, FBT002
+    use_chatbot: bool = True,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
 ):
     """Configures notifications for the pipeline.
 

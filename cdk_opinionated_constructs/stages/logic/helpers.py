@@ -19,7 +19,7 @@ default_install_commands = [
 ]
 
 
-def default_environment_variables(pipeline_vars: PipelineVars) -> dict[str, Any]:  # noqa: ARG001
+def default_environment_variables(pipeline_vars: PipelineVars) -> dict[str, Any]:  # ruff:ignore[unused-function-argument]
     """Returns a dictionary of default environment variables for a CodeBuild project."""
     return {}
 

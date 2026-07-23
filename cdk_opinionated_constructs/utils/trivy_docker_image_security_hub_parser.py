@@ -113,7 +113,7 @@ class SecurityHubFindingBuilder:
                 image_id = repo_digests[0].split("@sha256:")[1]
             else:
                 # Fallback to a timestamp-based ID if no proper ID is available
-                image_id = f"unknown-{datetime.datetime.now().timestamp()}"  # noqa: DTZ005
+                image_id = f"unknown-{datetime.datetime.now().timestamp()}"  # ruff:ignore[call-datetime-now-without-tzinfo]
 
         pkg_name = vulnerability.get("PkgName", "unknown")
         installed_version = vulnerability.get("InstalledVersion", "unknown")
@@ -211,7 +211,7 @@ class SecurityHubFindingBuilder:
                 image_id = repo_digests[0].split("@sha256:")[1]
             else:
                 # Fallback to a timestamp-based ID if no proper ID is available
-                image_id = f"unknown-{datetime.datetime.now().timestamp()}"  # noqa: DTZ005
+                image_id = f"unknown-{datetime.datetime.now().timestamp()}"  # ruff:ignore[call-datetime-now-without-tzinfo]
 
         return {
             "SchemaVersion": "2018-10-08",

@@ -29,7 +29,7 @@ class RDSInstance(Construct):
         vpc: ec2.Vpc | ec2.IVpc,
         preferred_maintenance_window: str | None = "Sun:04:00-Sun:04:30",
         snapshot_identifier: str | None = None,
-        instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),  # noqa: B008
+        instance_type: ec2.InstanceType = ec2.InstanceType.of(ec2.InstanceClass.BURSTABLE3, ec2.InstanceSize.MICRO),  # ruff:ignore[function-call-in-default-argument]
         **kwargs,
     ) -> rds.DatabaseInstance | rds.IDatabaseInstance:
         """Creates an RDS PostgreSQL database instance.

@@ -19,7 +19,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
     * similar
     """
 
-    def __init__(self, scope, name, env, props):  # noqa: ARG002
+    def __init__(self, scope, name, env, props):  # ruff:ignore[unused-method-argument]
         super().__init__(scope, name)
         lmb_function: lmb.Function | lmb.IFunction = props["lmb_function"]
 

@@ -12,7 +12,7 @@ class ECR(Construct):
     """Create ECR resource with tag immutability, lifecycle rule and removal
     policy."""
 
-    def __init__(self, scope: Construct, id: str):  # noqa: A002
+    def __init__(self, scope: Construct, id: str):  # ruff:ignore[builtin-argument-shadowing]
         super().__init__(scope, id)
 
     def repository(

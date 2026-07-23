@@ -274,7 +274,7 @@ class WAFv2(Construct):
         )
 
     @staticmethod
-    def __aws_bot_control_rule(count: bool = False):  # noqa: FBT001, FBT002
+    def __aws_bot_control_rule(count: bool = False):  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         if count:
             override_action = wafv2.CfnWebACL.OverrideActionProperty(count={})
         else:
@@ -305,7 +305,7 @@ class WAFv2(Construct):
         )
 
     @staticmethod
-    def __aws_php_application_rule(count: bool = False):  # noqa: FBT001, FBT002
+    def __aws_php_application_rule(count: bool = False):  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         if count:
             override_action = wafv2.CfnWebACL.OverrideActionProperty(count={})
         else:
@@ -329,7 +329,7 @@ class WAFv2(Construct):
         )
 
     @staticmethod
-    def __aws_posix_operating_system_rule(count: bool = False):  # noqa: FBT001, FBT002
+    def __aws_posix_operating_system_rule(count: bool = False):  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         if count:
             override_action = wafv2.CfnWebACL.OverrideActionProperty(count={})
         else:
@@ -356,16 +356,16 @@ class WAFv2(Construct):
         self,
         name: str,
         rate_value: int | None,
-        aws_common_rule: bool = True,  # noqa: FBT001, FBT002
+        aws_common_rule: bool = True,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         aws_common_rule_ignore_list: list | None = None,
-        aws_anony_list: bool = False,  # noqa: FBT001, FBT002
-        aws_bad_inputs_rule: bool = False,  # noqa: FBT001, FBT002
-        aws_sqli_rule: bool = False,  # noqa: FBT001, FBT002
-        aws_account_takeover_prevention: bool | dict[Any, Any] = False,  # noqa: FBT001, FBT002
-        aws_bot_control_rule: bool = False,  # noqa: FBT001, FBT002
-        aws_bot_control_count: bool = False,  # noqa: FBT001, FBT002
-        aws_php_application_rule: bool = False,  # noqa: FBT001, FBT002
-        aws_posix_operating_system_rule: bool = False,  # noqa: FBT001, FBT002
+        aws_anony_list: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+        aws_bad_inputs_rule: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+        aws_sqli_rule: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+        aws_account_takeover_prevention: bool | dict[Any, Any] = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+        aws_bot_control_rule: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+        aws_bot_control_count: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+        aws_php_application_rule: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+        aws_posix_operating_system_rule: bool = False,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         waf_scope: Literal["REGIONAL", "CLOUDFRONT"] = "REGIONAL",
     ) -> wafv2.CfnWebACL:
         """
