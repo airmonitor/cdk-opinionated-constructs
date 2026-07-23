@@ -15,7 +15,7 @@ class AWSPythonLambdaFunction(Construct):
     """Create Lambda function and supported objects like lambda layer, signing
     profile, IAM role and policies."""
 
-    def __init__(self, scope: Construct, id: str):  # noqa: A002
+    def __init__(self, scope: Construct, id: str):  # ruff:ignore[builtin-argument-shadowing]
         super().__init__(scope, id)
 
     def create_log_group(self, log_group_name: str):
@@ -100,7 +100,7 @@ class AWSPythonLambdaFunction(Construct):
         memory_size: int = 256,
         handler: str = "handler.handler",
         signing_config: lmb.ICodeSigningConfig | None = None,
-        tracing: bool = True,  # noqa: FBT001, FBT002
+        tracing: bool = True,  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         insights_version: lmb.LambdaInsightsVersion | None = lmb.LambdaInsightsVersion.VERSION_1_0_404_0,
         env_variables: None | dict = None,
         **kwargs,
@@ -197,7 +197,7 @@ class AWSDockerLambdaFunction(Construct):
     """Create Lambda function based on docker image with support of signing
     profile, IAM role and policies."""
 
-    def __init__(self, scope: Construct, id: str):  # noqa: A002
+    def __init__(self, scope: Construct, id: str):  # ruff:ignore[builtin-argument-shadowing]
         super().__init__(scope, id)
 
     def create_log_group(self, log_group_name: str):
@@ -268,7 +268,7 @@ class AWSDockerLambdaFunction(Construct):
             allow_public_subnet=True,
             architecture=architecture,
             code=code,
-            environment=lambda_environment_default_variables | env_variables,
+            environment=lambda_environment_default_variables | env_variables,  # type: ignore
             ephemeral_storage_size=kwargs.get("ephemeral_storage_size"),
             filesystem=kwargs.get("filesystem"),
             function_name=function_name,
@@ -291,6 +291,7 @@ class AWSDockerLambdaFunction(Construct):
             profiling=False,  # CodeGuru profiling is not supported by runtime FROM_IMAGE
             reserved_concurrent_executions=reserved_concurrent_executions,
             security_groups=kwargs.get("security_groups"),
+            snap_start=lmb.SnapStartConf.ON_PUBLISHED_VERSIONS,
             timeout=cdk.Duration.seconds(timeout),
             tracing=lmb.Tracing.ACTIVE,
             vpc=kwargs.get("vpc"),
