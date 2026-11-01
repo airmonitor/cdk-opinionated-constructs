@@ -215,7 +215,7 @@ def codebuild_build_arm_image(
     Functionality:
         Determines and returns an appropriate ARM build image for CodeBuild based on pipeline configuration
         Supports custom Docker images from ECR repository or SSM parameter references
-        Falls back to Amazon Linux 2 standard image if no custom configuration is provided
+        Falls back to Amazon Linux 2023 standard image if no custom configuration is provided
         Handles image tag resolution from direct values or SSM parameters
 
     Arguments:
@@ -225,7 +225,7 @@ def codebuild_build_arm_image(
 
     Returns:
         codebuild.LinuxArmBuildImage | codebuild.IBuildImage: A CodeBuild ARM build image object,
-        either from ECR repository or the default Amazon Linux 2 standard image
+        either from ECR repository or the default Amazon Linux 2023 standard image
     """
     image_tag = None
     if pipeline_vars.codebuild_docker_image_tag:
@@ -243,7 +243,7 @@ def codebuild_build_arm_image(
             ),
             tag_or_digest=image_tag,
         )
-    return codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0  # type: ignore
+    return codebuild.LinuxArmBuildImage.AMAZON_LINUX_2023_STANDARD_3_0  # type: ignore
 
 
 def get_build_image_for_architecture(
@@ -593,9 +593,9 @@ def validate_oci_image(
     """
 
     build_image = (
-        codebuild.LinuxBuildImage.AMAZON_LINUX_2_5
+        codebuild.LinuxBuildImage.AMAZON_LINUX_2023_5
         if cpu_architecture == "amd64"
-        else codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0
+        else codebuild.LinuxArmBuildImage.AMAZON_LINUX_2023_STANDARD_3_0
     )
     return pipelines.CodeBuildStep(
         f"validate_oci_image_{docker_image_project_name.replace('-', '_')}",
