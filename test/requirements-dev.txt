@@ -1,4 +1,4 @@
 filelock==3.32.0
-git-cliff==2.13.1
+git-cliff==2.14.2
 pip-audit==2.10.1
 pytest==9.1.1
