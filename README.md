@@ -2,16 +2,29 @@
 [![tests](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/airmonitor/cdk-opinionated-constructs/actions/workflows/tests.yml)
 
 # cdk-opinionated-constructs
+
 CDK constructs with added security configuration
 
+## cdk-nag v3
+
+Examples use cdk-nag v3, which relies on CDK's native `Validations` API:
+
+- Rules are acknowledged with `Validations.of(construct).acknowledge(Acknowledgment(id=..., reason=...))`.
+- Each finding is acknowledged individually, e.g. `AwsSolutions-IAM5[Resource::*]`; a bare `AwsSolutions-IAM5`
+  no longer covers all IAM5 findings. The exact id is printed after `Acknowledge with` in the synth report.
+- `Validations.of(...).add_plugins(...)` registers a rule pack for the whole app, not only the stack it is
+  called from. Add compliance packs (NIST 800-53 R5, PCI DSS 3.2.1, HIPAA) only when every stack in the app
+  should be checked against them.
+
 ## S3 Bucket example:
+
 ```python
 """Test S3 construct against cdk-nag."""
 
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_s3 as s3
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.s3 import S3Bucket
@@ -29,15 +42,12 @@ class TestS3Stack(Stack):
             bucket_name="access-logs-bucket", encryption=s3.BucketEncryption.S3_MANAGED
         )
 
-        NagSuppressions.add_resource_suppressions(
-            access_logs_bucket,
-            [
-                {
-                    "id": "AwsSolutions-S1",
-                    "reason": "This is the access logs bucket, "
-                    "it doesn't require another resource for storing access logs from it",
-                },
-            ],
+        Validations.of(access_logs_bucket).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-S1",
+                reason="This is the access logs bucket, "
+                "it doesn't require another resource for storing access logs from it",
+            ),
         )
 
         s3_bucket_construct.create_bucket(
@@ -49,15 +59,16 @@ class TestS3Stack(Stack):
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 ```
+
 ## SNS topic example:
 
 ```python
 """Test SNS construct against cdk-nag."""
 
 import aws_cdk.aws_kms as kms
-from aws_cdk import Aspects, Stack
+from aws_cdk import Stack, Validations
 from cdk_nag import (
     AwsSolutionsChecks,
     HIPAASecurityChecks,
@@ -80,19 +91,20 @@ class TestSNSStack(Stack):
         sns_construct.create_sns_topic(topic_name="topic", master_key=shared_kms_key)
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-        Aspects.of(self).add(NIST80053R5Checks(log_ignores=True))
-        Aspects.of(self).add(PCIDSS321Checks(log_ignores=True))
-        Aspects.of(self).add(HIPAASecurityChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
+        Validations.of(self).add_plugins(NIST80053R5Checks(self))
+        Validations.of(self).add_plugins(PCIDSS321Checks(self))
+        Validations.of(self).add_plugins(HIPAASecurityChecks(self))
 ```
+
 ## AWS Lambda example:
 
 ```python
 """Test AWS Lambda function construct.."""
 
 import aws_cdk.aws_lambda as lmb
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
@@ -111,7 +123,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
             signing_profile_name="signing_profile_name"
         )
         lmb_construct.create_lambda_function(
-            code_path=f'{props["service_name"]}',
+            code_path=f"{props['service_name']}",
             env=env,
             function_name=props["service_name"],
             timeout=6,
@@ -132,8 +144,8 @@ class TestAWSPythonLambdaFunctionStack(Stack):
 
         # Validate stack against AWS Solutions checklist
         nag_suppression_rule_list = self.nag_suppression()
-        NagSuppressions.add_stack_suppressions(self, nag_suppression_rule_list)
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).acknowledge(*nag_suppression_rule_list)
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 
     @staticmethod
     def nag_suppression() -> list:
@@ -142,17 +154,27 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         :return:
         """
         return [
-            {
-                "id": "AwsSolutions-IAM4",
-                "reason": "Using managed policies is allowed",
-            },
-            {
-                "id": "AwsSolutions-IAM5",
-                "reason": "There isn't a way to tailor IAM policy using more restrictive permissions for "
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::*]",
+                reason="There isn't a way to tailor IAM policy using more restrictive permissions for "
                 "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
-            },
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::arn:aws:logs:*:*:log-group:/aws/lambda-insights:*]",
+                reason="There isn't a way to tailor IAM policy using more restrictive permissions for "
+                "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
+            ),
         ]
 ```
+
 ## AWS Lambda monitoring example:
 
 ```python
@@ -198,7 +220,7 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
                 action=cdk_monitoring.SnsAlarmActionStrategy(
                     on_alarm_topic=alarm_topic
                 ),
-                alarm_name_prefix=f'{props["service_name"]}',
+                alarm_name_prefix=f"{props['service_name']}",
                 actions_enabled=True,
             ),
         )
@@ -256,7 +278,9 @@ class TestAWSPythonLambdaFunctionStackMonitoring(Stack):
             },
         )
 ```
+
 ## AWS Lambda Docker example:
+
 ```python
 """Test AWS Lambda docker function construct."""
 
@@ -264,8 +288,8 @@ import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_ecr as ecr
 import aws_cdk.aws_lambda as lmb
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.lmb import AWSDockerLambdaFunction
@@ -280,14 +304,11 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         vpc = ec2.Vpc(self, id="vpc")
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-VPC7",
+                reason="Test VPC, flow logs logs aren't required here.",
+            ),
         )
 
         ecr_repository = ecr.Repository(
@@ -325,8 +346,8 @@ class TestAWSPythonLambdaFunctionStack(Stack):
 
         # Validate stack against AWS Solutions checklist
         nag_suppression_rule_list = self.nag_suppression()
-        NagSuppressions.add_stack_suppressions(self, nag_suppression_rule_list)
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).acknowledge(*nag_suppression_rule_list)
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 
     @staticmethod
     def nag_suppression() -> list:
@@ -335,15 +356,24 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         :return:
         """
         return [
-            {
-                "id": "AwsSolutions-IAM4",
-                "reason": "Using managed policies is allowed",
-            },
-            {
-                "id": "AwsSolutions-IAM5",
-                "reason": "There isn't a way to tailor IAM policy using more restrictive permissions for "
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::*]",
+                reason="There isn't a way to tailor IAM policy using more restrictive permissions for "
                 "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
-            },
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::arn:aws:logs:*:*:log-group:/aws/lambda-insights:*]",
+                reason="There isn't a way to tailor IAM policy using more restrictive permissions for "
+                "used API calls logs:CreateLogGroup, xray:PutTelemetryRecords, xray:PutTraceSegments",
+            ),
         ]
 
     @property
@@ -354,6 +384,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         """
         return self.output_props
 ```
+
 ## WAFv2 example
 
 ```python
@@ -361,8 +392,8 @@ class TestAWSPythonLambdaFunctionStack(Stack):
 
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
@@ -376,14 +407,11 @@ class TestWAFv2Stack(Stack):
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
 
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-VPC7",
+                reason="Test VPC, flow logs logs aren't required here.",
+            ),
         )
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
@@ -419,7 +447,7 @@ class TestWAFv2Stack(Stack):
             aws_account_takeover_prevention={
                 "login_path": "/portal/login",
                 "payload_type": "FORM_ENCODED",
-                "password_field": "data[AuthUser][password]",
+                "password_field": "data[AuthUser][password]",  # pragma: allowlist secret
                 "username_field": "data[AuthUser][userId]",
             },
         )
@@ -433,8 +461,9 @@ class TestWAFv2Stack(Stack):
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 ```
+
 ## ApplicationLoadBalancer example
 
 ```python
@@ -443,8 +472,8 @@ class TestWAFv2Stack(Stack):
 import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-from aws_cdk import Aspects, Duration, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Duration, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
@@ -460,14 +489,11 @@ class TestALBStack(Stack):
             self, "certificate", domain_name="example.com"
         )
 
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-VPC7",
+                reason="Test VPC, flow logs logs aren't required here.",
+            ),
         )
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
@@ -504,12 +530,13 @@ class TestALBStack(Stack):
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 ```
+
 ## ECR example
 
 ```python
-from aws_cdk import Aspects, Stack
+from aws_cdk import Stack, Validations
 from cdk_nag import (
     AwsSolutionsChecks,
     HIPAASecurityChecks,
@@ -534,19 +561,21 @@ class TestECRStack(Stack):
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-        Aspects.of(self).add(NIST80053R5Checks(log_ignores=True))
-        Aspects.of(self).add(PCIDSS321Checks(log_ignores=True))
-        Aspects.of(self).add(HIPAASecurityChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
+        Validations.of(self).add_plugins(NIST80053R5Checks(self))
+        Validations.of(self).add_plugins(PCIDSS321Checks(self))
+        Validations.of(self).add_plugins(HIPAASecurityChecks(self))
 ```
+
 ## Network Load Balancer example
+
 ```python
 """Example code for Network Load Balancer cdk stack."""
 
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.nlb import NetworkLoadBalancer
@@ -558,14 +587,11 @@ class TestNLBStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-VPC7",
+                reason="Test VPC, flow logs logs aren't required here.",
+            ),
         )
 
         nlb_construct = NetworkLoadBalancer(self, construct_id="nlb_construct")
@@ -603,9 +629,11 @@ class TestNLBStack(Stack):
             ],
         )
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 ```
+
 ## RDS PostgresSQL Instance example
+
 ```python
 """Example code for Application Load Balancer cdk stack."""
 
@@ -614,8 +642,8 @@ import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_rds as rds
 import aws_cdk.aws_secretsmanager as secretsmanager
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.rds_instance import RDSInstance
@@ -670,7 +698,9 @@ class TestRDSPostgresSQLStack(Stack):
             ),
             publicly_accessible=False,
             secret=secretsmanager.Secret.from_secret_name_v2(
-                self, id="imported_secret", secret_name="secret-name"
+                self,
+                id="imported_secret",
+                secret_name="secret-name",  # pragma: allowlist secret
             ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",
@@ -680,34 +710,30 @@ class TestRDSPostgresSQLStack(Stack):
             vpc=vpc,
         )
 
-        NagSuppressions.add_resource_suppressions(
-            rds_instance,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-RDS11",
-                    "reason": "Default RDS port is allowed to be used.",
-                },
-                {
-                    "id": "AwsSolutions-RDS2",
-                    "reason": "The RDS encryption is managed on a snapshot level from which RDS is restored.",
-                },
-            ],
+        Validations.of(rds_instance).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-RDS11",
+                reason="Default RDS port is allowed to be used.",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-RDS2",
+                reason="The RDS encryption is managed on a snapshot level from which RDS is restored.",
+            ),
         )
 
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-VPC7",
+                reason="Test VPC, flow logs logs aren't required here.",
+            ),
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 ```
+
 ## RDS MySQL Instance example
+
 ```python
 """Example code for Application Load Balancer cdk stack."""
 
@@ -716,8 +742,8 @@ import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_rds as rds
 import aws_cdk.aws_secretsmanager as secretsmanager
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from constructs import Construct
 
 from cdk_opinionated_constructs.rds_instance import RDSInstance
@@ -772,7 +798,9 @@ class TestRDSMySQLStack(Stack):
             ),
             publicly_accessible=False,
             secret=secretsmanager.Secret.from_secret_name_v2(
-                self, id="imported_secret", secret_name="secret-name"
+                self,
+                id="imported_secret",
+                secret_name="secret-name",  # pragma: allowlist secret
             ),
             security_group=security_group,
             snapshot_identifier="snapshot_identifier",
@@ -782,30 +810,24 @@ class TestRDSMySQLStack(Stack):
             vpc=vpc,
         )
 
-        NagSuppressions.add_resource_suppressions(
-            rds_instance,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-RDS11",
-                    "reason": "Default RDS port is allowed to be used.",
-                },
-                {
-                    "id": "AwsSolutions-RDS2",
-                    "reason": "The RDS encryption is managed on a snapshot level from which RDS is restored.",
-                },
-            ],
+        Validations.of(rds_instance).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-RDS11",
+                reason="Default RDS port is allowed to be used.",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-RDS2",
+                reason="The RDS encryption is managed on a snapshot level from which RDS is restored.",
+            ),
         )
 
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-VPC7",
+                reason="Test VPC, flow logs logs aren't required here.",
+            ),
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 ```

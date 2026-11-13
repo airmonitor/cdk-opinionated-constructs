@@ -1,7 +1,7 @@
 import aws_cdk as cdk
 import aws_cdk.aws_ssm as ssm
 
-from aws_cdk import Aspects
+from aws_cdk import Validations
 from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
 from cdk_opinionated_constructs.stacks import reduce_items_number, set_ssm_parameter_tier_type
@@ -35,7 +35,7 @@ class ServicesTestsStack(cdk.Stack):
         5. Create an SSM StringParameter to store the ConfigurationVars as a string,
            for later retrieval.
 
-        6. Validates the stack against the AWS Solutions checklist using Aspects.
+        6. Validates the stack against the AWS Solutions checklist using cdk-nag validation plugins.
         """
 
         super().__init__(scope, construct_id, env=env, **kwargs)
@@ -52,4 +52,4 @@ class ServicesTestsStack(cdk.Stack):
             tier=set_ssm_parameter_tier_type(character_number=len(str(ssm_parameter_value))),
         )
 
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

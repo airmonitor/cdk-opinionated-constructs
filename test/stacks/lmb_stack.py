@@ -2,8 +2,8 @@
 
 import aws_cdk.aws_lambda as lmb
 
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.lmb import AWSPythonLambdaFunction
 from constructs import Construct
 
@@ -41,8 +41,8 @@ class TestAWSPythonLambdaFunctionStack(Stack):
 
         # Validate stack against AWS Solutions checklist
         nag_suppression_rule_list = self.nag_suppression()
-        NagSuppressions.add_stack_suppressions(self, nag_suppression_rule_list)
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).acknowledge(*nag_suppression_rule_list)
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 
     @staticmethod
     def nag_suppression() -> list:
@@ -51,16 +51,27 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         :return:
         """
         return [
-            NagPackSuppression(id="AwsSolutions-IAM4", reason="Using managed policies is allowed"),
-            NagPackSuppression(
-                id="AwsSolutions-IAM5",
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::*]",
                 reason="There isn't a way to tailor IAM policy using more restrictive "
                 "permissions for used API calls logs:CreateLogGroup, "
                 "xray:PutTelemetryRecords, xray:PutTraceSegments",
             ),
-            NagPackSuppression(
-                id="AwsSolutions-L1", reason="The custom resource lambda runtime is managed by CDK itself"
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::arn:aws:logs:*:*:log-group:/aws/lambda-insights:*]",
+                reason="There isn't a way to tailor IAM policy using more restrictive "
+                "permissions for used API calls logs:CreateLogGroup, "
+                "xray:PutTelemetryRecords, xray:PutTraceSegments",
             ),
+            Acknowledgment(id="AwsSolutions-L1", reason="The custom resource lambda runtime is managed by CDK itself"),
         ]
 
     @property

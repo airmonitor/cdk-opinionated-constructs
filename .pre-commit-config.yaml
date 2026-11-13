@@ -37,6 +37,7 @@ repos:
       - id: ruff
         args: [ --fix]
       - id: ruff-format
+        types_or: [ python, pyi ]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v2.4.1"
     hooks:

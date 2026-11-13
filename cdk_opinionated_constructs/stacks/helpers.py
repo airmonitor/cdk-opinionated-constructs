@@ -8,11 +8,11 @@ import aws_cdk.aws_sns as sns
 import aws_cdk.aws_sns_subscriptions as sns_subscriptions
 import aws_cdk.aws_ssm as ssm
 
+from aws_cdk import Acknowledgment, Validations
 from aws_cdk.aws_codepipeline import Pipeline
 from aws_cdk.aws_codestarnotifications import DetailType, NotificationRule
 from aws_cdk.pipelines import CodePipeline
 from cdk.schemas.configuration_vars import PipelineVars
-from cdk_nag import NagPackSuppression
 from cdk_opinionated_constructs.utils import apply_tags
 
 
@@ -79,7 +79,7 @@ def notifications_topic(self, pipeline_vars: PipelineVars) -> sns.Topic:
 
     2. add a subscription to the topic using the email address from pipeline_vars.
 
-    3. add metadata to suppress cdk_nag warnings about encryption.
+    3. acknowledge the cdk_nag finding about encryption.
 
     4. return the created SNS topic.
     """
@@ -89,14 +89,8 @@ def notifications_topic(self, pipeline_vars: PipelineVars) -> sns.Topic:
     )
 
     # Warning suppression for cdk_nag
-    notifications_sns_topic_cfn = notifications_sns_topic.node.default_child
-    notifications_sns_topic_cfn.add_metadata(  # type: ignore
-        "cdk_nag",
-        {
-            "rules_to_suppress": [
-                NagPackSuppression(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption"),
-            ]
-        },
+    Validations.of(notifications_sns_topic).acknowledge(
+        Acknowledgment(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption"),
     )
     return notifications_sns_topic
 

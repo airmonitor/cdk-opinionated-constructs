@@ -4,8 +4,8 @@ import aws_cdk as cdk
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_lambda as lmb
 
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.ecr import ECR
 from cdk_opinionated_constructs.lmb import AWSDockerLambdaFunction
 from constructs import Construct
@@ -46,11 +46,8 @@ class TestAWSLambdaDockerFunctionStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         vpc = ec2.Vpc(self, id="vpc")
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                NagPackSuppression(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here.")
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here."),
         )
 
         ecr_construct = ECR(
@@ -86,8 +83,8 @@ class TestAWSLambdaDockerFunctionStack(Stack):
 
         # Validate stack against AWS Solutions checklist
         nag_suppression_rule_list = self.nag_suppression()
-        NagSuppressions.add_stack_suppressions(self, nag_suppression_rule_list)
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).acknowledge(*nag_suppression_rule_list)
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 
     @staticmethod
     def nag_suppression() -> list:
@@ -96,9 +93,22 @@ class TestAWSLambdaDockerFunctionStack(Stack):
         :return:
         """
         return [
-            NagPackSuppression(id="AwsSolutions-IAM4", reason="Using managed policies is allowed"),
-            NagPackSuppression(
-                id="AwsSolutions-IAM5",
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM4[Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole]",
+                reason="Using managed policies is allowed",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::*]",
+                reason="There isn't a way to tailor IAM policy using more restrictive "
+                "permissions for used API calls logs:CreateLogGroup, "
+                "xray:PutTelemetryRecords, xray:PutTraceSegments",
+            ),
+            Acknowledgment(
+                id="AwsSolutions-IAM5[Resource::arn:aws:logs:*:*:log-group:/aws/lambda-insights:*]",
                 reason="There isn't a way to tailor IAM policy using more restrictive "
                 "permissions for used API calls logs:CreateLogGroup, "
                 "xray:PutTelemetryRecords, xray:PutTraceSegments",

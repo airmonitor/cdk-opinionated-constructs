@@ -254,6 +254,7 @@ class AWSDockerLambdaFunction(Construct):
         - Retention of logs
 
         CodeGuru profiling is disabled due to incompatibility with FROM_IMAGE.
+        SnapStart is enabled unless EFS or ephemeral storage greater than 512 MiB is used.
         """
 
         if env_variables is None:
@@ -262,6 +263,11 @@ class AWSDockerLambdaFunction(Construct):
             "CLOUDWATCH_SAMPLING_RATE": "1",
             "REGION_NAME": env.region,
         }
+        # SnapStart does not support EFS or ephemeral storage greater than 512 MiB
+        ephemeral_storage_size = kwargs.get("ephemeral_storage_size")
+        snap_start_supported = kwargs.get("filesystem") is None and (
+            ephemeral_storage_size is None or ephemeral_storage_size.to_mebibytes() <= 512
+        )
         return lmb.DockerImageFunction(
             self,
             id=function_name,
@@ -291,7 +297,7 @@ class AWSDockerLambdaFunction(Construct):
             profiling=False,  # CodeGuru profiling is not supported by runtime FROM_IMAGE
             reserved_concurrent_executions=reserved_concurrent_executions,
             security_groups=kwargs.get("security_groups"),
-            snap_start=lmb.SnapStartConf.ON_PUBLISHED_VERSIONS,
+            snap_start=lmb.SnapStartConf.ON_PUBLISHED_VERSIONS if snap_start_supported else None,
             timeout=cdk.Duration.seconds(timeout),
             tracing=lmb.Tracing.ACTIVE,
             vpc=kwargs.get("vpc"),

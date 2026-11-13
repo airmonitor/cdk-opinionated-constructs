@@ -25,6 +25,7 @@ install: # Install all project dependencies and development tools
 	uv pip install prek pytest pytest-snapshot pur
 	uv pip install -r test/requirements.txt
 	uv pip install -r test/requirements-dev.txt
+	uv pip install -e .
 
 pre-commit: # Run code quality checks on all Python files
 	@echo "Running pre-commit"

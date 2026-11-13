@@ -3,8 +3,8 @@
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
 
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from cdk_opinionated_constructs.wafv2 import WAFv2
 from constructs import Construct
@@ -17,14 +17,8 @@ class TestWAFv2Stack(Stack):
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
 
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                {
-                    "id": "AwsSolutions-VPC7",
-                    "reason": "Test VPC, flow logs logs aren't required here.",
-                },
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here."),
         )
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
@@ -68,4 +62,4 @@ class TestWAFv2Stack(Stack):
         wafv2_construct.web_acl_association(resource_arn=alb.load_balancer_arn, web_acl_arn=wafv2_acl.attr_arn)
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

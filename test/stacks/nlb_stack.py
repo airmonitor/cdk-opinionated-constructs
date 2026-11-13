@@ -3,8 +3,8 @@
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
 
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.nlb import NetworkLoadBalancer
 from constructs import Construct
 
@@ -15,11 +15,8 @@ class TestNLBStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
         vpc = ec2.Vpc(self, id="vpc")
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                NagPackSuppression(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here.")
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here."),
         )
 
         nlb_construct = NetworkLoadBalancer(self, construct_id="nlb_construct")
@@ -53,4 +50,4 @@ class TestNLBStack(Stack):
             ],
         )
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

@@ -6,6 +6,7 @@ import aws_cdk as cdk
 import pytest
 
 from aws_cdk.assertions import Template
+from cdk_nag import HIPAASecurityChecks, NIST80053R5Checks, PCIDSS321Checks
 
 from test.stacks.sns_stack import TestSNSStack
 
@@ -30,6 +31,8 @@ def stack_template() -> Template:
 
     app = cdk.App()
     stack = TestSNSStack(app, "TestSNSStack", env=CDK_ENV)
+    # cdk-nag v3 plugins are app-wide; compliance packs are applied here so they cover only this stack
+    cdk.Validations.of(app).add_plugins(NIST80053R5Checks(app), PCIDSS321Checks(app), HIPAASecurityChecks(app))
     return Template.from_stack(stack)
 
 

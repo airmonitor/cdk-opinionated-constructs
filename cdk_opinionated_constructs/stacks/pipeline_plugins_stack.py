@@ -1,7 +1,7 @@
 import aws_cdk as cdk
 import aws_cdk.aws_ssm as ssm
 
-from aws_cdk import Aspects
+from aws_cdk import Validations
 from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
 from cdk_opinionated_constructs.utils import load_properties
@@ -32,7 +32,7 @@ class PipelinePluginsStack(cdk.Stack):
         5. Create an SSM StringParameter to store the pipeline plugins configuration
            from PipelineVars, for later retrieval.
 
-        6. Validates the stack against the AWS Solutions checklist using Aspects.
+        6. Validates the stack against the AWS Solutions checklist using cdk-nag validation plugins.
         """
 
         super().__init__(scope, construct_id, env=env, **kwargs)
@@ -48,4 +48,4 @@ class PipelinePluginsStack(cdk.Stack):
             parameter_name=f"/{config_vars.project}/{config_vars.stage}/pipeline_plugins",
         )
 
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

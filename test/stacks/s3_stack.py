@@ -3,8 +3,8 @@
 import aws_cdk.aws_kms as kms
 import aws_cdk.aws_s3 as s3
 
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.s3 import S3Bucket
 from constructs import Construct
 
@@ -21,15 +21,12 @@ class TestS3Stack(Stack):
             bucket_name="access-logs-bucket", encryption=s3.BucketEncryption.S3_MANAGED
         )
 
-        NagSuppressions.add_resource_suppressions(
-            access_logs_bucket,
-            [
-                NagPackSuppression(
-                    id="AwsSolutions-S1",
-                    reason="This is the access logs bucket, "
-                    "it doesn't require another resource for storing access logs from it",
-                )
-            ],
+        Validations.of(access_logs_bucket).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-S1",
+                reason="This is the access logs bucket, "
+                "it doesn't require another resource for storing access logs from it",
+            ),
         )
 
         s3_bucket_construct.create_bucket(
@@ -41,4 +38,4 @@ class TestS3Stack(Stack):
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

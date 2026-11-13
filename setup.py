@@ -16,7 +16,7 @@ setup(
     package_dir={"": "."},
     packages=find_packages(where="."),
     install_requires=[
-        "aws-cdk-lib>=2.177.0",
+        "aws-cdk-lib>=2.257.0",
         "constructs>=10.4.2",
         "cdk-monitoring-constructs>=6.0.0",
         "pydantic>=2.9.0",

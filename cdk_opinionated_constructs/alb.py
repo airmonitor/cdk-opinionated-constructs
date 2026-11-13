@@ -10,7 +10,7 @@ import aws_cdk.aws_elasticloadbalancingv2 as albv2
 import aws_cdk.aws_iam as iam
 import aws_cdk.aws_s3 as s3
 
-from cdk_nag import NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Validations
 from cdk_opinionated_constructs.s3 import S3Bucket
 from constructs import Construct
 
@@ -75,15 +75,12 @@ class ApplicationLoadBalancer(Construct):
         alb_access_logs_bucket.add_lifecycle_rule(expiration=cdk.Duration.days(expiration_days))
 
         # Supress a few false positive alerts from the cfn-nag
-        NagSuppressions.add_resource_suppressions(
-            alb_access_logs_bucket,
-            [
-                NagPackSuppression(
-                    id="AwsSolutions-S1",
-                    reason="ALB access logs location, doesn't contain sensitive data it doesn't require "
-                    "another resource for storing access logs from it",
-                ),
-            ],
+        Validations.of(alb_access_logs_bucket).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-S1",
+                reason="ALB access logs location, doesn't contain sensitive data it doesn't require "
+                "another resource for storing access logs from it",
+            ),
         )
 
         return alb_access_logs_bucket
