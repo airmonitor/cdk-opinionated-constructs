@@ -28,17 +28,17 @@ repos:
       - id: detect-aws-credentials
         args: [ --allow-missing-credentials ]
   - repo: https://github.com/bwhmather/ssort
-    rev: 0.16.0
+    rev: 0.19.0
     hooks:
       - id: ssort
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: 'v0.15.22'
+    rev: 'v0.17.5'
     hooks:
       - id: ruff
         args: [ --fix]
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v2.3.0"
+    rev: "v2.4.1"
     hooks:
       - id: mypy
         args: [--explicit-package-bases, --namespace-packages, --ignore-missing-imports, --no-warn-unused-ignores]
@@ -74,7 +74,7 @@ repos:
         - -s
         - B101
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.14.0
+    rev: v2.15.1
     hooks:
       - id: hadolint
   -   repo: https://github.com/Yelp/detect-secrets
