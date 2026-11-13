@@ -1,8 +1,8 @@
 """Validate variables against pydantic models."""
 
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, EmailStr, PositiveFloat, constr
+from pydantic import BaseModel, ConfigDict, EmailStr, PositiveFloat, constr, model_validator
 
 
 class Observability(BaseModel):
@@ -81,12 +81,15 @@ class ConfigurationVars(PipelinePluginsVars):
 class ApplicationTags(BaseModel):
     """Defines the ApplicationTags model.
 
-    This model represents the tags associated with an AWS application, specifically the AWS Resource Group ARN.
+    This model represents the tags associated with an AWS application. Any tag key is accepted, so tags referenced
+    by GovernanceVars.budget_filter_tag_keys can be validated and read.
 
     Attributes:
-        awsApplication (constr | None): The ARN of the AWS Resource Group, which must match a specific pattern.
-        This field is optional.
+        awsApplication (constr | None): The ARN of the myApplications AWS Resource Group, which must match a specific
+        pattern. This field is optional and kept for backward compatibility (myApplications is deprecated).
     """
+
+    model_config = ConfigDict(extra="allow")
 
     awsApplication: constr(pattern=r"^arn:aws:resource-groups:*") | None = None  # type: ignore
 
@@ -100,11 +103,28 @@ class GovernanceVars(ConfigurationVars):
 
       - budget_limit_monthly (int | None): The monthly budget limit.
 
+      - budget_filter_tag_keys (list[str] | None): Tag keys whose configured values must all match (AND) for a cost
+        to count towards the budgets, e.g. ["tr:project-name", "tr:environment-type"]. The keys must be present in
+        tags and activated as cost allocation tags. When not set, budgets fall back to the awsApplication tag.
+
       - tags (ApplicationTags): The tags to apply to the application.
     """
 
     budget_limit_monthly: int | None = None
+    budget_filter_tag_keys: list[str] | None = None
     tags: ApplicationTags
+
+    @model_validator(mode="after")
+    def check_budget_filter_tag_keys(self) -> Self:
+        """Ensure every budget filter tag key has a value in tags."""
+        if missing := [key for key in self.budget_filter_tag_keys or () if key not in self.tag_values]:
+            raise ValueError(f"budget_filter_tag_keys not found in tags: {missing}")
+        return self
+
+    @property
+    def tag_values(self) -> dict[str, str]:
+        """Return all tags as strings, keyed by tag key."""
+        return {key: str(value) for key, value in self.tags.model_dump(exclude_none=True).items()}
 
 
 class NotificationVars(BaseModel):
