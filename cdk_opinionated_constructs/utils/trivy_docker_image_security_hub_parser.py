@@ -7,7 +7,7 @@ It supports Trivy JSON format (SchemaVersion 2).
 Generated with: trivy image --timeout 60m --no-progress -f json -o results.json --severity HIGH,CRITICAL <image>
 """
 
-import datetime
+import datetime as dt
 import json
 import re
 
@@ -113,7 +113,7 @@ class SecurityHubFindingBuilder:
                 image_id = repo_digests[0].split("@sha256:")[1]
             else:
                 # Fallback to a timestamp-based ID if no proper ID is available
-                image_id = f"unknown-{datetime.datetime.now().timestamp()}"  # ruff:ignore[call-datetime-now-without-tzinfo]
+                image_id = f"unknown-{dt.datetime.now().timestamp()}"  # ruff:ignore[call-datetime-now-without-tzinfo]
 
         pkg_name = vulnerability.get("PkgName", "unknown")
         installed_version = vulnerability.get("InstalledVersion", "unknown")
@@ -159,7 +159,7 @@ class SecurityHubFindingBuilder:
                 - Metadata about the finding source and state
         """
 
-        iso8601_time = datetime.datetime.now(datetime.UTC).isoformat()
+        iso8601_time = dt.datetime.now(dt.UTC).isoformat()
         product_sev, normalized_sev = VulnerabilityParser.parse_severity(vulnerability.get("Severity", "UNKNOWN"))
         vuln_id = vulnerability.get("VulnerabilityID", "unknown")
         description = vulnerability.get("Description", "No description available")
@@ -200,7 +200,7 @@ class SecurityHubFindingBuilder:
         Returns:
             dict: A formatted Security Hub finding with informational severity
         """
-        iso8601_time = datetime.datetime.now(datetime.UTC).isoformat()
+        iso8601_time = dt.datetime.now(dt.UTC).isoformat()
 
         # Ensure we have a valid ImageId or use a fallback
         image_id = image_info.get("ImageID", "")
@@ -211,7 +211,7 @@ class SecurityHubFindingBuilder:
                 image_id = repo_digests[0].split("@sha256:")[1]
             else:
                 # Fallback to a timestamp-based ID if no proper ID is available
-                image_id = f"unknown-{datetime.datetime.now().timestamp()}"  # ruff:ignore[call-datetime-now-without-tzinfo]
+                image_id = f"unknown-{dt.datetime.now().timestamp()}"  # ruff:ignore[call-datetime-now-without-tzinfo]
 
         return {
             "SchemaVersion": "2018-10-08",
