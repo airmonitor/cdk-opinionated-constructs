@@ -1,7 +1,7 @@
 """Example code for ECR cdk stack."""
 
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, HIPAASecurityChecks, NIST80053R5Checks, PCIDSS321Checks
+from aws_cdk import Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.ecr import ECR
 from constructs import Construct
 
@@ -15,9 +15,8 @@ class TestECRStack(Stack):
     It validates the stack against the following checklists:
 
     - AWS Solutions
-    - NIST 800-53 R5
-    - PCI DSS 3.2.1
-    - HIPAA Security
+    - NIST 800-53 R5, PCI DSS 3.2.1, HIPAA Security (applied in the pytest fixture,
+      since cdk-nag v3 plugins are app-wide)
 
     Parameters:
 
@@ -32,7 +31,4 @@ class TestECRStack(Stack):
         ecr_construct.repository(repository_name="repository_name", removal_policy="destroy", max_image_age=90)
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
-        Aspects.of(self).add(NIST80053R5Checks(log_ignores=True))
-        Aspects.of(self).add(PCIDSS321Checks(log_ignores=True))
-        Aspects.of(self).add(HIPAASecurityChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

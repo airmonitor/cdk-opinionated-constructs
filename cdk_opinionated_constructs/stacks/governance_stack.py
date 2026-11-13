@@ -4,9 +4,9 @@ import aws_cdk as cdk
 import aws_cdk.aws_sns as sns
 import aws_cdk.aws_ssm as ssm
 
-from aws_cdk import Aspects
+from aws_cdk import Acknowledgment, Validations
 from aws_cdk.aws_budgets import CfnBudget as Budget
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars, GovernanceVars
 from cdk_opinionated_constructs.utils import load_properties
 from constructs import Construct
@@ -76,9 +76,8 @@ class GovernanceStack(cdk.Stack):
             ),
         )
 
-        NagSuppressions.add_resource_suppressions(
-            bill_sns_topic,
-            [NagPackSuppression(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption")],
+        Validations.of(bill_sns_topic).acknowledge(
+            Acknowledgment(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption"),
         )
 
         bill_sns_subscribers = Budget.SubscriberProperty(address=bill_sns_topic.topic_arn, subscription_type="SNS")
@@ -102,7 +101,7 @@ class GovernanceStack(cdk.Stack):
                 monthly_budget_limit=monthly_budget_limit,
             )
 
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 
     def budget_alarms(
         self,

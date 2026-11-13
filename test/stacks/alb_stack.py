@@ -4,8 +4,8 @@ import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
 
-from aws_cdk import Aspects, Duration, Stack
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Duration, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.alb import ApplicationLoadBalancer
 from constructs import Construct
 
@@ -55,11 +55,8 @@ class TestALBStack(Stack):
         vpc = ec2.Vpc(self, id="vpc")
         certificate = certificate_manager.Certificate(self, "certificate", domain_name="example.com")
 
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                NagPackSuppression(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here."),
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here."),
         )
 
         alb_construct = ApplicationLoadBalancer(self, construct_id="alb_construct")
@@ -94,4 +91,4 @@ class TestALBStack(Stack):
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

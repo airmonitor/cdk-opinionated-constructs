@@ -1,7 +1,7 @@
 import aws_cdk as cdk
 import aws_cdk.aws_ssm as ssm
 
-from aws_cdk import Aspects
+from aws_cdk import Validations
 from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
 from cdk_opinionated_constructs.stacks import reduce_items_number, set_ssm_parameter_tier_type
@@ -45,4 +45,4 @@ class IntegrationTestsStack(cdk.Stack):
             tier=set_ssm_parameter_tier_type(character_number=len(str(ssm_parameter_value))),
         )
 
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

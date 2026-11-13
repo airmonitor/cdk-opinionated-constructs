@@ -7,7 +7,7 @@ Example is SSM parameter store entry ci/cd configuration values
 import aws_cdk as cdk
 import aws_cdk.aws_ssm as ssm
 
-from aws_cdk import Aspects
+from aws_cdk import Validations
 from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars
 from cdk_opinionated_constructs.stacks import count_characters_number, reduce_items_number, set_ssm_parameter_tier_type
@@ -51,4 +51,4 @@ class CodeQualityStack(cdk.Stack):
             tier=set_ssm_parameter_tier_type(character_number=character_number),
         )
 
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

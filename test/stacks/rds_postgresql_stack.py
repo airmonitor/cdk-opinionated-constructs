@@ -6,8 +6,8 @@ import aws_cdk.aws_kms as kms
 import aws_cdk.aws_rds as rds
 import aws_cdk.aws_secretsmanager as secretsmanager
 
-from aws_cdk import Aspects, Stack
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Stack, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.rds_instance import RDSInstance
 from constructs import Construct
 
@@ -69,23 +69,17 @@ class TestRDSPostgreSQLStack(Stack):
             vpc=vpc,
         )
 
-        NagSuppressions.add_resource_suppressions(
-            rds_instance,
-            suppressions=[
-                NagPackSuppression(
-                    id="AwsSolutions-RDS2",
-                    reason="The RDS encryption is managed on a snapshot level from which RDS is restored.",
-                ),
-                NagPackSuppression(id="AwsSolutions-RDS11", reason="Default RDS port is allowed to be used."),
-            ],
+        Validations.of(rds_instance).acknowledge(
+            Acknowledgment(
+                id="AwsSolutions-RDS2",
+                reason="The RDS encryption is managed on a snapshot level from which RDS is restored.",
+            ),
+            Acknowledgment(id="AwsSolutions-RDS11", reason="Default RDS port is allowed to be used."),
         )
 
-        NagSuppressions.add_resource_suppressions(
-            vpc,
-            suppressions=[
-                NagPackSuppression(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here.")
-            ],
+        Validations.of(vpc).acknowledge(
+            Acknowledgment(id="AwsSolutions-VPC7", reason="Test VPC, flow logs logs aren't required here."),
         )
 
         # Validate stack against AWS Solutions checklist
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))

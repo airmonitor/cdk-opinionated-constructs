@@ -6,8 +6,8 @@ import aws_cdk.aws_sns as sns
 import aws_cdk.aws_sns_subscriptions as sns_subscriptions
 import aws_cdk.aws_ssm as ssm
 
-from aws_cdk import Aspects
-from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
+from aws_cdk import Acknowledgment, Validations
+from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars, NotificationVars
 from cdk_opinionated_constructs.sns import SNSTopic
 from cdk_opinionated_constructs.utils import load_properties
@@ -170,13 +170,13 @@ class NotificationsStack(cdk.Stack):
                 self._add_ms_teams_integration(config_vars, notifications_vars, chatbot_iam_role)
 
         # Validate stack against AWS Solutions checklist
-        NagSuppressions.add_stack_suppressions(self, self.nag_suppression())
-        Aspects.of(self).add(AwsSolutionsChecks(log_ignores=True))
+        Validations.of(self).acknowledge(*self.nag_suppression())
+        Validations.of(self).add_plugins(AwsSolutionsChecks(self))
 
     @staticmethod
-    def nag_suppression() -> list[NagPackSuppression]:
+    def nag_suppression() -> list[Acknowledgment]:
         return [
-            NagPackSuppression(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption"),
-            NagPackSuppression(id="AwsSolutions-IAM4", reason="Wildcard permissions are used in Deny section"),
-            NagPackSuppression(id="AwsSolutions-IAM5", reason="Wildcard permissions are used in Deny section"),
+            Acknowledgment(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption"),
+            Acknowledgment(id="AwsSolutions-IAM4", reason="Wildcard permissions are used in Deny section"),
+            Acknowledgment(id="AwsSolutions-IAM5", reason="Wildcard permissions are used in Deny section"),
         ]
