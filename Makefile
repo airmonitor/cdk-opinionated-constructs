@@ -21,24 +21,23 @@ activate: # Activate Python virtual environment
 
 install: # Install all project dependencies and development tools
 	@echo "Installing dependencies from requirements files"
-	pip install --upgrade pip
-	pip install --upgrade uv
-	uv pip install pre-commit pytest pytest-snapshot pur
+	pip install --upgrade pip uv pur
+	uv pip install prek pytest pytest-snapshot pur
 	uv pip install -r test/requirements.txt
 	uv pip install -r test/requirements-dev.txt
 
 pre-commit: # Run code quality checks on all Python files
 	@echo "Running pre-commit"
-	pre-commit run --files cdk_opinionated_constructs/*.py
-	pre-commit run --files cdk_opinionated_constructs/schemas/*.py
-	pre-commit run --files cdk_opinionated_constructs/stacks/*.py
-	pre-commit run --files cdk_opinionated_constructs/stages/*.py
-	pre-commit run --files cdk_opinionated_constructs/stages/logic/*.py
-	pre-commit run --files cdk_opinionated_constructs/tests/integration/*.py
-	pre-commit run --files cdk_opinionated_constructs/utils/*.py
-	pre-commit run --files cdk_opinionated_constructs/libs/pipeline_v2/*.py
-	pre-commit run --files test/infrastucture/*.py
-	pre-commit run --files test/stacks/*.py
+	prek run --files cdk_opinionated_constructs/*.py
+	prek run --files cdk_opinionated_constructs/schemas/*.py
+	prek run --files cdk_opinionated_constructs/stacks/*.py
+	prek run --files cdk_opinionated_constructs/stages/*.py
+	prek run --files cdk_opinionated_constructs/stages/logic/*.py
+	prek run --files cdk_opinionated_constructs/tests/integration/*.py
+	prek run --files cdk_opinionated_constructs/utils/*.py
+	prek run --files cdk_opinionated_constructs/libs/pipeline_v2/*.py
+	prek run --files test/infrastucture/*.py
+	prek run --files test/stacks/*.py
 
 tests: # Run infrastructure tests for specified stage
 	@echo "Running pytest for stage "
@@ -47,7 +46,7 @@ tests: # Run infrastructure tests for specified stage
 
 update: # Update all dependencies and tools to latest versions
 	@echo "Updating used tools and scripts"
-	pre-commit autoupdate
+	prek autoupdate
 	pur -r test/requirements.txt
 	pur -r test/requirements-dev.txt
 
