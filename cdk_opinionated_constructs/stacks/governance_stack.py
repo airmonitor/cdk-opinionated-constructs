@@ -13,14 +13,20 @@ from constructs import Construct
 
 
 def budget_filter(governance_vars: GovernanceVars) -> dict[str, Any]:
-    """Build the cost filter arguments of Budget.BudgetDataProperty.
+    """
+    Build the cost filter arguments of Budget.BudgetDataProperty.
 
-    Parameters:
-    - governance_vars: Governance-related variables, including tags and budget_filter_tag_keys.
+    Parameters
+    ----------
+    governance_vars : GovernanceVars
+        Governance-related variables, including tags and budget_filter_tag_keys.
 
-    Returns:
-    - Keyword arguments for Budget.BudgetDataProperty. With budget_filter_tag_keys set, a filter_expression that
-      requires all configured tags (AND) on unblended cost; otherwise the legacy awsApplication tag cost filter.
+    Returns
+    -------
+    dict[str, Any]
+        Keyword arguments for Budget.BudgetDataProperty. With budget_filter_tag_keys set, a filter_expression that
+        requires all configured tags (AND) on unblended cost; otherwise the legacy awsApplication tag cost filter.
+
     """
     if not governance_vars.budget_filter_tag_keys:
         return {"cost_filters": {"TagKeyValue": [f"user:awsApplication${governance_vars.tags.awsApplication}"]}}

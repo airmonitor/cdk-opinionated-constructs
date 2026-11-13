@@ -21,8 +21,8 @@ def test_budget_filter_tag_keys_default_to_none():
         **BASE_PROPS, tags={"awsApplication": "arn:aws:resource-groups:eu-west-1:1:group/a"}
     )
 
-    assert governance_vars.budget_filter_tag_keys is None
-    assert governance_vars.tags.awsApplication == "arn:aws:resource-groups:eu-west-1:1:group/a"
+    assert governance_vars.budget_filter_tag_keys is None  # nosec B101
+    assert governance_vars.tags.awsApplication == "arn:aws:resource-groups:eu-west-1:1:group/a"  # nosec B101
 
 
 def test_tag_values_keep_arbitrary_tags_as_strings():
@@ -31,7 +31,7 @@ def test_tag_values_keep_arbitrary_tags_as_strings():
         **BASE_PROPS, tags=PROJECT_TAGS, budget_filter_tag_keys=["tr:project-name", "tr:environment-type"]
     )
 
-    assert governance_vars.tag_values == {
+    assert governance_vars.tag_values == {  # nosec B101
         "tr:project-name": "demo",
         "tr:environment-type": "ppe",
         "tr:application-asset-insight-id": "204727",
