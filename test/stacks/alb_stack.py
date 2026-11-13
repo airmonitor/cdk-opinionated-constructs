@@ -3,6 +3,7 @@
 import aws_cdk.aws_certificatemanager as certificate_manager
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
+import aws_cdk.aws_elasticloadbalancingv2_targets as albv2_targets
 
 from aws_cdk import Acknowledgment, Duration, Stack, Validations
 from cdk_nag import AwsSolutionsChecks
@@ -83,7 +84,7 @@ class TestALBStack(Stack):
                     "back_end_port": 8088,
                     "front_end_port": 443,
                     "back_end_protocol": albv2.ApplicationProtocol.HTTP,
-                    "targets": [],
+                    "targets": [albv2_targets.IpTarget(ip_address="10.0.0.10")],
                     "healthy_http_codes": "200,302",
                     "deregistration_delay": Duration.minutes(1),
                 }

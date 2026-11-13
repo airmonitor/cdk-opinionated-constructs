@@ -4,3 +4,12 @@ env/
 .venv/
 cdk_opinionated_constructs/README.md
 __pycache__
+# Build and CDK artifacts
+build/
+*.egg-info/
+cdk.out/
+cdk.context.json
+
+# Local scan results and IDE
+cdk_opinionated_constructs/utils/*_trivy_results.json
+.idea/
