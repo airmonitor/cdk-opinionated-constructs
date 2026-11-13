@@ -24,18 +24,6 @@ def default_environment_variables(pipeline_vars: PipelineVars) -> dict[str, Any]
     return {}
 
 
-def jfrog_pip_default_environment_variables(pipeline_vars: PipelineVars) -> dict[str, Any]:
-    """Returns a dictionary of default environment variables for a CodeBuild project."""
-    return {
-        "UV_INDEX_URL": f"https://{pipeline_vars.jfrog_artifactory_service_account_id}:"
-        f"{pipeline_vars.jfrog_artifactory_service_account_api_key}@"
-        f"{pipeline_vars.jfrog_artifactory_pypi_uri}",
-        "PIP_INDEX_URL": f"https://{pipeline_vars.jfrog_artifactory_service_account_id}:"
-        f"{pipeline_vars.jfrog_artifactory_service_account_api_key}@"
-        f"{pipeline_vars.jfrog_artifactory_pypi_uri}",
-    }
-
-
 revert_to_original_role_command = "unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN"
 
 
