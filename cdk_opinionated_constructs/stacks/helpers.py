@@ -13,7 +13,7 @@ from aws_cdk.aws_codepipeline import Pipeline
 from aws_cdk.aws_codestarnotifications import DetailType, NotificationRule
 from aws_cdk.pipelines import CodePipeline
 from cdk.schemas.configuration_vars import PipelineVars
-from cdk_opinionated_constructs.utils import apply_tags
+from cdk_opinionated_constructs.utils import acknowledge_iam_findings, apply_tags
 
 
 def count_characters_number(values: dict[list, dict] | dict[str, str]) -> int:
@@ -79,7 +79,7 @@ def notifications_topic(self, pipeline_vars: PipelineVars) -> sns.Topic:
 
     2. add a subscription to the topic using the email address from pipeline_vars.
 
-    3. acknowledge the cdk_nag finding about encryption.
+    3. acknowledge the cdk_nag findings about encryption (SNS2) and SSL enforcement (SNS3).
 
     4. return the created SNS topic.
     """
@@ -91,6 +91,7 @@ def notifications_topic(self, pipeline_vars: PipelineVars) -> sns.Topic:
     # Warning suppression for cdk_nag
     Validations.of(notifications_sns_topic).acknowledge(
         Acknowledgment(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption"),
+        Acknowledgment(id="AwsSolutions-SNS3", reason="Only AWS services publish pipeline notifications to this topic"),
     )
     return notifications_sns_topic
 
@@ -267,13 +268,17 @@ def _configure_pipeline_slack_notifications(
     """
 
     if pipeline_vars.slack_workspace_id and pipeline_vars.slack_ci_cd_channel_id:
-        chatbot.SlackChannelConfiguration(
+        slack_channel = chatbot.SlackChannelConfiguration(
             scope,
             "chatbot",
             slack_channel_configuration_name=pipeline_vars.project,
             notification_topics=[notifications_sns_topic],
             slack_workspace_id=pipeline_vars.slack_workspace_id,
             slack_channel_id=pipeline_vars.slack_ci_cd_channel_id,
+        )
+        acknowledge_iam_findings(
+            slack_channel,
+            reason="AWS Chatbot needs ReadOnlyAccess and read-only wildcard permissions; sensitive actions are denied",
         )
 
 
@@ -370,6 +375,10 @@ def _create_ms_teams_chatbot_iam_role(scope) -> iam.Role:
         ),
     )
 
+    acknowledge_iam_findings(
+        ms_teams_chatbot_role,
+        reason="AWS Chatbot needs ReadOnlyAccess and read-only wildcard permissions; sensitive actions are denied",
+    )
     return ms_teams_chatbot_role
 
 

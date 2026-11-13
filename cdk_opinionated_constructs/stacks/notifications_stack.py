@@ -10,7 +10,7 @@ from aws_cdk import Acknowledgment, Validations
 from cdk_nag import AwsSolutionsChecks
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars, NotificationVars
 from cdk_opinionated_constructs.sns import SNSTopic
-from cdk_opinionated_constructs.utils import load_properties
+from cdk_opinionated_constructs.utils import acknowledge_iam_findings, load_properties
 from constructs import Construct
 
 
@@ -118,6 +118,10 @@ class NotificationsStack(cdk.Stack):
                 resources=["*"],
             ),
         )
+        acknowledge_iam_findings(
+            chatbot_iam_role,
+            reason="AWS Chatbot needs ReadOnlyAccess and read-only wildcard permissions; sensitive actions are denied",
+        )
         return chatbot_iam_role
 
     def _add_slack_integration(
@@ -177,6 +181,4 @@ class NotificationsStack(cdk.Stack):
     def nag_suppression() -> list[Acknowledgment]:
         return [
             Acknowledgment(id="AwsSolutions-SNS2", reason="Notifications stack, doesn't require encryption"),
-            Acknowledgment(id="AwsSolutions-IAM4", reason="Wildcard permissions are used in Deny section"),
-            Acknowledgment(id="AwsSolutions-IAM5", reason="Wildcard permissions are used in Deny section"),
         ]
