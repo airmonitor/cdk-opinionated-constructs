@@ -48,19 +48,27 @@ def test_application_load_balancer_existence(stack_template):
     stack_template.resource_count_is("AWS::ElasticLoadBalancingV2::LoadBalancer", 1)
 
 
-def test_kms_key_existence(stack_template):
-    """test_kms_key_existence tests that the stack template contains one KMS
-    Key resource.
+def test_access_logs_bucket_encryption(stack_template):
+    """test_access_logs_bucket_encryption tests that the access logs bucket is
+    encrypted with S3 managed keys.
 
-    It asserts that the template contains exactly one
-    "AWS::KMS::Key" resource.
+    ALB access logs support only SSE-S3, so the stack must not create a KMS
+    key and the bucket must use the "AES256" algorithm.
 
     Parameters:
 
     - stack_template: The CDK stack template to test against.
     """
 
-    stack_template.resource_count_is("AWS::KMS::Key", 1)
+    stack_template.resource_count_is("AWS::KMS::Key", 0)
+    stack_template.has_resource_properties(
+        "AWS::S3::Bucket",
+        {
+            "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [{"ServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]
+            }
+        },
+    )
 
 
 def test_access_logs_bucket_existence(stack_template):
