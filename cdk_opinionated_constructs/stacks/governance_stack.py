@@ -1,3 +1,5 @@
+from typing import Any
+
 import aws_cdk as cdk
 import aws_cdk.aws_sns as sns
 import aws_cdk.aws_ssm as ssm
@@ -8,6 +10,30 @@ from cdk_nag import AwsSolutionsChecks, NagPackSuppression, NagSuppressions
 from cdk_opinionated_constructs.schemas.configuration_vars import ConfigurationVars, GovernanceVars
 from cdk_opinionated_constructs.utils import load_properties
 from constructs import Construct
+
+
+def budget_filter(governance_vars: GovernanceVars) -> dict[str, Any]:
+    """Build the cost filter arguments of Budget.BudgetDataProperty.
+
+    Parameters:
+    - governance_vars: Governance-related variables, including tags and budget_filter_tag_keys.
+
+    Returns:
+    - Keyword arguments for Budget.BudgetDataProperty. With budget_filter_tag_keys set, a filter_expression that
+      requires all configured tags (AND) on unblended cost; otherwise the legacy awsApplication tag cost filter.
+    """
+    if not governance_vars.budget_filter_tag_keys:
+        return {"cost_filters": {"TagKeyValue": [f"user:awsApplication${governance_vars.tags.awsApplication}"]}}
+
+    tag_values = governance_vars.tag_values
+    expressions = [
+        Budget.ExpressionProperty(tags=Budget.TagValuesProperty(key=key, values=[tag_values[key]]))
+        for key in governance_vars.budget_filter_tag_keys
+    ]
+    expression = expressions[0] if len(expressions) == 1 else Budget.ExpressionProperty(and_=expressions)
+    # FilterExpression uses the Cost Explorer Expression model: plain tag keys, unlike the legacy "user:key$value"
+    # CostFilters format. It must be paired with Metrics, not CostTypes; unblended cost matches the CostTypes defaults.
+    return {"filter_expression": expression, "metrics": ["UnblendedCost"]}
 
 
 class GovernanceStack(cdk.Stack):
@@ -51,7 +77,9 @@ class GovernanceStack(cdk.Stack):
 
         bill_sns_subscribers = Budget.SubscriberProperty(address=bill_sns_topic.topic_arn, subscription_type="SNS")
 
-        if governance_vars.budget_limit_monthly and governance_vars.tags.awsApplication:
+        if governance_vars.budget_limit_monthly and (
+            governance_vars.budget_filter_tag_keys or governance_vars.tags.awsApplication
+        ):
             monthly_budget_limit = governance_vars.budget_limit_monthly
             self.budget_alarms(
                 sns_subscribers=bill_sns_subscribers,
@@ -113,7 +141,7 @@ class GovernanceStack(cdk.Stack):
                     budget_limit=Budget.SpendProperty(amount=amount[period], unit="USD"),
                     budget_name=budget_name,
                     budget_type="COST",
-                    cost_filters={"TagKeyValue": [f"user:awsApplication${governance_vars.tags.awsApplication}"]},
+                    **budget_filter(governance_vars),
                     time_unit=period,
                 ),
                 notifications_with_subscribers=[
@@ -136,7 +164,7 @@ class GovernanceStack(cdk.Stack):
                 budget_limit=Budget.SpendProperty(amount=amount[period], unit="USD"),
                 budget_name=budget_name,
                 budget_type="COST",
-                cost_filters={"TagKeyValue": [f"user:awsApplication${governance_vars.tags.awsApplication}"]},
+                **budget_filter(governance_vars),
                 time_unit=period,
             ),
             notifications_with_subscribers=[
