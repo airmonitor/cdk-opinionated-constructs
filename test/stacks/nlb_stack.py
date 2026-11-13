@@ -2,6 +2,7 @@
 
 import aws_cdk.aws_ec2 as ec2
 import aws_cdk.aws_elasticloadbalancingv2 as albv2
+import aws_cdk.aws_elasticloadbalancingv2_targets as albv2_targets
 
 from aws_cdk import Acknowledgment, Stack, Validations
 from cdk_nag import AwsSolutionsChecks
@@ -43,7 +44,7 @@ class TestNLBStack(Stack):
                 {
                     "front_end_port": 6001,
                     "front_end_protocol": albv2.Protocol.UDP,
-                    "targets": [],
+                    "targets": [albv2_targets.IpTarget(ip_address="10.0.0.10")],
                     "back_end_port": 6001,
                     "back_end_protocol": albv2.Protocol.UDP,
                 },

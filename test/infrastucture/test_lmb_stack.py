@@ -40,17 +40,33 @@ def stack_template() -> Template:
 
 def test_aws_lambda_function_existence(stack_template):
     """test_aws_lambda_function_existence tests that the stack template
-    contains two AWS Lambda Function resources.
+    contains one AWS Lambda Function resource.
 
-    It asserts that the template contains exactly two
-    "AWS::Lambda::Function" resources.
+    It asserts that the template contains exactly one
+    "AWS::Lambda::Function" resource. The function uses an explicit log
+    group, so CDK does not add a LogRetention custom resource function.
 
     Parameters:
 
     - stack_template: The CDK stack template to test against.
     """
 
-    stack_template.resource_count_is("AWS::Lambda::Function", 2)
+    stack_template.resource_count_is("AWS::Lambda::Function", 1)
+
+
+def test_aws_lambda_function_log_group(stack_template):
+    """test_aws_lambda_function_log_group tests that the function has its own
+    log group with a one-week retention.
+
+    Parameters:
+
+    - stack_template: The CDK stack template to test against.
+    """
+
+    stack_template.has_resource_properties(
+        "AWS::Logs::LogGroup",
+        {"LogGroupName": "/service/lambda/example_lambda_function", "RetentionInDays": 7},
+    )
 
 
 def test_signer_profile_existence(stack_template):

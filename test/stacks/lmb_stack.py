@@ -1,5 +1,7 @@
 """Test AWS Lambda function construct."""
 
+from pathlib import Path
+
 import aws_cdk.aws_lambda as lmb
 
 from aws_cdk import Acknowledgment, Stack, Validations
@@ -17,7 +19,7 @@ class TestAWSPythonLambdaFunctionStack(Stack):
         lmb_construct = AWSPythonLambdaFunction(self, id="lmb_construct")
         lmb_signing = lmb_construct.signing_config(signing_profile_name="signing_profile_name")
         lmb_function = lmb_construct.create_lambda_function(
-            code_path=f"{props['service_name']}",
+            code_path=str(Path(__file__).parent.parent / props["service_name"]),
             env=env,
             function_name=props["service_name"],
             timeout=10,
